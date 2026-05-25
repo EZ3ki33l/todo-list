@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Propriétaire d'une liste ou membre invité (liste partagée).
+enum ListMemberRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  ownedLists  TodoList[]       @relation("ListOwner")
+  memberships TodoListMember[]
+}
+
+/// Une todo-list : appartient à un utilisateur, peut être partagée via TodoListMember.
+model TodoList {
+  id        String   @id @default(cuid())
+  title     String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner   User             @relation("ListOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members TodoListMember[]
+  actions Action[]
+}
+
+/// Accès à une liste partagée (en plus du propriétaire défini par ownerId).
+model TodoListMember {
+  id       String         @id @default(cuid())
+  listId   String
+  userId   String
+  role     ListMemberRole @default(EDITOR)
+  joinedAt DateTime       @default(now())
+
+  list TodoList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+  @@index([userId])
+}
+
+/// Une action dans une liste : titre, fait / pas fait, rappel optionnel.
+model Action {
+  id         String    @id @default(cuid())
+  listId     String
+  title      String
+  done       Boolean   @default(false)
+  reminderAt DateTime?
+  position   Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  list TodoList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@index([listId])
+}

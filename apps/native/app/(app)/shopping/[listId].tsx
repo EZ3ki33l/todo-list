@@ -15,7 +15,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PushOptInCard } from "@/components/push-opt-in-card";
 import { UnitPicker } from "@/components/unit-picker";
 import { useAuth } from "@/lib/auth-context";
-import { detectCategory, type GroceryCategory } from "@/lib/grocery-detect";
+import {
+  detectCategory,
+  normalizeItemTitle,
+  type GroceryCategory,
+  type ItemMemory,
+} from "@/lib/grocery-detect";
 import {
   CATEGORY_LABELS,
   itemIcon,
@@ -24,6 +29,16 @@ import {
 import { trpc } from "@/lib/trpc";
 
 type ShareRole = "membre" | "invité";
+
+/** Aligné sur `shoppingItems.getFrequent` (évite les `any` si les types tRPC ne sont pas à jour). */
+type FrequentShoppingItem = {
+  title: string;
+  titleNorm: string;
+  category: GroceryCategory;
+  quantity: number | null;
+  unit: string | null;
+  useCount: number;
+};
 
 function CategoryChips({
   value,
@@ -90,10 +105,28 @@ export default function ShoppingListDetailScreen() {
   const isOwner = list?.ownerId === user?.id;
   const myMember = list?.members.find((m) => m.userId === user?.id);
   const canWrite = isOwner || myMember?.role === "membre";
+
+  const { data: frequentItemsRaw } = trpc.shoppingItems.getFrequent.useQuery(
+    { limit: 12, minUseCount: 2 },
+    { enabled: !!listId && canWrite },
+  );
+  const frequentItems = frequentItemsRaw as FrequentShoppingItem[] | undefined;
+
+  const itemMemory: ItemMemory[] = useMemo(
+    () =>
+      (frequentItems ?? []).map((f: FrequentShoppingItem) => ({
+        titleNorm: f.titleNorm,
+        category: f.category as GroceryCategory,
+      })),
+    [frequentItems],
+  );
   const isShared =
     (list?.members.length ?? 0) > 0 || (!!user?.id && !isOwner && !!myMember);
 
-  const detectedCategory = useMemo(() => detectCategory(title), [title]);
+  const detectedCategory = useMemo(
+    () => detectCategory(title, itemMemory),
+    [title, itemMemory],
+  );
   const resolvedCategory = detectedCategory ?? manualCategory;
   const needsCategoryPicker = !detectedCategory && title.trim().length > 0;
 
@@ -123,6 +156,7 @@ export default function ShoppingListDetailScreen() {
   const createItem = trpc.shoppingItems.create.useMutation({
     onSuccess: () => {
       invalidateList();
+      utils.shoppingItems.getFrequent.invalidate();
       setTitle("");
       setQuantityText("");
       setUnit(null);
@@ -170,17 +204,31 @@ export default function ShoppingListDetailScreen() {
     return Number.isFinite(n) && n > 0 ? n : null;
   }
 
-  function handleCreate() {
-    if (!title.trim() || !listId || !canWrite) return;
-    if (needsCategoryPicker && !manualCategory) return;
+  function handleCreate(quick?: {
+    title: string;
+    category: GroceryCategory;
+    quantity?: number | null;
+    unit?: string | null;
+  }) {
+    if (!listId || !canWrite) return;
+    const t = quick?.title ?? title.trim();
+    if (!t) return;
+    const cat = quick?.category ?? resolvedCategory;
+    if (!quick && needsCategoryPicker && !manualCategory) return;
     createItem.mutate({
       listId,
-      title: title.trim(),
-      quantity: parseQuantity(quantityText),
-      unit,
-      category: resolvedCategory,
+      title: t,
+      quantity: quick ? (quick.quantity ?? null) : parseQuantity(quantityText),
+      unit: quick ? (quick.unit ?? null) : unit,
+      category: cat,
     });
   }
+
+  const frequentNotInList = useMemo((): FrequentShoppingItem[] => {
+    if (!frequentItems?.length || !items) return frequentItems ?? [];
+    const inList = new Set(items.map((i) => normalizeItemTitle(i.title)));
+    return frequentItems.filter((f: FrequentShoppingItem) => !inList.has(f.titleNorm));
+  }, [frequentItems, items]);
 
   function startEdit(item: NonNullable<typeof items>[number]) {
     setEditingId(item.id);
@@ -193,7 +241,7 @@ export default function ShoppingListDetailScreen() {
 
   function handleSaveEdit(itemId: string) {
     if (!editTitle.trim()) return;
-    const cat = detectCategory(editTitle) ?? editCategory;
+    const cat = detectCategory(editTitle, itemMemory) ?? editCategory;
     updateItem.mutate({
       itemId,
       title: editTitle.trim(),
@@ -213,6 +261,38 @@ export default function ShoppingListDetailScreen() {
 
         {!canWrite && (
           <Text style={styles.readOnlyBanner}>Lecture seule (invité)</Text>
+        )}
+
+        {canWrite && frequentNotInList.length > 0 && (
+          <View style={styles.frequentSection}>
+            <Text style={styles.frequentTitle}>Ajout rapide</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.frequentRow}>
+                {frequentNotInList.map((f: FrequentShoppingItem) => (
+                  <Pressable
+                    key={f.titleNorm}
+                    style={styles.frequentChip}
+                    onPress={() =>
+                      handleCreate({
+                        title: f.title,
+                        category: f.category,
+                        quantity: f.quantity,
+                        unit: f.unit,
+                      })
+                    }
+                    disabled={createItem.isPending}
+                  >
+                    <Text style={styles.frequentIcon}>
+                      {itemIcon(f.category)}
+                    </Text>
+                    <Text style={styles.frequentLabel} numberOfLines={1}>
+                      {f.title}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
         )}
 
         {canWrite && (
@@ -254,7 +334,7 @@ export default function ShoppingListDetailScreen() {
                 pressed && { opacity: 0.8 },
                 (!title.trim() || createItem.isPending) && { opacity: 0.4 },
               ]}
-              onPress={handleCreate}
+              onPress={() => handleCreate()}
               disabled={!title.trim() || createItem.isPending}
             >
               <Text style={styles.addBtnText}>Ajouter</Text>
@@ -282,7 +362,7 @@ export default function ShoppingListDetailScreen() {
             const icon = itemIcon(category, item.icon);
 
             if (editingId === item.id) {
-              const editDetected = detectCategory(editTitle);
+              const editDetected = detectCategory(editTitle, itemMemory);
               return (
                 <View key={item.id} style={styles.itemCard}>
                   <TextInput
@@ -461,6 +541,23 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
   content: { padding: 16, paddingBottom: 40 },
   headerShare: { fontSize: 15, fontWeight: "600", color: "#111827", marginRight: 4 },
+  frequentSection: { marginBottom: 16 },
+  frequentTitle: { fontSize: 13, fontWeight: "600", color: "#6B7280", marginBottom: 8 },
+  frequentRow: { flexDirection: "row", gap: 8, paddingRight: 8 },
+  frequentChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxWidth: 160,
+  },
+  frequentIcon: { fontSize: 16 },
+  frequentLabel: { fontSize: 13, color: "#111827", fontWeight: "500" },
   readOnlyBanner: {
     fontSize: 13,
     color: "#6B7280",

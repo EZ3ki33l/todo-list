@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PushOptInCard } from "@/components/push-opt-in-card";
 import { UnitPicker } from "@/components/unit-picker";
@@ -53,6 +54,7 @@ function CategoryChips({
 export default function ShoppingListDetailScreen() {
   const { listId } = useLocalSearchParams<{ listId: string }>();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
   const [title, setTitle] = useState("");
@@ -372,7 +374,15 @@ export default function ShoppingListDetailScreen() {
 
       <Modal visible={shareOpen} animationType="slide" transparent onRequestClose={() => setShareOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setShareOpen(false)}>
-          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+          <View
+            style={[styles.modalCard, { paddingBottom: insets.bottom + 20 }]}
+            onStartShouldSetResponder={() => true}
+          >
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
             <Text style={styles.modalTitle}>Partager la liste</Text>
 
             <TextInput
@@ -432,10 +442,15 @@ export default function ShoppingListDetailScreen() {
               </View>
             ))}
 
-            <Pressable style={styles.modalClose} onPress={() => setShareOpen(false)}>
+            <Pressable
+              style={styles.modalClose}
+              onPress={() => setShareOpen(false)}
+              hitSlop={12}
+            >
               <Text style={styles.modalCloseText}>Fermer</Text>
             </Pressable>
-          </Pressable>
+            </ScrollView>
+          </View>
         </Pressable>
       </Modal>
     </>
@@ -557,8 +572,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    padding: 20,
-    paddingBottom: 32,
+    paddingHorizontal: 20,
+    paddingTop: 20,
     maxHeight: "85%",
   },
   modalTitle: { fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 16 },
@@ -588,6 +603,12 @@ const styles = StyleSheet.create({
   memberName: { fontSize: 14, color: "#111827" },
   memberRole: { fontSize: 12, color: "#9CA3AF" },
   unshareBtn: { fontSize: 13, color: "#DC2626" },
-  modalClose: { marginTop: 16, alignItems: "center" },
-  modalCloseText: { fontSize: 15, color: "#6B7280" },
+  modalClose: {
+    marginTop: 16,
+    alignItems: "center",
+    paddingVertical: 14,
+    minHeight: 48,
+    justifyContent: "center",
+  },
+  modalCloseText: { fontSize: 15, fontWeight: "600", color: "#374151" },
 });

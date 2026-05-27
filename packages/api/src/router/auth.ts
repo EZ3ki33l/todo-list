@@ -2,7 +2,7 @@ import { SignJWT } from "jose";
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
-import { publicProcedure, router, z } from "../trpc";
+import { protectedProcedure, publicProcedure, router, z } from "../trpc";
 
 function getJwtSecret() {
   return new TextEncoder().encode(process.env.JWT_SECRET!);
@@ -30,6 +30,17 @@ async function upsertUser(profile: { sub: string; email?: string; name?: string;
 }
 
 export const authRouter = router({
+  me: protectedProcedure.query(async ({ ctx }) => {
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.userId },
+      select: { id: true, name: true, email: true, image: true },
+    });
+    if (!user) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
+    }
+    return user;
+  }),
+
   signInWithGoogleIdToken: publicProcedure
     .input(z.object({ idToken: z.string() }))
     .mutation(async ({ input }) => {

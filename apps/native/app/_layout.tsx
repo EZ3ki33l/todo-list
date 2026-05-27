@@ -7,10 +7,26 @@ import { AuthProvider, useAuth } from "@/lib/auth-context";
 
 const queryClient = new QueryClient();
 
-function RootNavigator() {
-  const { ready, token } = useAuth();
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { ready, token, signOut } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+
+  // Valide le token au démarrage (et à chaque changement). Si le serveur
+  // renvoie UNAUTHORIZED, on déconnecte. Les erreurs réseau ne déclenchent
+  // pas de signOut pour préserver la session en mode offline.
+  const meQuery = trpc.auth.me.useQuery(undefined, {
+    enabled: !!token && ready,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    const code = (meQuery.error as { data?: { code?: string } } | null)?.data?.code;
+    if (code === "UNAUTHORIZED") {
+      signOut();
+    }
+  }, [meQuery.error, signOut]);
 
   useEffect(() => {
     if (!ready) return;
@@ -20,12 +36,19 @@ function RootNavigator() {
     if (token && !inApp) router.replace("/(app)");
   }, [ready, token, segments]);
 
+  return <>{children}</>;
+}
+
+function RootNavigator() {
+  const { token } = useAuth();
   const trpcClient = useMemo(() => createTrpcClient(() => token), [token]);
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <Stack screenOptions={{ headerShown: false }} />
+        <AuthGuard>
+          <Stack screenOptions={{ headerShown: false }} />
+        </AuthGuard>
       </QueryClientProvider>
     </trpc.Provider>
   );

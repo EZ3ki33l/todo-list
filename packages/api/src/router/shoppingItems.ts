@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
 import { protectedProcedure, router, z } from "../trpc";
+import { scheduleShoppingItemNotification } from "../lib/shopping-notify-scheduler";
 import { assertShoppingListAccess } from "./shoppingLists";
 
 const groceryCategoryEnum = z.enum([
@@ -59,7 +60,7 @@ export const shoppingItemsRouter = router({
         orderBy: { position: "desc" },
         select: { position: true },
       });
-      return prisma.shoppingItem.create({
+      const item = await prisma.shoppingItem.create({
         data: {
           listId: input.listId,
           title: input.title,
@@ -70,6 +71,16 @@ export const shoppingItemsRouter = router({
           position: (last?.position ?? -1) + 1,
         },
       });
+
+      void scheduleShoppingItemNotification({
+        listId: input.listId,
+        actorUserId: ctx.userId,
+        itemTitle: input.title,
+        quantity: input.quantity ?? null,
+        unit: input.unit ?? null,
+      }).catch((err) => console.error("[push] scheduleShoppingItemNotification", err));
+
+      return item;
     }),
 
   update: protectedProcedure

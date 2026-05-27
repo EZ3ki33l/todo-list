@@ -33,7 +33,7 @@ export const shoppingListsRouter = router({
           { members: { some: { userId: ctx.userId } } },
         ],
       },
-      include: { _count: { select: { items: true } } },
+      include: { _count: { select: { items: true, members: true } } },
       orderBy: { updatedAt: "desc" },
     });
   }),

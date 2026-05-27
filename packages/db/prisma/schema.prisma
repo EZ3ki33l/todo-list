@@ -57,6 +57,35 @@ model User {
   memberships         TodoListMember[]
   ownedShoppingLists  ShoppingList[]       @relation("ShoppingListOwner")
   shoppingMemberships ShoppingListMember[]
+  pushTokens          PushToken[]
+}
+
+/// Token Expo Push (app native) pour les notifications.
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Lot de notifications courses en attente (regroupement des ajouts rapides).
+model ShoppingNotifyBatch {
+  listId        String
+  actorUserId   String
+  itemCount     Int
+  lastTitle     String
+  lastQuantity  Float?
+  lastUnit      String?
+  sendAfter     DateTime
+
+  @@unique([listId, actorUserId])
+  @@index([sendAfter])
 }
 
 model Account {

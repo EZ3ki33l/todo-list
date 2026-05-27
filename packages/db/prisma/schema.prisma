@@ -9,28 +9,82 @@ datasource db {
 
 /// Propriétaire d'une liste ou membre invité (liste partagée).
 enum ListMemberRole {
-  OWNER
-  EDITOR
-  VIEWER
+  Propriétaire
+  membre
+  invité
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+/// Statut d'une todo-list.
+enum ListStatus {
+  ACTIVE
+  ARCHIVED
+  DONE
+}
 
+/// Récurrence d'une action.
+enum Recurrence {
+  NONE    // tâche ponctuelle
+  DAILY   // chaque jour
+  WEEKLY  // chaque semaine, même jour
+}
+
+/// Utilisateur applicatif + profil Auth.js (OAuth).
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts    Account[]
+  sessions    Session[]
   ownedLists  TodoList[]       @relation("ListOwner")
   memberships TodoListMember[]
 }
 
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 /// Une todo-list : appartient à un utilisateur, peut être partagée via TodoListMember.
 model TodoList {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   title     String
+  status    ListStatus @default(ACTIVE)
   ownerId   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   owner   User             @relation("ListOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members TodoListMember[]
@@ -42,7 +96,7 @@ model TodoListMember {
   id       String         @id @default(cuid())
   listId   String
   userId   String
-  role     ListMemberRole @default(EDITOR)
+  role     ListMemberRole @default(membre)
   joinedAt DateTime       @default(now())
 
   list TodoList @relation(fields: [listId], references: [id], onDelete: Cascade)
@@ -52,18 +106,23 @@ model TodoListMember {
   @@index([userId])
 }
 
-/// Une action dans une liste : titre, fait / pas fait, rappel optionnel.
+/// Une action dans une liste : titre, fait / pas fait, planification optionnelle.
 model Action {
-  id         String    @id @default(cuid())
-  listId     String
-  title      String
-  done       Boolean   @default(false)
-  reminderAt DateTime?
-  position   Int       @default(0)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id             String     @id @default(cuid())
+  listId         String
+  title          String
+  done           Boolean    @default(false)
+  dueAt          DateTime?  // date d'échéance (tâche ponctuelle)
+  recurrence     Recurrence @default(NONE)
+  recurrenceTime String?    // heure de la récurrence au format "HH:mm"
+  recurrenceDow  Int?       // jour de la semaine (0=dim..6=sam) pour WEEKLY
+  position       Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   list TodoList @relation(fields: [listId], references: [id], onDelete: Cascade)
 
   @@index([listId])
+  @@index([dueAt])
+  @@index([recurrence])
 }

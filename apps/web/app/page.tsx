@@ -1,14 +1,19 @@
-"use client";
+import { auth } from "@/auth";
+import TodoDashboard from "@/components/todo-dashboard";
 
-import { Button } from "@repo/ui";
+export default async function Web() {
+  const session = await auth();
 
-import styles from "../styles/index.module.css";
-
-export default function Web() {
   return (
-    <div className={styles.container}>
-      <h1>Web</h1>
-      <Button onClick={() => console.log("Pressed!")} text="Boop" />
-    </div>
+    <>
+      <h1 className="text-3xl font-bold">Todo list</h1>
+      {session?.user ? (
+        <div> <p className="mt-2 text-gray-600">Bienvenue sur votre tableau de bord, {session.user.name}.</p>
+        <TodoDashboard userId={session.user.id} />
+        </div>
+      ) : (
+        <p className="mt-2 text-gray-600">Connectez-vous pour accéder à vos listes.</p>
+      )}
+    </>
   );
 }

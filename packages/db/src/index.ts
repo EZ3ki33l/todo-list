@@ -22,9 +22,14 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export type {
+  Account,
   Action,
   ListMemberRole,
+  ListStatus,
+  Recurrence,
+  Session,
   TodoList,
   TodoListMember,
   User,
+  VerificationToken,
 } from "@prisma/client";

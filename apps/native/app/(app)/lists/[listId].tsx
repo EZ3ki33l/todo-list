@@ -8,6 +8,9 @@ import {
   TextInput,
   View,
 } from "react-native";
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 
 import { trpc } from "@/lib/trpc";
@@ -15,6 +18,16 @@ import { trpc } from "@/lib/trpc";
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
 type Recurrence = "NONE" | "DAILY" | "WEEKLY";
+
+function formatDateFr(d: Date) {
+  return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatTime24(d: Date) {
+  const h = d.getHours().toString().padStart(2, "0");
+  const m = d.getMinutes().toString().padStart(2, "0");
+  return `${h}:${m}`;
+}
 
 function RecurrenceBadge({ recurrence, dow }: { recurrence: string; dow?: number | null }) {
   if (recurrence === "DAILY") return <Text style={styles.badgeBlue}>quotidien</Text>;
@@ -28,9 +41,12 @@ export default function ListDetailScreen() {
 
   const [title, setTitle] = useState("");
   const [recurrence, setRecurrence] = useState<Recurrence>("NONE");
-  const [dueAt, setDueAt] = useState("");
-  const [recurrenceTime, setRecurrenceTime] = useState("");
+  const [dueAt, setDueAt] = useState<Date | null>(null);
+  const [recurrenceTime, setRecurrenceTime] = useState<Date | null>(null);
   const [recurrenceDow, setRecurrenceDow] = useState(1);
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -46,7 +62,7 @@ export default function ListDetailScreen() {
     onSuccess: () => {
       utils.actions.invalidate();
       utils.lists.getAll.invalidate();
-      setTitle(""); setDueAt(""); setRecurrenceTime(""); setRecurrence("NONE");
+      setTitle(""); setDueAt(null); setRecurrenceTime(null); setRecurrence("NONE");
     },
   });
 
@@ -71,10 +87,20 @@ export default function ListDetailScreen() {
       listId,
       title,
       recurrence,
-      dueAt: recurrence === "NONE" && dueAt ? new Date(dueAt).toISOString() : null,
-      recurrenceTime: recurrence !== "NONE" ? recurrenceTime || null : null,
+      dueAt: recurrence === "NONE" && dueAt ? dueAt.toISOString() : null,
+      recurrenceTime: recurrence !== "NONE" && recurrenceTime ? formatTime24(recurrenceTime) : null,
       recurrenceDow: recurrence === "WEEKLY" ? recurrenceDow : null,
     });
+  }
+
+  function handleDateChange(event: DateTimePickerEvent, d?: Date) {
+    setShowDatePicker(false);
+    if (event.type === "set" && d) setDueAt(d);
+  }
+
+  function handleTimeChange(event: DateTimePickerEvent, d?: Date) {
+    setShowTimePicker(false);
+    if (event.type === "set" && d) setRecurrenceTime(d);
   }
 
   const done = actions?.filter((a) => a.done).length ?? 0;
@@ -112,14 +138,22 @@ export default function ListDetailScreen() {
 
         {recurrence === "NONE" && (
           <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>À faire le (YYYY-MM-DD)</Text>
-            <TextInput style={styles.fieldInput} placeholder="2026-06-01" placeholderTextColor="#9CA3AF" value={dueAt} onChangeText={setDueAt} />
+            <Text style={styles.fieldLabel}>À faire le</Text>
+            <Pressable style={styles.fieldInput} onPress={() => setShowDatePicker(true)}>
+              <Text style={[styles.fieldText, !dueAt && styles.fieldTextPlaceholder]}>
+                {dueAt ? formatDateFr(dueAt) : "Choisir une date"}
+              </Text>
+            </Pressable>
           </View>
         )}
         {recurrence === "DAILY" && (
           <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>À (HH:MM)</Text>
-            <TextInput style={styles.fieldInput} placeholder="09:00" placeholderTextColor="#9CA3AF" value={recurrenceTime} onChangeText={setRecurrenceTime} />
+            <Text style={styles.fieldLabel}>À</Text>
+            <Pressable style={styles.fieldInput} onPress={() => setShowTimePicker(true)}>
+              <Text style={[styles.fieldText, !recurrenceTime && styles.fieldTextPlaceholder]}>
+                {recurrenceTime ? formatTime24(recurrenceTime) : "Choisir une heure"}
+              </Text>
+            </Pressable>
           </View>
         )}
         {recurrence === "WEEKLY" && (
@@ -132,10 +166,30 @@ export default function ListDetailScreen() {
               ))}
             </View>
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>À (HH:MM)</Text>
-              <TextInput style={styles.fieldInput} placeholder="09:00" placeholderTextColor="#9CA3AF" value={recurrenceTime} onChangeText={setRecurrenceTime} />
+              <Text style={styles.fieldLabel}>À</Text>
+              <Pressable style={styles.fieldInput} onPress={() => setShowTimePicker(true)}>
+                <Text style={[styles.fieldText, !recurrenceTime && styles.fieldTextPlaceholder]}>
+                  {recurrenceTime ? formatTime24(recurrenceTime) : "Choisir une heure"}
+                </Text>
+              </Pressable>
             </View>
           </View>
+        )}
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={dueAt ?? new Date()}
+            mode="date"
+            onChange={handleDateChange}
+          />
+        )}
+        {showTimePicker && (
+          <DateTimePicker
+            value={recurrenceTime ?? new Date()}
+            mode="time"
+            is24Hour
+            onChange={handleTimeChange}
+          />
         )}
 
         <Pressable
@@ -217,7 +271,9 @@ const styles = StyleSheet.create({
   radioLabel: { fontSize: 13, color: "#374151" },
   fieldRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
   fieldLabel: { fontSize: 13, color: "#6B7280", minWidth: 80 },
-  fieldInput: { flex: 1, borderWidth: 1, borderColor: "#D1D5DB", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, fontSize: 13, color: "#111827" },
+  fieldInput: { flex: 1, borderWidth: 1, borderColor: "#D1D5DB", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: "#111827", justifyContent: "center", minHeight: 36 },
+  fieldText: { fontSize: 13, color: "#111827" },
+  fieldTextPlaceholder: { color: "#9CA3AF" },
   dowRow: { flexDirection: "row", gap: 4, marginBottom: 10, flexWrap: "wrap" },
   dowBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: "#E5E7EB" },
   dowBtnActive: { backgroundColor: "#111827", borderColor: "#111827" },

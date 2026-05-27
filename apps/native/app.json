@@ -15,7 +15,9 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -28,8 +30,15 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "data": [{ "scheme": "com.googleusercontent.apps.782595741716-t1sj4n49ib5espdl1gdaosuc0dpf1b9g" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "com.googleusercontent.apps.782595741716-t1sj4n49ib5espdl1gdaosuc0dpf1b9g"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -39,7 +48,8 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

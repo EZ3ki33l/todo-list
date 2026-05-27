@@ -13,13 +13,18 @@ import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PushOptInCard } from "@/components/push-opt-in-card";
+import { TitleSuggestionList } from "@/components/title-suggestion-list";
 import { UnitPicker } from "@/components/unit-picker";
 import { useAuth } from "@/lib/auth-context";
 import {
   detectCategory,
+  getTitleSuggestions,
+  mergeItemMemory,
   normalizeItemTitle,
   type GroceryCategory,
   type ItemMemory,
+  type SuggestionHistoryEntry,
+  type TitleSuggestion,
 } from "@/lib/grocery-detect";
 import {
   CATEGORY_LABELS,
@@ -37,6 +42,14 @@ type FrequentShoppingItem = {
   category: GroceryCategory;
   quantity: number | null;
   unit: string | null;
+  useCount: number;
+  lastUsedAt?: string | Date;
+};
+
+type ListCatalogItem = {
+  title: string;
+  titleNorm: string;
+  category: GroceryCategory;
   useCount: number;
 };
 
@@ -107,21 +120,73 @@ export default function ShoppingListDetailScreen() {
   const canWrite = isOwner || myMember?.role === "membre";
 
   const { data: frequentItemsRaw } = trpc.shoppingItems.getFrequent.useQuery(
-    { limit: 12, minUseCount: 2 },
-    { enabled: !!listId && canWrite },
+    { limit: 24, minUseCount: 1 },
+    { enabled: !!listId && canWrite, retry: false },
   );
   const frequentItems = frequentItemsRaw as FrequentShoppingItem[] | undefined;
 
-  const itemMemory: ItemMemory[] = useMemo(
+  const isShared =
+    (list?.members.length ?? 0) > 0 || (!!user?.id && !isOwner && !!myMember);
+
+  const { data: listCatalogRaw } = trpc.shoppingItems.getListCatalog.useQuery(
+    { listId: listId!, limit: 32 },
+    { enabled: !!listId && canWrite && isShared, retry: false },
+  );
+  const listCatalog = listCatalogRaw as ListCatalogItem[] | undefined;
+
+  const userMemory: ItemMemory[] = useMemo(
     () =>
-      (frequentItems ?? []).map((f: FrequentShoppingItem) => ({
+      (frequentItems ?? []).map((f) => ({
         titleNorm: f.titleNorm,
-        category: f.category as GroceryCategory,
+        category: f.category,
       })),
     [frequentItems],
   );
-  const isShared =
-    (list?.members.length ?? 0) > 0 || (!!user?.id && !isOwner && !!myMember);
+
+  const listMemory: ItemMemory[] = useMemo(
+    () =>
+      isShared
+        ? (listCatalog ?? []).map((e) => ({
+            titleNorm: e.titleNorm,
+            category: e.category,
+          }))
+        : [],
+    [isShared, listCatalog],
+  );
+
+  const itemMemory = useMemo(
+    () => mergeItemMemory(userMemory, listMemory),
+    [userMemory, listMemory],
+  );
+
+  const suggestionHistory: SuggestionHistoryEntry[] = useMemo(() => {
+    const seen = new Set<string>();
+    const out: SuggestionHistoryEntry[] = [];
+    const push = (entry: SuggestionHistoryEntry) => {
+      if (seen.has(entry.titleNorm)) return;
+      seen.add(entry.titleNorm);
+      out.push(entry);
+    };
+    for (const f of frequentItems ?? []) {
+      push({
+        title: f.title,
+        titleNorm: f.titleNorm,
+        category: f.category,
+        source: "history",
+      });
+    }
+    if (isShared) {
+      for (const e of listCatalog ?? []) {
+        push({
+          title: e.title,
+          titleNorm: e.titleNorm,
+          category: e.category,
+          source: "list",
+        });
+      }
+    }
+    return out;
+  }, [frequentItems, listCatalog, isShared]);
 
   const detectedCategory = useMemo(
     () => detectCategory(title, itemMemory),
@@ -147,16 +212,20 @@ export default function ShoppingListDetailScreen() {
     });
   }, [navigation, list?.title, isOwner]);
 
-  const invalidateList = () => {
-    utils.shoppingItems.getByList.invalidate({ listId: listId! });
-    utils.shoppingLists.getAll.invalidate();
-    utils.shoppingLists.getById.invalidate({ listId: listId! });
+  const refreshListData = async () => {
+    if (!listId) return;
+    await Promise.all([
+      utils.shoppingItems.getByList.invalidate({ listId }),
+      utils.shoppingLists.getAll.invalidate(),
+      utils.shoppingLists.getById.invalidate({ listId }),
+      utils.shoppingItems.getFrequent.invalidate(),
+      utils.shoppingItems.getListCatalog.invalidate({ listId }),
+    ]);
   };
 
   const createItem = trpc.shoppingItems.create.useMutation({
-    onSuccess: () => {
-      invalidateList();
-      utils.shoppingItems.getFrequent.invalidate();
+    onSuccess: async () => {
+      await refreshListData();
       setTitle("");
       setQuantityText("");
       setUnit(null);
@@ -166,22 +235,22 @@ export default function ShoppingListDetailScreen() {
   });
 
   const updateItem = trpc.shoppingItems.update.useMutation({
-    onSuccess: () => {
-      invalidateList();
+    onSuccess: async () => {
+      await refreshListData();
       setEditingId(null);
     },
   });
 
   const toggleItem = trpc.shoppingItems.toggle.useMutation({
-    onSuccess: invalidateList,
+    onSuccess: refreshListData,
   });
 
   const deleteItem = trpc.shoppingItems.delete.useMutation({
-    onSuccess: invalidateList,
+    onSuccess: refreshListData,
   });
 
   const clearChecked = trpc.shoppingItems.clearChecked.useMutation({
-    onSuccess: invalidateList,
+    onSuccess: refreshListData,
   });
 
   const shareList = trpc.shoppingLists.share.useMutation({
@@ -224,11 +293,64 @@ export default function ShoppingListDetailScreen() {
     });
   }
 
+  const titlesInList = useMemo(
+    () => new Set((items ?? []).map((i) => normalizeItemTitle(i.title))),
+    [items],
+  );
+
+  /** Puces « Ajout rapide » : au moins 2 ajouts, pas déjà dans la liste, tri récent. */
   const frequentNotInList = useMemo((): FrequentShoppingItem[] => {
-    if (!frequentItems?.length || !items) return frequentItems ?? [];
-    const inList = new Set(items.map((i) => normalizeItemTitle(i.title)));
-    return frequentItems.filter((f: FrequentShoppingItem) => !inList.has(f.titleNorm));
-  }, [frequentItems, items]);
+    if (!frequentItems?.length) return [];
+    return frequentItems
+      .filter((f) => f.useCount >= 2 && !titlesInList.has(f.titleNorm))
+      .sort((a, b) => {
+        const ta = a.lastUsedAt ? new Date(a.lastUsedAt).getTime() : 0;
+        const tb = b.lastUsedAt ? new Date(b.lastUsedAt).getTime() : 0;
+        return tb - ta || b.useCount - a.useCount;
+      });
+  }, [frequentItems, titlesInList]);
+
+  function filterSuggestions(raw: string): TitleSuggestion[] {
+    if (!canWrite || raw.trim().length < 1) return [];
+    const norm = normalizeItemTitle(raw);
+    return getTitleSuggestions(raw, suggestionHistory).filter(
+      (s) => normalizeItemTitle(s.title) !== norm,
+    );
+  }
+
+  const titleSuggestions = useMemo(
+    () => filterSuggestions(title),
+    [canWrite, title, suggestionHistory],
+  );
+
+  const editTitleSuggestions = useMemo(
+    () => (editingId ? filterSuggestions(editTitle) : []),
+    [editingId, editTitle, canWrite, suggestionHistory],
+  );
+
+  function applyTitleSuggestion(s: TitleSuggestion) {
+    setTitle(s.title);
+    const detected = detectCategory(s.title, itemMemory);
+    if (detected) {
+      setManualCategory(detected);
+      setShowCategoryPicker(false);
+    } else {
+      setManualCategory(s.category);
+      setShowCategoryPicker(true);
+    }
+  }
+
+  function applyEditTitleSuggestion(s: TitleSuggestion) {
+    setEditTitle(s.title);
+    const detected = detectCategory(s.title, itemMemory);
+    if (detected) {
+      setEditCategory(detected);
+      setEditShowCategory(false);
+    } else {
+      setEditCategory(s.category);
+      setEditShowCategory(true);
+    }
+  }
 
   function startEdit(item: NonNullable<typeof items>[number]) {
     setEditingId(item.id);
@@ -304,6 +426,12 @@ export default function ShoppingListDetailScreen() {
               value={title}
               onChangeText={setTitle}
               returnKeyType="done"
+              autoCorrect={false}
+              autoCapitalize="sentences"
+            />
+            <TitleSuggestionList
+              suggestions={titleSuggestions}
+              onSelect={applyTitleSuggestion}
             />
             <TextInput
               style={styles.input}
@@ -370,6 +498,12 @@ export default function ShoppingListDetailScreen() {
                     value={editTitle}
                     onChangeText={setEditTitle}
                     autoFocus
+                    autoCorrect={false}
+                    autoCapitalize="sentences"
+                  />
+                  <TitleSuggestionList
+                    suggestions={editTitleSuggestions}
+                    onSelect={applyEditTitleSuggestion}
                   />
                   <TextInput
                     style={styles.input}

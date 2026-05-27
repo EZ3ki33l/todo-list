@@ -118,3 +118,123 @@ export function detectCategory(
 
   return null;
 }
+
+/** Mémoire perso + vocabulaire de la liste partagée (sans doublons). */
+export function mergeItemMemory(
+  userMemory: ItemMemory[],
+  listMemory: ItemMemory[] = [],
+): ItemMemory[] {
+  const seen = new Set<string>();
+  const out: ItemMemory[] = [];
+  for (const m of [...userMemory, ...listMemory]) {
+    if (seen.has(m.titleNorm)) continue;
+    seen.add(m.titleNorm);
+    out.push(m);
+  }
+  return out;
+}
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 0; i < a.length; i++) {
+    let prev = i + 1;
+    for (let j = 0; j < b.length; j++) {
+      const cur =
+        a[i] === b[j]
+          ? row[j]
+          : 1 + Math.min(row[j], row[j + 1], prev);
+      row[j] = prev;
+      prev = cur;
+    }
+    row[b.length] = prev;
+  }
+  return row[b.length];
+}
+
+/** Correspondance souple pour suggestions (préfixe, contient, faute proche). */
+export function matchesSuggestionQuery(queryNorm: string, targetNorm: string): boolean {
+  if (!queryNorm || !targetNorm) return false;
+  if (targetNorm.startsWith(queryNorm) || queryNorm.startsWith(targetNorm)) return true;
+  if (queryNorm.length >= 3 && targetNorm.includes(queryNorm)) return true;
+
+  const words = targetNorm.split(/\s+/).filter(Boolean);
+  for (const word of words) {
+    if (word.startsWith(queryNorm)) return true;
+    if (queryNorm.length >= 4 && word.length >= 4) {
+      const maxDist = queryNorm.length <= 5 ? 1 : 2;
+      if (levenshtein(word.slice(0, queryNorm.length + 2), queryNorm) <= maxDist) {
+        return true;
+      }
+    }
+  }
+
+  if (queryNorm.length >= 4 && targetNorm.length >= 4) {
+    const maxDist = queryNorm.length <= 5 ? 1 : 2;
+    if (levenshtein(targetNorm.slice(0, queryNorm.length + 3), queryNorm) <= maxDist) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export type TitleSuggestion = {
+  title: string;
+  category: GroceryCategory;
+  source: "dictionary" | "history" | "list";
+};
+
+export type SuggestionHistoryEntry = {
+  title: string;
+  titleNorm: string;
+  category: GroceryCategory;
+  source: "history" | "list";
+};
+
+function displayKeyword(keyword: string): string {
+  const t = keyword.trim();
+  if (!t) return t;
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** Suggestions : historique perso, liste partagée, puis dictionnaire fixe. */
+export function getTitleSuggestions(
+  rawQuery: string,
+  history: SuggestionHistoryEntry[] = [],
+  limit = 8,
+): TitleSuggestion[] {
+  const n = normalize(rawQuery);
+  if (n.length < 1) return [];
+
+  const seen = new Set<string>();
+  const out: TitleSuggestion[] = [];
+
+  const push = (title: string, category: GroceryCategory, source: TitleSuggestion["source"]) => {
+    const norm = normalize(title);
+    if (!norm || seen.has(norm)) return;
+    seen.add(norm);
+    out.push({ title, category, source });
+  };
+
+  for (const h of history) {
+    if (matchesSuggestionQuery(n, h.titleNorm)) {
+      push(h.title, h.category, h.source);
+      if (out.length >= limit) return out;
+    }
+  }
+
+  for (const category of Object.keys(KEYWORDS) as Exclude<GroceryCategory, "AUTRE">[]) {
+    for (const keyword of KEYWORDS[category]) {
+      const kn = normalize(keyword);
+      if (matchesSuggestionQuery(n, kn)) {
+        push(displayKeyword(keyword), category, "dictionary");
+        if (out.length >= limit) return out;
+      }
+    }
+  }
+
+  return out;
+}

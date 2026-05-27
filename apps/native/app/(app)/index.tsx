@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TabListHeader } from "@/components/tab-list-header";
@@ -28,6 +28,14 @@ export default function DashboardScreen() {
   const { data: todayActions, isLoading: loadingToday } = trpc.actions.getToday.useQuery();
   const { data: weekActions } = trpc.actions.getWeek.useQuery();
   const { data: lists, isLoading: loadingLists, refetch } = trpc.lists.getAll.useQuery();
+
+  useFocusEffect(
+    useCallback(() => {
+      void utils.lists.getAll.invalidate();
+      void utils.actions.getToday.invalidate();
+      void utils.actions.getWeek.invalidate();
+    }, [utils]),
+  );
 
   const createList = trpc.lists.create.useMutation({
     onSuccess: () => { utils.lists.getAll.invalidate(); setNewTitle(""); },

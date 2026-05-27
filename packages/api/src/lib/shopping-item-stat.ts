@@ -65,6 +65,7 @@ export async function getFrequentShoppingItems(
       quantity: true,
       unit: true,
       useCount: true,
+      lastUsedAt: true,
     },
   });
 }

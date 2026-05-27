@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -7,7 +7,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PushOptInCard } from "@/components/push-opt-in-card";
@@ -24,6 +24,12 @@ export default function ShoppingListsScreen() {
 
   const utils = trpc.useUtils();
   const { data: lists, isLoading, refetch } = trpc.shoppingLists.getAll.useQuery();
+
+  useFocusEffect(
+    useCallback(() => {
+      void utils.shoppingLists.getAll.invalidate();
+    }, [utils]),
+  );
 
   const createList = trpc.shoppingLists.create.useMutation({
     onSuccess: () => {

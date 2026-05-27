@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
 import { protectedProcedure, router, z } from "../trpc";
+import { getShoppingListCatalog } from "../lib/shopping-list-catalog";
 import {
   getFrequentShoppingItems,
   recordShoppingItemStat,
@@ -51,12 +52,32 @@ export const shoppingItemsRouter = router({
       z
         .object({
           limit: z.number().int().min(1).max(24).optional(),
-          minUseCount: z.number().int().min(2).max(20).optional(),
+          minUseCount: z.number().int().min(1).max(20).optional(),
         })
         .optional(),
     )
     .query(async ({ ctx, input }) => {
       return getFrequentShoppingItems(ctx.userId, input);
+    }),
+
+  /** Articles déjà vus sur cette liste (tous les membres), pour listes partagées. */
+  getListCatalog: protectedProcedure
+    .input(
+      z.object({
+        listId: z.string(),
+        limit: z.number().int().min(1).max(48).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await assertShoppingListAccess(input.listId, ctx.userId, "read");
+      const list = await prisma.shoppingList.findUnique({
+        where: { id: input.listId },
+        select: { ownerId: true, members: { select: { userId: true } } },
+      });
+      if (!list) throw new TRPCError({ code: "NOT_FOUND" });
+      const isShared = list.members.length > 0;
+      if (!isShared) return [];
+      return getShoppingListCatalog(input.listId, input.limit);
     }),
 
   getByList: protectedProcedure
@@ -90,12 +111,16 @@ export const shoppingItemsRouter = router({
         },
       });
 
-      await recordShoppingItemStat(ctx.userId, {
-        title: input.title,
-        category: input.category,
-        quantity: input.quantity ?? null,
-        unit: input.unit ?? null,
-      });
+      try {
+        await recordShoppingItemStat(ctx.userId, {
+          title: input.title,
+          category: input.category,
+          quantity: input.quantity ?? null,
+          unit: input.unit ?? null,
+        });
+      } catch (err) {
+        console.error("[shopping] recordShoppingItemStat", err);
+      }
 
       void scheduleShoppingItemNotification({
         listId: input.listId,
@@ -123,12 +148,16 @@ export const shoppingItemsRouter = router({
         },
       });
 
-      await recordShoppingItemStat(ctx.userId, {
-        title: input.title,
-        category: input.category,
-        quantity: input.quantity ?? null,
-        unit: input.unit ?? null,
-      });
+      try {
+        await recordShoppingItemStat(ctx.userId, {
+          title: input.title,
+          category: input.category,
+          quantity: input.quantity ?? null,
+          unit: input.unit ?? null,
+        });
+      } catch (err) {
+        console.error("[shopping] recordShoppingItemStat", err);
+      }
 
       return updated;
     }),

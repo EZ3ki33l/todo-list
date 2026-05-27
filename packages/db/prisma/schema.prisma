@@ -28,6 +28,20 @@ enum Recurrence {
   WEEKLY  // chaque semaine, même jour
 }
 
+/// Catégorie d'un article de courses (utilisée pour fallback d'icône et tri/groupement).
+enum GroceryCategory {
+  LEGUME
+  FRUIT
+  VIANDE
+  POISSON
+  BOULANGERIE
+  EPICERIE
+  LAITIER
+  BOISSON
+  HYGIENE
+  AUTRE
+}
+
 /// Utilisateur applicatif + profil Auth.js (OAuth).
 model User {
   id            String    @id @default(cuid())
@@ -37,10 +51,12 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
 
-  accounts    Account[]
-  sessions    Session[]
-  ownedLists  TodoList[]       @relation("ListOwner")
-  memberships TodoListMember[]
+  accounts            Account[]
+  sessions            Session[]
+  ownedLists          TodoList[]           @relation("ListOwner")
+  memberships         TodoListMember[]
+  ownedShoppingLists  ShoppingList[]       @relation("ShoppingListOwner")
+  shoppingMemberships ShoppingListMember[]
 }
 
 model Account {
@@ -125,4 +141,52 @@ model Action {
   @@index([listId])
   @@index([dueAt])
   @@index([recurrence])
+}
+
+/// Une liste de courses : appartient à un utilisateur, peut être partagée via ShoppingListMember.
+model ShoppingList {
+  id        String     @id @default(cuid())
+  title     String
+  status    ListStatus @default(ACTIVE)
+  ownerId   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  owner   User                 @relation("ShoppingListOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members ShoppingListMember[]
+  items   ShoppingItem[]
+}
+
+/// Accès à une liste de courses partagée (en plus du propriétaire défini par ownerId).
+model ShoppingListMember {
+  id       String         @id @default(cuid())
+  listId   String
+  userId   String
+  role     ListMemberRole @default(membre)
+  joinedAt DateTime       @default(now())
+
+  list ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+  @@index([userId])
+}
+
+/// Un article dans une liste de courses : titre, quantité optionnelle, catégorie et icône.
+model ShoppingItem {
+  id        String          @id @default(cuid())
+  listId    String
+  title     String
+  quantity  Float?          // null = pas de quantité spécifiée
+  unit      String?         // "kg", "g", "L", "botte", "pcs"... libre
+  category  GroceryCategory @default(AUTRE)
+  icon      String?         // nom MaterialCommunityIcons spécifique, null = fallback catégorie
+  checked   Boolean         @default(false)
+  position  Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  list ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@index([listId])
 }

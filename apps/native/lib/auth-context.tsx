@@ -7,6 +7,7 @@ import {
   saveSession,
   type StoredUser,
 } from "./auth";
+import { setPushOptIn } from "./push-preferences";
 
 type AuthContextValue = {
   ready: boolean;
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
+    await setPushOptIn(false);
     await clearSession();
     setToken(null);
     setUser(null);

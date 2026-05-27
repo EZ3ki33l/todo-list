@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 
+import { PushOptInCard } from "@/components/push-opt-in-card";
 import { UnitPicker } from "@/components/unit-picker";
 import { useAuth } from "@/lib/auth-context";
 import { detectCategory, type GroceryCategory } from "@/lib/grocery-detect";
@@ -87,6 +88,8 @@ export default function ShoppingListDetailScreen() {
   const isOwner = list?.ownerId === user?.id;
   const myMember = list?.members.find((m) => m.userId === user?.id);
   const canWrite = isOwner || myMember?.role === "membre";
+  const isShared =
+    (list?.members.length ?? 0) > 0 || (!!user?.id && !isOwner && !!myMember);
 
   const detectedCategory = useMemo(() => detectCategory(title), [title]);
   const resolvedCategory = detectedCategory ?? manualCategory;
@@ -204,6 +207,8 @@ export default function ShoppingListDetailScreen() {
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <PushOptInCard visible={!!list && isShared} />
+
         {!canWrite && (
           <Text style={styles.readOnlyBanner}>Lecture seule (invité)</Text>
         )}

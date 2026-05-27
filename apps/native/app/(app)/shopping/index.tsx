@@ -10,6 +10,7 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { PushOptInCard } from "@/components/push-opt-in-card";
 import { TabListHeader } from "@/components/tab-list-header";
 import { useAuth } from "@/lib/auth-context";
 import { listHubStyles as hub } from "@/lib/list-hub-styles";
@@ -17,7 +18,7 @@ import { trpc } from "@/lib/trpc";
 
 export default function ShoppingListsScreen() {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [newTitle, setNewTitle] = useState("");
   const [showSection, setShowSection] = useState<"ARCHIVED" | "DONE" | null>(null);
 
@@ -43,6 +44,11 @@ export default function ShoppingListsScreen() {
   const archivedLists = lists?.filter((l) => l.status === "ARCHIVED") ?? [];
   const doneLists = lists?.filter((l) => l.status === "DONE") ?? [];
 
+  const hasSharedList =
+    lists?.some((l) =>
+      l.ownerId === user?.id ? l._count.members > 0 : true,
+    ) ?? false;
+
   return (
     <SafeAreaView style={hub.safe} edges={["top"]}>
       <ScrollView
@@ -51,6 +57,8 @@ export default function ShoppingListsScreen() {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
       >
         <TabListHeader title="Mes courses" onSignOut={signOut} />
+
+        <PushOptInCard visible={hasSharedList} />
 
         <View style={hub.section}>
           <View style={hub.createRow}>

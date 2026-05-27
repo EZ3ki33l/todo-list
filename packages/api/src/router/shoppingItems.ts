@@ -2,6 +2,10 @@ import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
 import { protectedProcedure, router, z } from "../trpc";
+import {
+  getFrequentShoppingItems,
+  recordShoppingItemStat,
+} from "../lib/shopping-item-stat";
 import { scheduleShoppingItemNotification } from "../lib/shopping-notify-scheduler";
 import { assertShoppingListAccess } from "./shoppingLists";
 
@@ -41,6 +45,20 @@ async function assertShoppingItemAccess(itemId: string, userId: string) {
 }
 
 export const shoppingItemsRouter = router({
+  /** Articles ajoutés souvent par l'utilisateur (toutes listes confondues). */
+  getFrequent: protectedProcedure
+    .input(
+      z
+        .object({
+          limit: z.number().int().min(1).max(24).optional(),
+          minUseCount: z.number().int().min(2).max(20).optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      return getFrequentShoppingItems(ctx.userId, input);
+    }),
+
   getByList: protectedProcedure
     .input(z.object({ listId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -72,6 +90,13 @@ export const shoppingItemsRouter = router({
         },
       });
 
+      await recordShoppingItemStat(ctx.userId, {
+        title: input.title,
+        category: input.category,
+        quantity: input.quantity ?? null,
+        unit: input.unit ?? null,
+      });
+
       void scheduleShoppingItemNotification({
         listId: input.listId,
         actorUserId: ctx.userId,
@@ -87,7 +112,7 @@ export const shoppingItemsRouter = router({
     .input(itemInput.extend({ itemId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertShoppingItemAccess(input.itemId, ctx.userId);
-      return prisma.shoppingItem.update({
+      const updated = await prisma.shoppingItem.update({
         where: { id: input.itemId },
         data: {
           title: input.title,
@@ -97,6 +122,15 @@ export const shoppingItemsRouter = router({
           icon: input.icon ?? null,
         },
       });
+
+      await recordShoppingItemStat(ctx.userId, {
+        title: input.title,
+        category: input.category,
+        quantity: input.quantity ?? null,
+        unit: input.unit ?? null,
+      });
+
+      return updated;
     }),
 
   toggle: protectedProcedure

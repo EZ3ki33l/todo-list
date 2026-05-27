@@ -58,6 +58,25 @@ model User {
   ownedShoppingLists  ShoppingList[]       @relation("ShoppingListOwner")
   shoppingMemberships ShoppingListMember[]
   pushTokens          PushToken[]
+  shoppingItemStats   ShoppingItemStat[]
+}
+
+/// Habitudes d'achat par utilisateur (articles récurrents + catégorie mémorisée).
+model ShoppingItemStat {
+  id         String          @id @default(cuid())
+  userId     String
+  titleNorm  String
+  title      String
+  category   GroceryCategory @default(AUTRE)
+  quantity   Float?
+  unit       String?
+  useCount   Int             @default(1)
+  lastUsedAt DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, titleNorm])
+  @@index([userId, useCount])
 }
 
 /// Token Expo Push (app native) pour les notifications.

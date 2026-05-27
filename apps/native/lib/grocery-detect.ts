@@ -66,6 +66,11 @@ const KEYWORDS: Record<Exclude<GroceryCategory, "AUTRE">, string[]> = {
   ],
 };
 
+/** Clé de regroupement pour articles récurrents et mémoire catégorie. */
+export function normalizeItemTitle(text: string): string {
+  return normalize(text);
+}
+
 function normalize(text: string): string {
   return text
     .toLowerCase()
@@ -89,7 +94,16 @@ function matchesKeyword(text: string, keyword: string): boolean {
   return false;
 }
 
-export function detectCategory(title: string): GroceryCategory | null {
+export type ItemMemory = {
+  titleNorm: string;
+  category: GroceryCategory;
+};
+
+/** Dictionnaire fixe, puis mémoire personnelle (articles déjà ajoutés). */
+export function detectCategory(
+  title: string,
+  memory: ItemMemory[] = [],
+): GroceryCategory | null {
   const n = normalize(title);
   if (!n) return null;
 
@@ -98,5 +112,9 @@ export function detectCategory(title: string): GroceryCategory | null {
       if (matchesKeyword(n, keyword)) return category;
     }
   }
+
+  const fromMemory = memory.find((m) => m.titleNorm === n);
+  if (fromMemory) return fromMemory.category;
+
   return null;
 }

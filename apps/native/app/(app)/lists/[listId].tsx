@@ -44,21 +44,25 @@ export default function ListDetailScreen() {
 
   const createAction = trpc.actions.create.useMutation({
     onSuccess: () => {
-      utils.actions.getByList.invalidate({ listId: listId! });
+      utils.actions.invalidate();
+      utils.lists.getAll.invalidate();
       setTitle(""); setDueAt(""); setRecurrenceTime(""); setRecurrence("NONE");
     },
   });
 
   const toggleAction = trpc.actions.toggle.useMutation({
-    onSuccess: () => utils.actions.getByList.invalidate({ listId: listId! }),
+    onSuccess: () => utils.actions.invalidate(),
   });
 
   const updateAction = trpc.actions.update.useMutation({
-    onSuccess: () => { utils.actions.getByList.invalidate({ listId: listId! }); setEditingId(null); },
+    onSuccess: () => { utils.actions.invalidate(); setEditingId(null); },
   });
 
   const deleteAction = trpc.actions.delete.useMutation({
-    onSuccess: () => utils.actions.getByList.invalidate({ listId: listId! }),
+    onSuccess: () => {
+      utils.actions.invalidate();
+      utils.lists.getAll.invalidate();
+    },
   });
 
   function handleCreate() {

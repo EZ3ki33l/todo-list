@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
 import { protectedProcedure, router, z } from "../trpc";
+import { assertOrderedIdsMatch } from "../lib/reorder-positions";
 import { getShoppingListCatalog } from "../lib/shopping-list-catalog";
 import {
   getFrequentShoppingItems,
@@ -187,5 +188,26 @@ export const shoppingItemsRouter = router({
         where: { listId: input.listId, checked: true },
       });
       return { deleted: result.count };
+    }),
+
+  reorder: protectedProcedure
+    .input(z.object({ listId: z.string(), orderedIds: z.array(z.string()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertShoppingListAccess(input.listId, ctx.userId);
+      const existing = await prisma.shoppingItem.findMany({
+        where: { listId: input.listId },
+        select: { id: true },
+        orderBy: [{ checked: "asc" }, { position: "asc" }],
+      });
+      assertOrderedIdsMatch(
+        existing.map((i) => i.id),
+        input.orderedIds,
+      );
+      await prisma.$transaction(
+        input.orderedIds.map((id, position) =>
+          prisma.shoppingItem.update({ where: { id }, data: { position } }),
+        ),
+      );
+      return { ok: true };
     }),
 });

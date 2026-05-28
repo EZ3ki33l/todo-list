@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
+import { assertOrderedIdsMatch } from "../lib/reorder-positions";
 import { protectedProcedure, router, z } from "../trpc";
 
 const recurrenceEnum = z.enum(["NONE", "DAILY", "WEEKLY"]);
@@ -148,5 +149,26 @@ export const actionsRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertActionAccess(input.actionId, ctx.userId);
       await prisma.action.delete({ where: { id: input.actionId } });
+    }),
+
+  reorder: protectedProcedure
+    .input(z.object({ listId: z.string(), orderedIds: z.array(z.string()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertListAccess(input.listId, ctx.userId);
+      const existing = await prisma.action.findMany({
+        where: { listId: input.listId },
+        select: { id: true },
+        orderBy: { position: "asc" },
+      });
+      assertOrderedIdsMatch(
+        existing.map((a) => a.id),
+        input.orderedIds,
+      );
+      await prisma.$transaction(
+        input.orderedIds.map((id, position) =>
+          prisma.action.update({ where: { id }, data: { position } }),
+        ),
+      );
+      return { ok: true };
     }),
 });

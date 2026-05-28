@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import DraggableFlatList, { type RenderItemParams } from "react-native-draggable-flatlist";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -31,6 +32,7 @@ import {
   itemIcon,
   PICKABLE_CATEGORIES,
 } from "@/lib/grocery-ui";
+import { applyListOrder } from "@/lib/reorder-list";
 import { trpc } from "@/lib/trpc";
 
 type ShareRole = "membre" | "invité";
@@ -253,6 +255,44 @@ export default function ShoppingListDetailScreen() {
     onSuccess: refreshListData,
   });
 
+  type ShoppingItemRow = NonNullable<typeof items>[number];
+  const checkedItems = useMemo(
+    () => (items ?? []).filter((i) => i.checked),
+    [items],
+  );
+  const uncheckedItems = useMemo(
+    () => (items ?? []).filter((i) => !i.checked),
+    [items],
+  );
+  const [uncheckedOverride, setUncheckedOverride] = useState<ShoppingItemRow[] | null>(
+    null,
+  );
+  const uncheckedListData = uncheckedOverride ?? uncheckedItems;
+
+  const uncheckedIdsKey = useMemo(
+    () => uncheckedItems.map((i) => i.id).sort().join(","),
+    [uncheckedItems],
+  );
+  useEffect(() => {
+    setUncheckedOverride(null);
+  }, [uncheckedIdsKey]);
+
+  const checkedIdsRef = useRef<string[]>([]);
+  checkedIdsRef.current = checkedItems.map((i) => i.id);
+
+  const reorderItems = trpc.shoppingItems.reorder.useMutation({
+    onSuccess: (_result, { listId: lid, orderedIds }) => {
+      utils.shoppingItems.getByList.setData({ listId: lid }, (old) =>
+        old ? applyListOrder(old, orderedIds) : old,
+      );
+      setUncheckedOverride(null);
+    },
+    onError: (_err, input) => {
+      setUncheckedOverride(null);
+      void utils.shoppingItems.getByList.invalidate({ listId: input.listId });
+    },
+  });
+
   const shareList = trpc.shoppingLists.share.useMutation({
     onSuccess: () => {
       utils.shoppingLists.getById.invalidate({ listId: listId! });
@@ -373,12 +413,158 @@ export default function ShoppingListDetailScreen() {
     });
   }
 
-  const checkedCount = items?.filter((i) => i.checked).length ?? 0;
+  const checkedCount = checkedItems.length;
   const hasChecked = checkedCount > 0;
+  const dragEnabled = canWrite && !editingId;
 
-  return (
+  const handleUncheckedDragEnd = useCallback(
+    ({ data }: { data: ShoppingItemRow[] }) => {
+      if (!listId) return;
+      setUncheckedOverride(data);
+      const orderedIds = [...data.map((i) => i.id), ...checkedIdsRef.current];
+      reorderItems.mutate({ listId, orderedIds });
+    },
+    [listId, reorderItems],
+  );
+
+  const renderShoppingItem = useCallback(
+    (
+      item: ShoppingItemRow,
+      opts?: { drag?: () => void; isActive?: boolean; draggable?: boolean },
+    ) => {
+      const category = item.category as GroceryCategory;
+      const icon = itemIcon(category, item.icon);
+      const { drag, isActive, draggable } = opts ?? {};
+
+      if (editingId === item.id) {
+        const editDetected = detectCategory(editTitle, itemMemory);
+        return (
+          <View key={item.id} style={styles.itemCard}>
+            <TextInput
+              style={styles.input}
+              value={editTitle}
+              onChangeText={setEditTitle}
+              autoFocus
+              autoCorrect={false}
+              autoCapitalize="sentences"
+            />
+            <TitleSuggestionList
+              suggestions={editTitleSuggestions}
+              onSelect={applyEditTitleSuggestion}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Qté (ex. 2, 0.5…)"
+              placeholderTextColor="#9CA3AF"
+              value={editQuantityText}
+              onChangeText={setEditQuantityText}
+              keyboardType="decimal-pad"
+            />
+            <UnitPicker value={editUnit} onChange={setEditUnit} />
+            {editDetected ? (
+              <Text style={styles.detectedHint}>
+                Catégorie : {CATEGORY_LABELS[editDetected]}
+              </Text>
+            ) : (
+              <Pressable onPress={() => setEditShowCategory((v) => !v)}>
+                <Text style={styles.editCatLink}>
+                  {editShowCategory
+                    ? "Masquer catégories"
+                    : `Catégorie : ${CATEGORY_LABELS[editCategory]} (modifier)`}
+                </Text>
+              </Pressable>
+            )}
+            {editShowCategory && !editDetected && (
+              <CategoryChips value={editCategory} onChange={setEditCategory} />
+            )}
+            <View style={styles.editBtns}>
+              <Pressable
+                style={styles.saveBtnSmall}
+                onPress={() => handleSaveEdit(item.id)}
+              >
+                <Text style={styles.saveBtnText}>Enregistrer</Text>
+              </Pressable>
+              <Pressable style={styles.cancelBtnSmall} onPress={() => setEditingId(null)}>
+                <Text style={styles.cancelBtnText}>Annuler</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+      }
+
+      return (
+        <View
+          key={item.id}
+          style={[styles.itemCard, item.checked && styles.itemChecked, isActive && styles.itemCardDragging]}
+        >
+            <View style={styles.itemRow}>
+              {draggable ? (
+                <Pressable
+                  onLongPress={drag}
+                  delayLongPress={120}
+                  disabled={isActive}
+                  hitSlop={8}
+                  style={styles.dragHandleBtn}
+                >
+                  <Text style={styles.dragHandle}>⠿</Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                style={[styles.checkbox, item.checked && styles.checkboxDone]}
+                onPress={() => canWrite && toggleItem.mutate({ itemId: item.id })}
+                disabled={!canWrite}
+              >
+                {item.checked && <Text style={styles.checkmark}>✓</Text>}
+              </Pressable>
+              <Text style={styles.itemIcon}>{icon}</Text>
+              <View style={styles.itemContent}>
+                <Text style={[styles.itemTitle, item.checked && styles.itemTitleDone]}>
+                  {item.title}
+                </Text>
+                {(item.quantity != null || item.unit) && (
+                  <Text style={styles.itemMeta}>
+                    {item.quantity != null ? item.quantity : ""}
+                    {item.unit ? ` ${item.unit}` : ""}
+                  </Text>
+                )}
+              </View>
+              {canWrite && (
+                <View style={styles.rowBtns}>
+                  <Pressable onPress={() => startEdit(item)}>
+                    <Text style={styles.editIcon}>✏️</Text>
+                  </Pressable>
+                  <Pressable onPress={() => deleteItem.mutate({ itemId: item.id })}>
+                    <Text style={styles.deleteIcon}>🗑</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+        </View>
+      );
+    },
+    [
+      editingId,
+      editTitle,
+      editQuantityText,
+      editUnit,
+      editCategory,
+      editShowCategory,
+      editTitleSuggestions,
+      itemMemory,
+      canWrite,
+      toggleItem,
+      deleteItem,
+    ],
+  );
+
+  const renderDraggableItem = useCallback(
+    ({ item, drag, isActive }: RenderItemParams<ShoppingItemRow>) =>
+      renderShoppingItem(item, { drag, isActive, draggable: dragEnabled }),
+    [renderShoppingItem, dragEnabled],
+  );
+
+  const listHeader = (
     <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <PushOptInCard visible={!!list && isShared} />
 
         {!canWrite && (
@@ -482,109 +668,35 @@ export default function ShoppingListDetailScreen() {
           </Pressable>
         )}
 
-        {isLoading ? (
-          <ActivityIndicator style={{ marginTop: 20 }} />
-        ) : (
-          (items ?? []).map((item) => {
-            const category = item.category as GroceryCategory;
-            const icon = itemIcon(category, item.icon);
-
-            if (editingId === item.id) {
-              const editDetected = detectCategory(editTitle, itemMemory);
-              return (
-                <View key={item.id} style={styles.itemCard}>
-                  <TextInput
-                    style={styles.input}
-                    value={editTitle}
-                    onChangeText={setEditTitle}
-                    autoFocus
-                    autoCorrect={false}
-                    autoCapitalize="sentences"
-                  />
-                  <TitleSuggestionList
-                    suggestions={editTitleSuggestions}
-                    onSelect={applyEditTitleSuggestion}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Qté (ex. 2, 0.5…)"
-                    placeholderTextColor="#9CA3AF"
-                    value={editQuantityText}
-                    onChangeText={setEditQuantityText}
-                    keyboardType="decimal-pad"
-                  />
-                  <UnitPicker value={editUnit} onChange={setEditUnit} />
-                  {editDetected ? (
-                    <Text style={styles.detectedHint}>
-                      Catégorie : {CATEGORY_LABELS[editDetected]}
-                    </Text>
-                  ) : (
-                    <Pressable onPress={() => setEditShowCategory((v) => !v)}>
-                      <Text style={styles.editCatLink}>
-                        {editShowCategory ? "Masquer catégories" : `Catégorie : ${CATEGORY_LABELS[editCategory]} (modifier)`}
-                      </Text>
-                    </Pressable>
-                  )}
-                  {editShowCategory && !editDetected && (
-                    <CategoryChips value={editCategory} onChange={setEditCategory} />
-                  )}
-                  <View style={styles.editBtns}>
-                    <Pressable
-                      style={styles.saveBtnSmall}
-                      onPress={() => handleSaveEdit(item.id)}
-                    >
-                      <Text style={styles.saveBtnText}>Enregistrer</Text>
-                    </Pressable>
-                    <Pressable style={styles.cancelBtnSmall} onPress={() => setEditingId(null)}>
-                      <Text style={styles.cancelBtnText}>Annuler</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              );
-            }
-
-            return (
-              <View key={item.id} style={[styles.itemCard, item.checked && styles.itemChecked]}>
-                <View style={styles.itemRow}>
-                  <Pressable
-                    style={[styles.checkbox, item.checked && styles.checkboxDone]}
-                    onPress={() => canWrite && toggleItem.mutate({ itemId: item.id })}
-                    disabled={!canWrite}
-                  >
-                    {item.checked && <Text style={styles.checkmark}>✓</Text>}
-                  </Pressable>
-                  <Text style={styles.itemIcon}>{icon}</Text>
-                  <View style={styles.itemContent}>
-                    <Text style={[styles.itemTitle, item.checked && styles.itemTitleDone]}>
-                      {item.title}
-                    </Text>
-                    {(item.quantity != null || item.unit) && (
-                      <Text style={styles.itemMeta}>
-                        {item.quantity != null ? item.quantity : ""}
-                        {item.unit ? ` ${item.unit}` : ""}
-                      </Text>
-                    )}
-                  </View>
-                  {canWrite && (
-                    <View style={styles.rowBtns}>
-                      <Pressable onPress={() => startEdit(item)}>
-                        <Text style={styles.editIcon}>✏️</Text>
-                      </Pressable>
-                      <Pressable onPress={() => deleteItem.mutate({ itemId: item.id })}>
-                        <Text style={styles.deleteIcon}>🗑</Text>
-                      </Pressable>
-                    </View>
-                  )}
-                </View>
-              </View>
-            );
-          })
+        {uncheckedItems.length > 1 && canWrite && (
+          <Text style={styles.dragHint}>Maintenir un article pour réordonner</Text>
         )}
 
-        {!isLoading && (items?.length ?? 0) === 0 && (
-          <Text style={styles.empty}>Aucun article dans cette liste.</Text>
-        )}
-      </ScrollView>
+        {isLoading ? <ActivityIndicator style={{ marginTop: 20 }} /> : null}
+    </>
+  );
+
+  return (
+    <>
+      <DraggableFlatList
+        data={uncheckedListData}
+        keyExtractor={(item) => item.id}
+        onDragEnd={handleUncheckedDragEnd}
+        activationDistance={12}
+        enableLayoutAnimationExperimental={false}
+        renderItem={renderDraggableItem}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={
+          <>
+            {checkedItems.map((item) => renderShoppingItem(item))}
+            {!isLoading && (items?.length ?? 0) === 0 && (
+              <Text style={styles.empty}>Aucun article dans cette liste.</Text>
+            )}
+          </>
+        }
+        containerStyle={styles.container}
+        contentContainerStyle={styles.content}
+      />
 
       <Modal visible={shareOpen} animationType="slide" transparent onRequestClose={() => setShareOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setShareOpen(false)}>
@@ -754,6 +866,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   itemChecked: { opacity: 0.75 },
+  itemCardDragging: {
+    borderColor: "#111827",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dragHint: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginBottom: 8,
+    textAlign: "right",
+  },
+  dragHandleBtn: { paddingVertical: 2, paddingRight: 4 },
+  dragHandle: { fontSize: 16, color: "#D1D5DB", width: 14, textAlign: "center" },
   itemRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   checkbox: {
     width: 18,

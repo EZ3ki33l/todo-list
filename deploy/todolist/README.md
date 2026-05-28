@@ -72,6 +72,20 @@ DATABASE_URL="..." pnpm exec prisma migrate deploy
 
 ---
 
+## Tester le build Docker en local (avant le serveur)
+
+Sur ta machine, à la racine du monorepo (Docker installé) :
+
+```bash
+pnpm docker:build
+```
+
+Même Dockerfile que sur le serveur. Si ça passe en local, `docker compose build` sur le Debian devrait passer aussi.
+
+`pnpm --filter web build` seul **ne suffit pas** : il utilise ton `apps/web/.env`, alors que l’image Docker n’a pas de `.env` au moment du build.
+
+---
+
 ## Étape 4 — Build et démarrage Docker
 
 ```bash

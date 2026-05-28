@@ -20,6 +20,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 # URL factice : Next charge @repo/db au build (collect page data) sans accès à Neon
 ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?sslmode=require"
+RUN mkdir -p apps/web/public
 RUN pnpm --filter @repo/db run db:generate
 RUN pnpm --filter web run build
 

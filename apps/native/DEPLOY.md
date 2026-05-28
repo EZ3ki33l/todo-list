@@ -89,7 +89,8 @@ eas build --platform android --profile production
 
 | Problème | Piste |
 |----------|--------|
-| **Install dependencies** failed | Monorepo pnpm : `eas.json` impose Node 22 + pnpm 11.3. Ouvrir les logs EAS (phase Install). |
+| **Install dependencies** failed | Monorepo : `eas.json` avec `node` 22 + `corepack: true`, script `eas-build-pre-install`. `.git` à la racine du monorepo. |
+| `installCommand is not allowed` | Retiré de `eas.json` (schéma EAS récent) — utiliser corepack + `packageManager` racine. |
 | `No environment variables` pour preview | `eas env:create --environment preview` (pas seulement `.env` local). |
 | Google Sign-In échoue sur l’APK | SHA-1 Android + package `com.todolist` |
 | API / réseau | `EXPO_PUBLIC_API_URL` sans slash final |

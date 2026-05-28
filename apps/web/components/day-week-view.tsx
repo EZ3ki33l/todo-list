@@ -30,7 +30,7 @@ export default async function DayWeekView({ userId, listId, canEdit = false }: P
       { list: { members: { some: { userId } } } },
     ],
     ...(listId ? { listId } : {}),
-  } as const;
+  };
 
   const [ponctualToday, dailyTasks, weeklyToday, ponctualWeek, weeklyWeek] =
     await Promise.all([

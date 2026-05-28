@@ -39,7 +39,7 @@ export async function getShoppingNotifyRecipients(
 
   if (recipientIds.size === 0) return null;
 
-  return { listTitle: list.title, recipientIds: [...recipientIds] };
+  return { listTitle: list.title, recipientIds: Array.from(recipientIds) };
 }
 
 export async function sendAggregatedShoppingNotification(params: {

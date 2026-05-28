@@ -45,7 +45,7 @@ export async function getShoppingListCatalog(
     }
   }
 
-  return [...map.values()]
+  return Array.from(map.values())
     .sort(
       (a, b) =>
         b.useCount - a.useCount ||

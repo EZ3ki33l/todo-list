@@ -1,4 +1,5 @@
 module.exports = {
+  output: "standalone",
   transpilePackages: ["@repo/db"],
   reactStrictMode: true,
   turbopack: {

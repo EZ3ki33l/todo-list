@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -23,20 +24,34 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  useEffect(() => {
-    const code = (meQuery.error as { data?: { code?: string } } | null)?.data?.code;
-    if (code === "UNAUTHORIZED") {
-      signOut();
-    }
-  }, [meQuery.error, signOut]);
+  const meUnauthorized =
+    (meQuery.error as { data?: { code?: string } } | null)?.data?.code === "UNAUTHORIZED";
 
   useEffect(() => {
-    if (!ready) return;
+    if (meUnauthorized) {
+      void signOut();
+    }
+  }, [meUnauthorized, signOut]);
+
+  const sessionResolved = ready && (!token || meQuery.isFetched);
+
+  useEffect(() => {
+    if (!sessionResolved) return;
+    if (token && meUnauthorized) return;
+
     const inAuth = segments[0] === "(auth)";
     const inApp = segments[0] === "(app)";
     if (!token && !inAuth) router.replace("/(auth)/login");
-    if (token && !inApp) router.replace("/(app)");
-  }, [ready, token, segments]);
+    else if (token && !inApp) router.replace("/(app)");
+  }, [sessionResolved, token, meUnauthorized, segments, router]);
+
+  if (!sessionResolved || (token && meUnauthorized)) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return <>{children}</>;
 }

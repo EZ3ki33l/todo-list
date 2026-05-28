@@ -19,16 +19,14 @@
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "expo": "^55.0.4",
-    "expo-auth-session": "~6.1.4",
     "expo-constants": "~55.0.7",
     "expo-device": "~55.0.8",
     "expo-linking": "~55.0.7",
     "expo-notifications": "~55.0.10",
     "expo-router": "~55.0.3",
-    "expo-secure-store": "~14.2.0",
+    "expo-secure-store": "~55.0.14",
     "expo-status-bar": "~55.0.4",
     "expo-system-ui": "~55.0.9",
-    "expo-web-browser": "~14.1.6",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-native": "0.83.2",
@@ -45,6 +43,9 @@
     "typescript": "5.9.2"
   },
   "expo": {
+    "install": {
+      "exclude": ["react-native-worklets", "react-native-reanimated"]
+    },
     "doctor": {
       "reactNativeDirectoryCheck": {
         "listUnknownPackages": false

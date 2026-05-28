@@ -6,11 +6,17 @@
   "build": {
     "preview": {
       "distribution": "internal",
+      "node": "22.13.0",
+      "pnpm": "11.3.0",
+      "installCommand": "pnpm install --frozen-lockfile",
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "node": "22.13.0",
+      "pnpm": "11.3.0",
+      "installCommand": "pnpm install --frozen-lockfile",
       "android": {
         "buildType": "app-bundle"
       }

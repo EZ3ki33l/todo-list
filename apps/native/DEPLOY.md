@@ -18,12 +18,16 @@ Les `EXPO_PUBLIC_*` sont **figées au build**. Modèle : `env.example`.
 
 ### Build cloud (recommandé)
 
+Variables pour l’environnement **preview** (sinon le build part sans API URL) :
+
 ```bash
 cd apps/native
-eas secret:create --scope project --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
-eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_CLIENT_ID --value "TON_CLIENT_WEB.apps.googleusercontent.com"
-eas secret:create --scope project --name EXPO_PUBLIC_EAS_PROJECT_ID --value "UUID_EAS"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_GOOGLE_CLIENT_ID --value "TON_CLIENT_WEB.apps.googleusercontent.com"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_EAS_PROJECT_ID --value "7880f051-0127-48d4-a656-b19916a7e1f4"
 ```
+
+(Répéter pour `production` avant un build Play Store.)
 
 ### Build local
 
@@ -85,6 +89,8 @@ eas build --platform android --profile production
 
 | Problème | Piste |
 |----------|--------|
+| **Install dependencies** failed | Monorepo pnpm : `eas.json` impose Node 22 + pnpm 11.3. Ouvrir les logs EAS (phase Install). |
+| `No environment variables` pour preview | `eas env:create --environment preview` (pas seulement `.env` local). |
 | Google Sign-In échoue sur l’APK | SHA-1 Android + package `com.todolist` |
 | API / réseau | `EXPO_PUBLIC_API_URL` sans slash final |
 | `EXPO_PUBLIC_EAS_PROJECT_ID manquant` | Secret EAS ou `.env` avant build |

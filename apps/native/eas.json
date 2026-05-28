@@ -7,14 +7,14 @@
     "preview": {
       "distribution": "internal",
       "node": "22.13.0",
-      "corepack": true,
+      "pnpm": "11.3.0",
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
       "node": "22.13.0",
-      "corepack": true,
+      "pnpm": "11.3.0",
       "android": {
         "buildType": "app-bundle"
       }

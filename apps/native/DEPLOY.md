@@ -63,13 +63,50 @@ eas build --platform android --profile preview
 
 Lien de téléchargement sur [expo.dev](https://expo.dev) → installer sur les téléphones des testeurs.
 
-## 5. Play Store — tests internes (optionnel)
+## 5. Play Store — tests internes (beta)
+
+### 5.1 Variables EAS **production**
+
+Mêmes valeurs que preview, environnement `production` :
 
 ```bash
-eas build --platform android --profile production
+cd apps/native
+npx eas-cli env:create --environment production --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
+npx eas-cli env:create --environment production --name EXPO_PUBLIC_GOOGLE_CLIENT_ID --value "TON_CLIENT_WEB.apps.googleusercontent.com"
+npx eas-cli env:create --environment production --name EXPO_PUBLIC_EAS_PROJECT_ID --value "7880f051-0127-48d4-a656-b19916a7e1f4"
 ```
 
-→ fichier `.aab` → Play Console → **Tests internes** → inviter par email Gmail.
+(Type **Plain text** pour les trois.)
+
+### 5.2 Build AAB
+
+```bash
+npx eas-cli build --platform android --profile production
+```
+
+Keystore : **non** (réutilise celui déjà créé → `n`).
+
+→ télécharger le `.aab` sur expo.dev ou :
+
+```bash
+npx eas-cli submit --platform android --profile production
+```
+
+(après liaison Play Console / clé de service)
+
+### 5.3 Google Play Console
+
+1. [play.google.com/console](https://play.google.com/console) — compte développeur (~25 € une fois)
+2. **Créer une application** → nom « Todo List » (ou autre)
+3. **Tests** → **Tests internes** → **Créer une version**
+4. Uploader le `.aab` (ou via `eas submit`)
+5. Renseigner au minimum : fiche store minimale, politique de confidentialité (URL de ton site si besoin), questionnaire contenu
+6. **Testeurs** → liste d’emails (ta compagne + toi) → copier le **lien d’adhésion**
+7. Publier la version sur la piste **Tests internes** (pas la prod publique)
+
+### 5.4 Google OAuth Android
+
+SHA-1 du **même** keystore EAS (`eas credentials -p android`) → client OAuth Android, package `com.todolist`.
 
 ## 6. iOS (TestFlight)
 

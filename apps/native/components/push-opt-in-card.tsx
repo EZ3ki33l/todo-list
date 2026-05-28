@@ -21,6 +21,7 @@ export function PushOptInCard({ visible }: Props) {
   const [optIn, setOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const registerPush = trpc.notifications.registerPushToken.useMutation();
   const unregisterPush = trpc.notifications.unregisterPushToken.useMutation();
@@ -49,25 +50,39 @@ export function PushOptInCard({ visible }: Props) {
   const active = optIn && serverRegistered?.registered;
 
   async function handleEnable() {
+    setErrorMessage(null);
     setLoading(true);
-    const result = await enablePushNotifications((input) =>
-      registerPush.mutateAsync(input),
-    );
-    setLoading(false);
-    if (result.ok) {
-      await refetch();
-      await refresh();
-    } else if (result.permission === "denied") {
-      setPermission("denied");
+    try {
+      const result = await enablePushNotifications((input) =>
+        registerPush.mutateAsync(input),
+      );
+      if (result.ok) {
+        await refetch();
+        await refresh();
+        return;
+      }
+      setPermission(result.permission);
+      if (result.permission === "denied") {
+        setErrorMessage("Autorisez les notifications dans les réglages du téléphone.");
+      } else {
+        setErrorMessage(result.reason ?? "Impossible d'activer les notifications.");
+      }
+    } catch {
+      setErrorMessage("Erreur réseau ou serveur. Réessayez.");
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleDisable() {
     setLoading(true);
-    await disablePushNotifications((input) => unregisterPush.mutateAsync(input));
-    await refetch();
-    await refresh();
-    setLoading(false);
+    try {
+      await disablePushNotifications((input) => unregisterPush.mutateAsync(input));
+      await refetch();
+      await refresh();
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (active) {
@@ -75,7 +90,7 @@ export function PushOptInCard({ visible }: Props) {
       <View style={[styles.card, styles.cardOk]}>
         <Text style={styles.titleOk}>Notifications activées</Text>
         <Text style={styles.hint}>
-          Vous recevrez un résumé ~45 s après des ajouts sur une liste partagée.
+          Un seul résumé ~45 s après des ajouts sur une liste partagée.
         </Text>
         <Pressable onPress={handleDisable} disabled={loading}>
           <Text style={styles.link}>Désactiver</Text>
@@ -89,11 +104,10 @@ export function PushOptInCard({ visible }: Props) {
       <View style={styles.card}>
         <Text style={styles.title}>Notifications désactivées</Text>
         <Text style={styles.hint}>
-          Autorisez les notifications dans les réglages du téléphone pour être prévenu des
-          ajouts sur les listes partagées.
+          Ouvrez les réglages du téléphone et autorisez les notifications pour cette app.
         </Text>
-        <Pressable style={styles.btn} onPress={openSystemNotificationSettings}>
-          <Text style={styles.btnText}>Ouvrir les réglages</Text>
+        <Pressable style={styles.btnSecondary} onPress={openSystemNotificationSettings}>
+          <Text style={styles.btnSecondaryText}>Ouvrir les réglages</Text>
         </Pressable>
       </View>
     );
@@ -101,11 +115,12 @@ export function PushOptInCard({ visible }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Listes partagées</Text>
+      <Text style={styles.title}>Liste partagée</Text>
       <Text style={styles.hint}>
-        Activez les notifications pour recevoir un seul résumé quand l'autre personne ajoute
-        des articles (pas une alerte par produit).
+        Recevez un résumé quand l'autre personne ajoute des articles — pas une alerte par
+        produit.
       </Text>
+      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
       <Pressable
         style={[styles.btn, loading && styles.btnDisabled]}
         onPress={handleEnable}
@@ -117,16 +132,21 @@ export function PushOptInCard({ visible }: Props) {
           <Text style={styles.btnText}>Activer les notifications</Text>
         )}
       </Pressable>
+      {errorMessage ? (
+        <Pressable style={styles.btnSecondary} onPress={openSystemNotificationSettings}>
+          <Text style={styles.btnSecondaryText}>Ouvrir les réglages</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 10,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: "#E2E8F0",
     padding: 14,
     marginBottom: 16,
   },
@@ -134,16 +154,27 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0FDF4",
     borderColor: "#BBF7D0",
   },
-  title: { fontSize: 14, fontWeight: "600", color: "#1E40AF", marginBottom: 6 },
-  titleOk: { fontSize: 14, fontWeight: "600", color: "#166534", marginBottom: 6 },
-  hint: { fontSize: 13, color: "#374151", lineHeight: 18, marginBottom: 12 },
+  title: { fontSize: 15, fontWeight: "600", color: "#0F172A", marginBottom: 6 },
+  titleOk: { fontSize: 15, fontWeight: "600", color: "#166534", marginBottom: 6 },
+  hint: { fontSize: 13, color: "#475569", lineHeight: 19, marginBottom: 12 },
+  error: { fontSize: 13, color: "#DC2626", marginBottom: 10 },
   btn: {
     backgroundColor: "#111827",
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 11,
     alignItems: "center",
   },
   btnDisabled: { opacity: 0.6 },
   btnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  btnSecondary: {
+    marginTop: 10,
+    borderRadius: 8,
+    paddingVertical: 11,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#fff",
+  },
+  btnSecondaryText: { color: "#334155", fontWeight: "600", fontSize: 14 },
   link: { fontSize: 13, color: "#6B7280", textDecorationLine: "underline" },
 });

@@ -99,15 +99,25 @@ export default function ShoppingListsScreen() {
           <Text style={hub.sectionTitle}>
             En cours <Text style={hub.count}>({activeLists.length})</Text>
           </Text>
-          {activeLists.map((list) => (
+          {activeLists.map((list) => {
+            const isSharedWithMe = list.ownerId !== user?.id;
+            return (
             <View key={list.id} style={hub.listCard}>
               <Pressable
                 style={hub.listMain}
                 onPress={() => router.push(`/(app)/shopping/${list.id}`)}
               >
-                <Text style={hub.listTitle}>{list.title}</Text>
+                <View style={hub.listTitleRow}>
+                  <Text style={hub.listTitle}>{list.title}</Text>
+                  {isSharedWithMe ? (
+                    <Text style={hub.sharedBadge}>Partagée</Text>
+                  ) : list._count.members > 0 ? (
+                    <Text style={hub.sharedBadge}>Partagée</Text>
+                  ) : null}
+                </View>
                 <Text style={hub.listMeta}>
                   {list._count.items} article{list._count.items !== 1 ? "s" : ""}
+                  {isSharedWithMe ? " · avec vous" : ""}
                 </Text>
               </Pressable>
               <View style={hub.listActions}>
@@ -122,7 +132,8 @@ export default function ShoppingListsScreen() {
                 </Pressable>
               </View>
             </View>
-          ))}
+          );
+          })}
           {activeLists.length === 0 && <Text style={hub.empty}>Aucune liste en cours.</Text>}
         </View>
 

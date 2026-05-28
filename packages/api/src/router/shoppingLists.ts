@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
+import { notifyShoppingListShared } from "../lib/shopping-list-share-notify";
 import { protectedProcedure, router, z } from "../trpc";
 
 export async function assertShoppingListAccess(
@@ -113,11 +114,25 @@ export const shoppingListsRouter = router({
       if (target.id === ctx.userId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Vous ne pouvez pas partager avec vous-même" });
       }
-      return prisma.shoppingListMember.upsert({
+      const member = await prisma.shoppingListMember.upsert({
         where: { listId_userId: { listId: input.listId, userId: target.id } },
         update: { role: input.role },
         create: { listId: input.listId, userId: target.id, role: input.role },
       });
+
+      const sharer = await prisma.user.findUnique({
+        where: { id: ctx.userId },
+        select: { name: true, email: true },
+      });
+
+      void notifyShoppingListShared({
+        listId: input.listId,
+        listTitle: list.title,
+        targetUserId: target.id,
+        sharerName: sharer?.name ?? sharer?.email ?? null,
+      }).catch((err) => console.error("[share] push notify", err));
+
+      return member;
     }),
 
   unshare: protectedProcedure

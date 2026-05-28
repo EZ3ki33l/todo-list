@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -295,9 +298,14 @@ export default function ShoppingListDetailScreen() {
 
   const shareList = trpc.shoppingLists.share.useMutation({
     onSuccess: () => {
-      utils.shoppingLists.getById.invalidate({ listId: listId! });
+      void utils.shoppingLists.getById.invalidate({ listId: listId! });
+      void utils.shoppingLists.getAll.invalidate();
       setShareEmail("");
       setShareError(null);
+      Alert.alert(
+        "Liste partagée",
+        "La personne la verra dans l'onglet Courses (pas d'écran « Accepter »). Si elle a activé les notifications, elle recevra une alerte.",
+      );
     },
     onError: (err) => setShareError(err.message),
   });
@@ -699,15 +707,22 @@ export default function ShoppingListDetailScreen() {
       />
 
       <Modal visible={shareOpen} animationType="slide" transparent onRequestClose={() => setShareOpen(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setShareOpen(false)}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={() => setShareOpen(false)} />
           <View
             style={[styles.modalCard, { paddingBottom: insets.bottom + 20 }]}
             onStartShouldSetResponder={() => true}
           >
             <ScrollView
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
               bounces={false}
+              contentContainerStyle={styles.modalScrollContent}
             >
             <Text style={styles.modalTitle}>Partager la liste</Text>
 
@@ -777,7 +792,7 @@ export default function ShoppingListDetailScreen() {
             </Pressable>
             </ScrollView>
           </View>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );
@@ -924,9 +939,13 @@ const styles = StyleSheet.create({
   empty: { fontSize: 13, color: "#9CA3AF", fontStyle: "italic", textAlign: "center", marginTop: 20 },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "flex-end",
   },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  modalScrollContent: { paddingBottom: 8 },
   modalCard: {
     backgroundColor: "#fff",
     borderTopLeftRadius: 16,

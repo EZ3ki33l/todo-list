@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { AppState, ActivityIndicator, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -9,7 +9,20 @@ import { PushTokenSync } from "@/components/push-registration";
 import { trpc, createTrpcClient } from "@/lib/trpc";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 
-const queryClient = new QueryClient();
+focusManager.setEventListener((handleFocus) => {
+  const sub = AppState.addEventListener("change", (state) => {
+    handleFocus(state === "active");
+  });
+  return () => sub.remove();
+});
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { ready, token, signOut } = useAuth();

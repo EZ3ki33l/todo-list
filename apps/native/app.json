@@ -47,6 +47,7 @@
       "bundler": "metro"
     },
     "plugins": [
+      "react-native-reanimated",
       "expo-router",
       "@react-native-google-signin/google-signin",
       "@react-native-community/datetimepicker",

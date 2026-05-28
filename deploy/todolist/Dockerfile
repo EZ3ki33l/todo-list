@@ -1,5 +1,5 @@
 # Build depuis la racine du monorepo (voir docker-compose.yml)
-FROM node:20-bookworm-slim AS base
+FROM node:22-bookworm-slim AS base
 RUN corepack enable && corepack prepare pnpm@11.3.0 --activate
 WORKDIR /app
 
@@ -21,7 +21,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @repo/db run db:generate
 RUN pnpm --filter web run build
 
-FROM node:20-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0

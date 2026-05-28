@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -9,10 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import DraggableFlatList, {
-  type RenderItemParams,
-  ScaleDecorator,
-} from "react-native-draggable-flatlist";
+import DraggableFlatList, { type RenderItemParams } from "react-native-draggable-flatlist";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,6 +32,7 @@ import {
   itemIcon,
   PICKABLE_CATEGORIES,
 } from "@/lib/grocery-ui";
+import { applyListOrder } from "@/lib/reorder-list";
 import { trpc } from "@/lib/trpc";
 
 type ShareRole = "membre" | "invité";
@@ -262,16 +260,36 @@ export default function ShoppingListDetailScreen() {
     () => (items ?? []).filter((i) => i.checked),
     [items],
   );
-  const [orderedUnchecked, setOrderedUnchecked] = useState<ShoppingItemRow[]>([]);
+  const uncheckedItems = useMemo(
+    () => (items ?? []).filter((i) => !i.checked),
+    [items],
+  );
+  const [uncheckedOverride, setUncheckedOverride] = useState<ShoppingItemRow[] | null>(
+    null,
+  );
+  const uncheckedListData = uncheckedOverride ?? uncheckedItems;
 
+  const uncheckedIdsKey = useMemo(
+    () => uncheckedItems.map((i) => i.id).sort().join(","),
+    [uncheckedItems],
+  );
   useEffect(() => {
-    setOrderedUnchecked((items ?? []).filter((i) => !i.checked));
-  }, [items]);
+    setUncheckedOverride(null);
+  }, [uncheckedIdsKey]);
+
+  const checkedIdsRef = useRef<string[]>([]);
+  checkedIdsRef.current = checkedItems.map((i) => i.id);
 
   const reorderItems = trpc.shoppingItems.reorder.useMutation({
-    onError: () => setOrderedUnchecked((items ?? []).filter((i) => !i.checked)),
-    onSettled: () => {
-      if (listId) void utils.shoppingItems.getByList.invalidate({ listId });
+    onSuccess: (_result, { listId: lid, orderedIds }) => {
+      utils.shoppingItems.getByList.setData({ listId: lid }, (old) =>
+        old ? applyListOrder(old, orderedIds) : old,
+      );
+      setUncheckedOverride(null);
+    },
+    onError: (_err, input) => {
+      setUncheckedOverride(null);
+      void utils.shoppingItems.getByList.invalidate({ listId: input.listId });
     },
   });
 
@@ -397,16 +415,16 @@ export default function ShoppingListDetailScreen() {
 
   const checkedCount = checkedItems.length;
   const hasChecked = checkedCount > 0;
-  const dragEnabled = canWrite && !editingId && !reorderItems.isPending;
+  const dragEnabled = canWrite && !editingId;
 
   const handleUncheckedDragEnd = useCallback(
     ({ data }: { data: ShoppingItemRow[] }) => {
-      setOrderedUnchecked(data);
       if (!listId) return;
-      const orderedIds = [...data.map((i) => i.id), ...checkedItems.map((i) => i.id)];
+      setUncheckedOverride(data);
+      const orderedIds = [...data.map((i) => i.id), ...checkedIdsRef.current];
       reorderItems.mutate({ listId, orderedIds });
     },
-    [listId, checkedItems, reorderItems],
+    [listId, reorderItems],
   );
 
   const renderShoppingItem = useCallback(
@@ -479,13 +497,18 @@ export default function ShoppingListDetailScreen() {
           key={item.id}
           style={[styles.itemCard, item.checked && styles.itemChecked, isActive && styles.itemCardDragging]}
         >
-          <Pressable
-            onLongPress={draggable && drag ? drag : undefined}
-            delayLongPress={150}
-            disabled={!draggable}
-          >
             <View style={styles.itemRow}>
-              {draggable ? <Text style={styles.dragHandle}>⠿</Text> : null}
+              {draggable ? (
+                <Pressable
+                  onLongPress={drag}
+                  delayLongPress={120}
+                  disabled={isActive}
+                  hitSlop={8}
+                  style={styles.dragHandleBtn}
+                >
+                  <Text style={styles.dragHandle}>⠿</Text>
+                </Pressable>
+              ) : null}
               <Pressable
                 style={[styles.checkbox, item.checked && styles.checkboxDone]}
                 onPress={() => canWrite && toggleItem.mutate({ itemId: item.id })}
@@ -516,7 +539,6 @@ export default function ShoppingListDetailScreen() {
                 </View>
               )}
             </View>
-          </Pressable>
         </View>
       );
     },
@@ -536,9 +558,8 @@ export default function ShoppingListDetailScreen() {
   );
 
   const renderDraggableItem = useCallback(
-    ({ item, drag, isActive }: RenderItemParams<ShoppingItemRow>) => (
-      <ScaleDecorator>{renderShoppingItem(item, { drag, isActive, draggable: dragEnabled })}</ScaleDecorator>
-    ),
+    ({ item, drag, isActive }: RenderItemParams<ShoppingItemRow>) =>
+      renderShoppingItem(item, { drag, isActive, draggable: dragEnabled }),
     [renderShoppingItem, dragEnabled],
   );
 
@@ -647,7 +668,7 @@ export default function ShoppingListDetailScreen() {
           </Pressable>
         )}
 
-        {orderedUnchecked.length > 1 && canWrite && (
+        {uncheckedItems.length > 1 && canWrite && (
           <Text style={styles.dragHint}>Maintenir un article pour réordonner</Text>
         )}
 
@@ -658,9 +679,11 @@ export default function ShoppingListDetailScreen() {
   return (
     <>
       <DraggableFlatList
-        data={orderedUnchecked}
+        data={uncheckedListData}
         keyExtractor={(item) => item.id}
         onDragEnd={handleUncheckedDragEnd}
+        activationDistance={12}
+        enableLayoutAnimationExperimental={false}
         renderItem={renderDraggableItem}
         ListHeaderComponent={listHeader}
         ListFooterComponent={
@@ -857,7 +880,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: "right",
   },
-  dragHandle: { fontSize: 16, color: "#D1D5DB", width: 14 },
+  dragHandleBtn: { paddingVertical: 2, paddingRight: 4 },
+  dragHandle: { fontSize: 16, color: "#D1D5DB", width: 14, textAlign: "center" },
   itemRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   checkbox: {
     width: 18,

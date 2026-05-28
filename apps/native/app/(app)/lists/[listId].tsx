@@ -10,12 +10,10 @@ import {
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import DraggableFlatList, {
-  type RenderItemParams,
-  ScaleDecorator,
-} from "react-native-draggable-flatlist";
+import DraggableFlatList, { type RenderItemParams } from "react-native-draggable-flatlist";
 import { useLocalSearchParams } from "expo-router";
 
+import { applyListOrder } from "@/lib/reorder-list";
 import { trpc } from "@/lib/trpc";
 
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -72,11 +70,17 @@ export default function ListDetailScreen() {
   );
 
   type ActionRow = NonNullable<typeof actions>[number];
-  const [orderedActions, setOrderedActions] = useState<ActionRow[]>([]);
+  const actionRows = actions ?? [];
+  const [orderOverride, setOrderOverride] = useState<ActionRow[] | null>(null);
+  const listData = orderOverride ?? actionRows;
 
+  const actionIdsKey = useMemo(
+    () => actionRows.map((a) => a.id).sort().join(","),
+    [actionRows],
+  );
   useEffect(() => {
-    setOrderedActions(actions ?? []);
-  }, [actions]);
+    setOrderOverride(null);
+  }, [actionIdsKey]);
 
   const createAction = trpc.actions.create.useMutation({
     onSuccess: () => {
@@ -108,16 +112,22 @@ export default function ListDetailScreen() {
   });
 
   const reorderActions = trpc.actions.reorder.useMutation({
-    onError: () => setOrderedActions(actions ?? []),
-    onSettled: () => {
-      void utils.actions.getByList.invalidate({ listId: listId! });
+    onSuccess: (_result, { listId: lid, orderedIds }) => {
+      utils.actions.getByList.setData({ listId: lid }, (old) =>
+        old ? applyListOrder(old, orderedIds) : old,
+      );
+      setOrderOverride(null);
+    },
+    onError: (_err, input) => {
+      setOrderOverride(null);
+      void utils.actions.getByList.invalidate({ listId: input.listId });
     },
   });
 
   const handleDragEnd = useCallback(
     ({ data }: { data: ActionRow[] }) => {
-      setOrderedActions(data);
       if (!listId) return;
+      setOrderOverride(data);
       reorderActions.mutate({ listId, orderedIds: data.map((a) => a.id) });
     },
     [listId, reorderActions],
@@ -148,7 +158,7 @@ export default function ListDetailScreen() {
 
   const done = actions?.filter((a) => a.done).length ?? 0;
   const total = actions?.length ?? 0;
-  const dragEnabled = !editingId && !reorderActions.isPending;
+  const dragEnabled = !editingId;
 
   const listHeader = useMemo(
     () => (
@@ -284,7 +294,6 @@ export default function ListDetailScreen() {
 
   const renderAction = useCallback(
     ({ item, drag, isActive }: RenderItemParams<ActionRow>) => (
-      <ScaleDecorator>
         <View style={[styles.actionCard, isActive && styles.actionCardDragging]}>
           {editingId === item.id ? (
             <View style={styles.editForm}>
@@ -313,13 +322,16 @@ export default function ListDetailScreen() {
               </View>
             </View>
           ) : (
-            <Pressable
-              onLongPress={dragEnabled ? drag : undefined}
-              delayLongPress={150}
-              disabled={!dragEnabled}
-            >
               <View style={styles.actionRow}>
-                <Text style={styles.dragHandle}>⠿</Text>
+                <Pressable
+                  onLongPress={dragEnabled ? drag : undefined}
+                  delayLongPress={120}
+                  disabled={!dragEnabled || isActive}
+                  hitSlop={8}
+                  style={styles.dragHandleBtn}
+                >
+                  <Text style={styles.dragHandle}>⠿</Text>
+                </Pressable>
                 <Pressable
                   style={[styles.checkbox, item.done && styles.checkboxDone]}
                   onPress={() => toggleAction.mutate({ actionId: item.id })}
@@ -356,10 +368,8 @@ export default function ListDetailScreen() {
                   </Pressable>
                 </View>
               </View>
-            </Pressable>
           )}
         </View>
-      </ScaleDecorator>
     ),
     [
       editingId,
@@ -373,13 +383,15 @@ export default function ListDetailScreen() {
 
   return (
     <DraggableFlatList
-      data={orderedActions}
+      data={listData}
       keyExtractor={(item) => item.id}
       onDragEnd={handleDragEnd}
+      activationDistance={12}
+      enableLayoutAnimationExperimental={false}
       renderItem={renderAction}
       ListHeaderComponent={listHeader}
       ListFooterComponent={
-        !isLoading && orderedActions.length === 0 ? (
+        !isLoading && listData.length === 0 ? (
           <Text style={styles.empty}>Aucune action dans cette liste.</Text>
         ) : null
       }
@@ -469,7 +481,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   actionRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
-  dragHandle: { fontSize: 16, color: "#D1D5DB", marginTop: 2, width: 14 },
+  dragHandleBtn: { paddingVertical: 2, paddingRight: 4 },
+  dragHandle: { fontSize: 16, color: "#D1D5DB", width: 14, textAlign: "center" },
   checkbox: {
     width: 18,
     height: 18,

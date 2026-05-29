@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -46,8 +47,41 @@ export default function DashboardScreen() {
   });
 
   const deleteList = trpc.lists.delete.useMutation({
-    onSuccess: () => utils.lists.getAll.invalidate(),
+    onMutate: async ({ listId }) => {
+      await utils.lists.getAll.cancel();
+      const previous = utils.lists.getAll.getData();
+      utils.lists.getAll.setData(
+        undefined,
+        (old) => old?.filter((l) => l.id !== listId),
+      );
+      return { previous };
+    },
+    onError: (_err, _input, ctx) => {
+      if (ctx?.previous) {
+        utils.lists.getAll.setData(undefined, ctx.previous);
+      }
+      Alert.alert("Erreur", "Impossible de supprimer la liste. Réessayez.");
+    },
+    onSettled: async () => {
+      await utils.lists.getAll.invalidate();
+      await refetch();
+    },
   });
+
+  function confirmDeleteList(listId: string, title: string) {
+    Alert.alert(
+      "Supprimer cette liste ?",
+      `« ${title} » sera supprimée définitivement.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: () => deleteList.mutate({ listId }),
+        },
+      ],
+    );
+  }
 
   const toggleAction = trpc.actions.toggle.useMutation({
     onSuccess: () => { utils.actions.getToday.invalidate(); utils.actions.getWeek.invalidate(); },
@@ -169,7 +203,7 @@ export default function DashboardScreen() {
               <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "ARCHIVED" })}>
                 <Text style={hub.actionBtnGray}>⊟</Text>
               </Pressable>
-              <Pressable onPress={() => deleteList.mutate({ listId: list.id })}>
+              <Pressable onPress={() => confirmDeleteList(list.id, list.title)}>
                 <Text style={hub.actionBtnRed}>✕</Text>
               </Pressable>
             </View>
@@ -193,7 +227,7 @@ export default function DashboardScreen() {
             <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "ACTIVE" })}>
               <Text style={hub.actionBtnGreen}>↩</Text>
             </Pressable>
-            <Pressable onPress={() => deleteList.mutate({ listId: list.id })}>
+            <Pressable onPress={() => confirmDeleteList(list.id, list.title)}>
               <Text style={hub.actionBtnRed}>✕</Text>
             </Pressable>
           </View>
@@ -215,7 +249,7 @@ export default function DashboardScreen() {
             <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "ACTIVE" })}>
               <Text style={hub.actionBtnGreen}>↩</Text>
             </Pressable>
-            <Pressable onPress={() => deleteList.mutate({ listId: list.id })}>
+            <Pressable onPress={() => confirmDeleteList(list.id, list.title)}>
               <Text style={hub.actionBtnRed}>✕</Text>
             </Pressable>
           </View>

@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import {
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -43,8 +44,42 @@ export default function ShoppingListsScreen() {
   });
 
   const deleteList = trpc.shoppingLists.delete.useMutation({
-    onSuccess: () => utils.shoppingLists.getAll.invalidate(),
+    onMutate: async ({ listId }) => {
+      await utils.shoppingLists.getAll.cancel();
+      const previous = utils.shoppingLists.getAll.getData();
+      utils.shoppingLists.getAll.setData(
+        undefined,
+        (old) => old?.filter((l) => l.id !== listId),
+      );
+      return { previous };
+    },
+    onError: (_err, _input, ctx) => {
+      if (ctx?.previous) {
+        utils.shoppingLists.getAll.setData(undefined, ctx.previous);
+      }
+      Alert.alert("Erreur", "Impossible de supprimer la liste. Réessayez.");
+    },
+    onSettled: async (_data, _err, { listId }) => {
+      utils.shoppingLists.getById.remove({ listId });
+      await utils.shoppingLists.getAll.invalidate();
+      await refetch();
+    },
   });
+
+  function confirmDeleteList(listId: string, title: string) {
+    Alert.alert(
+      "Supprimer cette liste ?",
+      `« ${title} » sera supprimée pour vous et pour les personnes avec qui elle est partagée.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: () => deleteList.mutate({ listId }),
+        },
+      ],
+    );
+  }
 
   const activeLists = lists?.filter((l) => l.status === "ACTIVE") ?? [];
   const archivedLists = lists?.filter((l) => l.status === "ARCHIVED") ?? [];
@@ -127,7 +162,7 @@ export default function ShoppingListsScreen() {
                 <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "ARCHIVED" })}>
                   <Text style={hub.actionBtnGray}>⊟</Text>
                 </Pressable>
-                <Pressable onPress={() => deleteList.mutate({ listId: list.id })}>
+                <Pressable onPress={() => confirmDeleteList(list.id, list.title)}>
                   <Text style={hub.actionBtnRed}>✕</Text>
                 </Pressable>
               </View>
@@ -159,7 +194,7 @@ export default function ShoppingListsScreen() {
                 <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "ACTIVE" })}>
                   <Text style={hub.actionBtnGreen}>↩</Text>
                 </Pressable>
-                <Pressable onPress={() => deleteList.mutate({ listId: list.id })}>
+                <Pressable onPress={() => confirmDeleteList(list.id, list.title)}>
                   <Text style={hub.actionBtnRed}>✕</Text>
                 </Pressable>
               </View>
@@ -188,7 +223,7 @@ export default function ShoppingListsScreen() {
                 <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "ACTIVE" })}>
                   <Text style={hub.actionBtnGreen}>↩</Text>
                 </Pressable>
-                <Pressable onPress={() => deleteList.mutate({ listId: list.id })}>
+                <Pressable onPress={() => confirmDeleteList(list.id, list.title)}>
                   <Text style={hub.actionBtnRed}>✕</Text>
                 </Pressable>
               </View>

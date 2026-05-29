@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { prisma } from "@repo/db";
-import { deleteAction, toggleAction } from "@/app/actions/action";
+import { deleteAction } from "@/app/actions/action";
 import { AddActionForm } from "@/components/add-action-form";
 import DayWeekView from "@/components/day-week-view";
 import { EditableTitle } from "@/components/editable-title";

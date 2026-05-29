@@ -1,20 +1,8 @@
-import { SignJWT } from "jose";
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
+import { issueJwt } from "../jwt";
 import { protectedProcedure, publicProcedure, router, z } from "../trpc";
-
-function getJwtSecret() {
-  return new TextEncoder().encode(process.env.JWT_SECRET!);
-}
-
-async function issueJwt(userId: string) {
-  return new SignJWT({ sub: userId })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("30d")
-    .sign(getJwtSecret());
-}
 
 async function upsertUser(profile: { sub: string; email?: string; name?: string; picture?: string }) {
   return prisma.user.upsert({

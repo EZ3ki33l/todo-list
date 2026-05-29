@@ -1,6 +1,7 @@
 module.exports = {
   output: "standalone",
   transpilePackages: ["@repo/db"],
+  serverExternalPackages: ["@prisma/client", "@prisma/adapter-neon"],
   reactStrictMode: true,
   turbopack: {
     resolveAlias: {

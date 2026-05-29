@@ -34,7 +34,10 @@ export async function SessionNav() {
         {session.user.email ?? session.user.name}
       </span>
       <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
-        Tableau de bord
+        Listes
+      </Link>
+      <Link href="/dashboard/shopping" className="text-sm text-gray-600 hover:text-gray-900">
+        Courses
       </Link>
       <form
         action={async () => {

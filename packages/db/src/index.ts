@@ -1,5 +1,5 @@
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./generated/prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -8,7 +8,7 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL manquante (voir packages/db/.env.example)");
+    throw new Error("DATABASE_URL manquante (packages/db/.env en local)");
   }
 
   const adapter = new PrismaNeon({ connectionString });
@@ -32,4 +32,4 @@ export type {
   TodoListMember,
   User,
   VerificationToken,
-} from "@prisma/client";
+} from "./generated/prisma/client";

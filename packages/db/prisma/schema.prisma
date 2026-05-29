@@ -1,10 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider             = "prisma-client"
+  output               = "../src/generated/prisma"
+  importFileExtension  = "ts"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 /// Propriétaire d'une liste ou membre invité (liste partagée).
@@ -176,6 +177,10 @@ model Action {
   listId         String
   title          String
   done           Boolean    @default(false)
+  doneAt         DateTime?  // dernière validation (réinitialise l'affichage des tâches récurrentes)
+  streakCount    Int        @default(0) // série en cours (récurrentes uniquement)
+  bestStreak     Int        @default(0)
+  lastStreakPeriod String?  // clé du dernier jour/semaine compté (ex. "2026-05-29")
   dueAt          DateTime?  // date d'échéance (tâche ponctuelle)
   recurrence     Recurrence @default(NONE)
   recurrenceTime String?    // heure de la récurrence au format "HH:mm"

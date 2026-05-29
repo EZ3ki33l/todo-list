@@ -84,7 +84,19 @@ export default function DashboardScreen() {
   }
 
   const toggleAction = trpc.actions.toggle.useMutation({
-    onSuccess: () => { utils.actions.getToday.invalidate(); utils.actions.getWeek.invalidate(); },
+    onSuccess: (result) => {
+      void utils.actions.getToday.invalidate();
+      void utils.actions.getWeek.invalidate();
+      void utils.lists.getAll.invalidate();
+      if (result.listClosed) {
+        Alert.alert(
+          "Liste terminée",
+          "Toutes les tâches ponctuelles sont faites. La liste est passée en « terminée ».",
+        );
+      } else if (result.listDayComplete) {
+        Alert.alert("Bravo !", "Toutes les tâches du jour sont réalisées.");
+      }
+    },
   });
 
   const activeLists = lists?.filter((l) => l.status === "ACTIVE") ?? [];

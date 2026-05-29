@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "NODE_OPTIONS=--disable-warning=DEP0205 next dev",
+    "build": "NODE_OPTIONS=--disable-warning=DEP0205 next build",
     "start": "next start",
     "lint": "eslint ."
   },
@@ -13,13 +13,16 @@
     "@repo/api": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/ui": "workspace:*",
-    "@trpc/server": "^11.0.0",
     "@tailwindcss/postcss": "^4.3.0",
+    "@tanstack/react-query": "^5.80.5",
+    "@trpc/client": "catalog:",
+    "@trpc/react-query": "catalog:",
+    "@trpc/server": "catalog:",
     "jose": "^5.10.0",
-    "next": "16.2.0",
+    "next": "16.2.6",
     "next-auth": "^5.0.0-beta.30",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "react-native-web": "^0.21.0",
     "tailwindcss": "^4.3.0"
   },
@@ -28,9 +31,9 @@
     "@types/node": "^20.10.6",
     "@types/react": "~19.2.10",
     "@types/react-dom": "~19.2.0",
-    "babel-plugin-react-native-web": "^0.19.10",
+    "babel-plugin-react-native-web": "^0.21.2",
     "eslint": "^9.16.0",
-    "eslint-config-next": "16.2.0",
+    "eslint-config-next": "16.2.6",
     "typescript": "5.9.2"
   }
 }

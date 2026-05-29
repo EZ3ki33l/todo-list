@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -35,7 +36,13 @@ function formatTime24(d: Date) {
   return `${h}:${m}`;
 }
 
-function RecurrenceBadge({ recurrence, dow }: { recurrence: string; dow?: number | null }) {
+function RecurrenceBadge({
+  recurrence,
+  dow,
+}: {
+  recurrence: string;
+  dow?: number | null;
+}) {
   if (recurrence === "DAILY") return <Text style={styles.badgeBlue}>quotidien</Text>;
   if (recurrence === "WEEKLY") {
     return (
@@ -45,6 +52,16 @@ function RecurrenceBadge({ recurrence, dow }: { recurrence: string; dow?: number
     );
   }
   return null;
+}
+
+function StreakBadge({ streakCount, bestStreak }: { streakCount: number; bestStreak: number }) {
+  if (streakCount <= 0) return null;
+  return (
+    <Text style={styles.badgeOrange}>
+      série {streakCount}
+      {bestStreak > streakCount ? ` · record ${bestStreak}` : ""}
+    </Text>
+  );
 }
 
 export default function ListDetailScreen() {
@@ -94,7 +111,18 @@ export default function ListDetailScreen() {
   });
 
   const toggleAction = trpc.actions.toggle.useMutation({
-    onSuccess: () => utils.actions.invalidate(),
+    onSuccess: (result) => {
+      void utils.actions.invalidate();
+      void utils.lists.getAll.invalidate();
+      if (result.listClosed) {
+        Alert.alert(
+          "Liste terminée",
+          "Toutes les tâches ponctuelles sont faites. La liste est passée en « terminée ».",
+        );
+      } else if (result.listDayComplete) {
+        Alert.alert("Bravo !", "Toutes les tâches du jour sont réalisées.");
+      }
+    },
   });
 
   const updateAction = trpc.actions.update.useMutation({
@@ -352,6 +380,7 @@ export default function ListDetailScreen() {
                       </Text>
                     )}
                     <RecurrenceBadge recurrence={item.recurrence} dow={item.recurrenceDow} />
+                    <StreakBadge streakCount={item.streakCount} bestStreak={item.bestStreak} />
                   </View>
                 </View>
                 <View style={styles.rowBtns}>
@@ -513,6 +542,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#7C3AED",
     backgroundColor: "#F5F3FF",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  badgeOrange: {
+    fontSize: 11,
+    color: "#C2410C",
+    backgroundColor: "#FFF7ED",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,

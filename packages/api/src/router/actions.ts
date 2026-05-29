@@ -2,6 +2,8 @@ import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
 import { assertOrderedIdsMatch } from "../lib/reorder-positions";
+import { withEffectiveDone } from "../lib/action-recurrence";
+import { performActionToggle } from "../lib/perform-action-toggle";
 import { protectedProcedure, router, z } from "../trpc";
 
 const recurrenceEnum = z.enum(["NONE", "DAILY", "WEEKLY"]);
@@ -46,7 +48,7 @@ export const actionsRouter = router({
       return prisma.action.findMany({
         where: { listId: input.listId },
         orderBy: { position: "asc" },
-      });
+      }).then((rows) => rows.map((a) => withEffectiveDone(a)));
     }),
 
   getToday: protectedProcedure.query(async ({ ctx }) => {
@@ -72,7 +74,7 @@ export const actionsRouter = router({
         orderBy: { recurrenceTime: "asc" },
       }),
     ]);
-    return [...ponctual, ...daily, ...weekly];
+    return [...ponctual, ...daily, ...weekly].map((a) => withEffectiveDone(a, now));
   }),
 
   getWeek: protectedProcedure.query(async ({ ctx }) => {
@@ -95,7 +97,7 @@ export const actionsRouter = router({
         orderBy: [{ recurrenceDow: "asc" }, { recurrenceTime: "asc" }],
       }),
     ]);
-    return [...ponctual, ...weekly];
+    return [...ponctual, ...weekly].map((a) => withEffectiveDone(a, now));
   }),
 
   create: protectedProcedure
@@ -137,11 +139,18 @@ export const actionsRouter = router({
   toggle: protectedProcedure
     .input(z.object({ actionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const action = await assertActionAccess(input.actionId, ctx.userId);
-      return prisma.action.update({
-        where: { id: input.actionId },
-        data: { done: !action.done },
-      });
+      try {
+        return await performActionToggle(input.actionId, ctx.userId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Erreur toggle";
+        if (message === "Action introuvable") {
+          throw new TRPCError({ code: "NOT_FOUND", message });
+        }
+        if (message === "Accès refusé") {
+          throw new TRPCError({ code: "FORBIDDEN", message });
+        }
+        throw err;
+      }
     }),
 
   delete: protectedProcedure

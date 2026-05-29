@@ -1,6 +1,6 @@
 # Build depuis la racine du monorepo (voir docker-compose.yml)
 FROM node:22-bookworm-slim AS base
-RUN corepack enable && corepack prepare pnpm@11.3.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
 WORKDIR /app
 
 FROM base AS deps
@@ -8,6 +8,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/api/package.json ./packages/api/
 COPY packages/db/package.json ./packages/db/
+COPY packages/ui/package.json ./packages/ui/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 RUN pnpm install --frozen-lockfile --filter web...
 

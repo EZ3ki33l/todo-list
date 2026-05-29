@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
+import { performActionToggle } from "@repo/api";
 import { prisma } from "@repo/db";
 
 async function requireListAccess(listId: string, mode: "read" | "write" = "write") {
@@ -92,14 +93,18 @@ export async function createAction(formData: FormData) {
 }
 
 export async function toggleAction(actionId: string) {
-  const { action } = await requireActionAccess(actionId, "write");
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Non authentifié");
 
-  await prisma.action.update({
-    where: { id: actionId },
-    data: { done: !action.done },
-  });
+  const result = await performActionToggle(actionId, session.user.id);
 
-  revalidatePath(`/dashboard/lists/${action.listId}`);
+  revalidatePath(`/dashboard/lists/${result.listId}`);
+  revalidatePath("/dashboard");
+
+  return {
+    listDayComplete: result.listDayComplete,
+    listClosed: result.listClosed,
+  };
 }
 
 export async function deleteAction(actionId: string) {

@@ -27,11 +27,8 @@ cd /srv/docker/todolist
 Copier `docker-compose.yml` depuis le repo (après push) :
 
 ```bash
-# depuis ta machine, ou après git clone :
 cp deploy/todolist/docker-compose.yml /srv/docker/todolist/
-cp deploy/todolist/env.example /srv/docker/todolist/.env
-# puis éditer .env avec tes vraies valeurs
-nano /srv/docker/todolist/.env
+nano /srv/docker/todolist/.env   # créer le fichier (voir étape 3)
 ```
 
 ---
@@ -51,24 +48,24 @@ Le `docker-compose.yml` attend le repo dans `./source` (voir `context: ./source`
 
 ## Étape 3 — Fichier `.env`
 
-Remplir `/srv/docker/todolist/.env` (modèle : `env.example`) :
+Créer `/srv/docker/todolist/.env` avec au minimum :
 
 | Variable | Où la trouver |
 |----------|----------------|
 | `DATABASE_URL` | Dashboard Neon → Connection string |
-| `JWT_SECRET` | Même valeur qu’en dev / Vercel (ou en générer une nouvelle) |
+| `JWT_SECRET` | Même valeur qu’en dev (ou `openssl rand -base64 32`) |
 | `AUTH_SECRET` | Idem (`openssl rand -base64 32`) |
-| `GOOGLE_CLIENT_ID` / `SECRET` | Google Cloud Console |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud Console |
 | `AUTH_URL` | `https://todolist.ez3ki33l.ovh` (après HTTPS ; en test HTTP temporaire possible) |
 
-**Migrations Neon** (une fois, depuis ton PC ou le serveur avec Node) :
+**Schéma Neon** (après changement Prisma, depuis ton PC ou le serveur avec Node) :
 
 ```bash
 cd source/packages/db
-DATABASE_URL="..." pnpm exec prisma migrate deploy
+DATABASE_URL="..." pnpm db:push
 ```
 
-(Si la base Vercel/dev est déjà à jour, cette étape ne change rien.)
+(`prisma db push` — pas de fichiers migrate dans ce projet.)
 
 ---
 
@@ -109,10 +106,9 @@ Tu dois obtenir `200` ou `307` (redirection), pas `000`.
 
 ## Étape 5 — Nginx (reverse proxy)
 
+Configurer un `server` nginx qui proxy vers `http://127.0.0.1:3000`, avec `server_name todolist.ez3ki33l.ovh;`, puis :
+
 ```bash
-sudo cp /srv/docker/todolist/source/deploy/todolist/nginx.conf.example \
-  /etc/nginx/sites-available/todolist
-sudo ln -sf /etc/nginx/sites-available/todolist /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```

@@ -1,3 +1,4 @@
+import { withEffectiveDone } from "@repo/api";
 import { prisma } from "@repo/db";
 import type { Action } from "@repo/db";
 
@@ -65,8 +66,10 @@ export default async function DayWeekView({ userId, listId, canEdit = false }: P
       }),
     ]);
 
-  const todayActions = [...ponctualToday, ...dailyTasks, ...weeklyToday];
-  const weekActions = [...ponctualWeek, ...weeklyWeek];
+  const todayActions = [...ponctualToday, ...dailyTasks, ...weeklyToday].map((a) =>
+    withEffectiveDone(a, now),
+  );
+  const weekActions = [...ponctualWeek, ...weeklyWeek].map((a) => withEffectiveDone(a, now));
 
   if (todayActions.length === 0 && weekActions.length === 0) return null;
 

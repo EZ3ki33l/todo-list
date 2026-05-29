@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { deleteAction, toggleAction, updateAction } from "@/app/actions/action";
+import { deleteAction, updateAction } from "@/app/actions/action";
+import { ActionToggleButton } from "@/components/action-toggle-button";
 import type { Action } from "@repo/db";
 
 type ActionWithList = Action & { list: { id: string; title: string } };
@@ -156,21 +157,7 @@ export function ActionItem({ action, canEdit = false, showListLink = true }: Pro
       ) : (
         <div className="flex items-start gap-3">
           {/* Checkbox */}
-          <form action={toggleAction.bind(null, action.id)}>
-            <button
-              type="submit"
-              aria-label={action.done ? "Marquer comme non fait" : "Marquer comme fait"}
-              className={`mt-0.5 size-4 flex-shrink-0 rounded border-2 transition-colors ${
-                action.done ? "border-green-500 bg-green-500" : "border-gray-300 hover:border-gray-400"
-              }`}
-            >
-              {action.done && (
-                <svg viewBox="0 0 12 12" className="size-full p-0.5">
-                  <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                </svg>
-              )}
-            </button>
-          </form>
+          <ActionToggleButton actionId={action.id} done={action.done} />
 
           {/* Titre + méta */}
           <div className="min-w-0 flex-1">
@@ -190,6 +177,12 @@ export function ActionItem({ action, canEdit = false, showListLink = true }: Pro
               {action.recurrence === "WEEKLY" && (
                 <span className="rounded bg-purple-50 px-1.5 py-0.5 text-xs text-purple-600">
                   hebdo · {action.recurrenceDow !== null ? DOW_LABELS[action.recurrenceDow!] : ""}
+                </span>
+              )}
+              {action.recurrence !== "NONE" && action.streakCount > 0 && (
+                <span className="rounded bg-orange-50 px-1.5 py-0.5 text-xs text-orange-600">
+                  série {action.streakCount}
+                  {action.bestStreak > action.streakCount ? ` · record ${action.bestStreak}` : ""}
                 </span>
               )}
             </div>

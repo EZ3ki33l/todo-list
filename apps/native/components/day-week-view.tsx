@@ -1,17 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
-import DraggableFlatList, {
-  ScaleDecorator,
-  type RenderItemParams,
-} from "react-native-draggable-flatlist";
 
 import { ActionItemRow, type ActionRow } from "@/components/action-item-row";
 import {
@@ -25,25 +20,29 @@ import {
   startOfDay,
   type DayGroup,
 } from "@/lib/day-week-split";
-import { applyListOrder } from "@/lib/reorder-list";
+import { normalizeActionRows } from "@/lib/normalize-action-row";
 import { sameDay } from "@/lib/task-agenda";
+import { useToggleAction } from "@/lib/use-toggle-action";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/lib/auth-context";
 
-const COLUMN_HEIGHT = 280;
+const STACK_BREAKPOINT = 640;
 
 function TaskColumnShell({
   header,
   children,
   isEmpty,
   emptyMessage = "Rien de prévu.",
+  stacked,
 }: {
   header: React.ReactNode;
   children: React.ReactNode;
   isEmpty?: boolean;
   emptyMessage?: string;
+  stacked?: boolean;
 }) {
   return (
-    <View style={styles.columnShell}>
+    <View style={[styles.columnShell, stacked && styles.columnShellStacked]}>
       <View style={styles.columnHeader}>{header}</View>
       {isEmpty ? (
         <Text style={styles.empty}>{emptyMessage}</Text>
@@ -54,107 +53,45 @@ function TaskColumnShell({
   );
 }
 
-function DraggableSection({
+function TaskSection({
   actions,
-  globalIds,
-  onReorder,
   onToggle,
   hideDayTag,
+  compact,
+  togglingId,
 }: {
   actions: ActionRow[];
-  globalIds: string[];
-  onReorder: (orderedIds: string[]) => void;
   onToggle: (id: string) => void;
   hideDayTag?: boolean;
+  compact?: boolean;
+  togglingId?: string | null;
 }) {
-  const [override, setOverride] = useState<ActionRow[] | null>(null);
-  const listData = override ?? actions;
-  const dragEnabled = listData.length > 1;
-
-  useEffect(() => {
-    setOverride(null);
-  }, [actions.map((a) => a.id).join(",")]);
-
-  const onDragEnd = useCallback(
-    ({ data }: { data: ActionRow[] }) => {
-      const sectionIds = listData.map((a) => a.id);
-      setOverride(data);
-      const newSectionIds = data.map((a) => a.id);
-      const sectionSet = new Set(sectionIds);
-      const out: string[] = [];
-      let inserted = false;
-      for (const id of globalIds) {
-        if (sectionSet.has(id)) {
-          if (!inserted) {
-            out.push(...newSectionIds);
-            inserted = true;
-          }
-        } else {
-          out.push(id);
-        }
-      }
-      onReorder(out);
-    },
-    [globalIds, listData, onReorder],
-  );
-
-  const renderItem = useCallback(
-    ({ item, drag, isActive }: RenderItemParams<ActionRow>) => (
-      <ScaleDecorator>
-        <View style={isActive ? styles.dragging : undefined}>
-          <ActionItemRow
-            action={item}
-            onToggle={() => onToggle(item.id)}
-            onLongPressDrag={dragEnabled ? drag : undefined}
-            dragEnabled={dragEnabled}
-            hideDayTag={hideDayTag}
-          />
-        </View>
-      </ScaleDecorator>
-    ),
-    [dragEnabled, hideDayTag, onToggle],
-  );
-
-  if (!dragEnabled) {
-    return (
-      <>
-        {listData.map((action) => (
-          <ActionItemRow
-            key={action.id}
-            action={action}
-            onToggle={() => onToggle(action.id)}
-            hideDayTag={hideDayTag}
-          />
-        ))}
-      </>
-    );
-  }
-
   return (
-    <DraggableFlatList
-      data={listData}
-      keyExtractor={(item) => item.id}
-      renderItem={renderItem}
-      onDragEnd={onDragEnd}
-      activationDistance={12}
-      scrollEnabled
-      nestedScrollEnabled
-      containerStyle={styles.draggableList}
-      contentContainerStyle={styles.draggableContent}
-    />
+    <>
+      {actions.map((action) => (
+        <ActionItemRow
+          key={action.id}
+          action={action}
+          onToggle={() => onToggle(action.id)}
+          hideDayTag={hideDayTag}
+          compact={compact}
+          disabled={togglingId === action.id}
+        />
+      ))}
+    </>
   );
 }
 
 function DayGroupBlock({
   group,
-  globalIds,
-  onReorder,
   onToggle,
+  compact,
+  togglingId,
 }: {
   group: DayGroup<ActionRow>;
-  globalIds: string[];
-  onReorder: (orderedIds: string[]) => void;
   onToggle: (id: string) => void;
+  compact?: boolean;
+  togglingId?: string | null;
 }) {
   const weekday = group.date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
   const dayMonth = group.date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
@@ -165,72 +102,61 @@ function DayGroupBlock({
         <Text style={styles.dayGroupWeekday}>{weekday}</Text>
         <Text style={styles.dayGroupDate}>{dayMonth}</Text>
       </View>
-      <DraggableSection
+      <TaskSection
         actions={group.actions}
-        globalIds={globalIds}
-        onReorder={onReorder}
         onToggle={onToggle}
         hideDayTag
+        compact={compact}
+        togglingId={togglingId}
       />
     </View>
   );
 }
 
 export function DayWeekView({ listId }: { listId: string }) {
+  const { width } = useWindowDimensions();
+  const stacked = width < STACK_BREAKPOINT;
+  const compact = !stacked;
+
   const [now] = useState(() => new Date());
   const today = startOfDay(now);
   const defaultStart = defaultPeriodStart(today);
   const [periodStart, setPeriodStart] = useState(defaultStart);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
-  const utils = trpc.useUtils();
-  const { data: actions, isLoading } = trpc.actions.getByList.useQuery({ listId });
+  const { data: actions, isLoading } = trpc.actions.getByList.useQuery(
+    { listId },
+    { staleTime: 15_000 },
+  );
+
+  const normalizedActions = useMemo(
+    () => normalizeActionRows(actions ?? []),
+    [actions],
+  );
 
   const split = useMemo(() => {
-    if (!actions?.length) {
+    if (!normalizedActions.length) {
       return { today: [] as ActionRow[], globalIds: [] as string[] };
     }
-    return splitActionsByDayWeek(actions, now, "position");
-  }, [actions, now]);
+    return splitActionsByDayWeek(normalizedActions, now, "position");
+  }, [normalizedActions, now]);
 
   const dayGroups = useMemo(() => {
-    const groups = buildPeriodDayGroups(actions ?? [], periodStart, "position");
+    const groups = buildPeriodDayGroups(normalizedActions, periodStart, "position");
     return groups.filter((g) => !sameDay(g.date, today));
-  }, [actions, periodStart, today]);
+  }, [normalizedActions, periodStart, today]);
 
   const isDefaultPeriod = sameDay(periodStart, defaultStart);
 
-  const toggleAction = trpc.actions.toggle.useMutation({
-    onSuccess: (result) => {
-      void utils.actions.getByList.invalidate({ listId });
-      if (result.listClosed) {
-        Alert.alert("Liste terminée", "Toutes les tâches ponctuelles sont faites.");
-      } else if (result.listDayComplete) {
-        Alert.alert("Bravo !", "Toutes les tâches du jour sont réalisées.");
-      }
-    },
-  });
-
-  const reorderActions = trpc.actions.reorder.useMutation({
-    onSuccess: (_result, { listId: lid, orderedIds }) => {
-      utils.actions.getByList.setData({ listId: lid }, (old) =>
-        old ? applyListOrder(old, orderedIds) : old,
-      );
-    },
-    onError: () => {
-      void utils.actions.getByList.invalidate({ listId });
-    },
-  });
-
-  const onReorder = useCallback(
-    (orderedIds: string[]) => {
-      reorderActions.mutate({ listId, orderedIds });
-    },
-    [listId, reorderActions],
-  );
+  const { signOut } = useAuth();
+  const toggleAction = useToggleAction(listId, { onUnauthorized: () => void signOut() });
+  const togglingId = toggleAction.isPending
+    ? (toggleAction.variables?.actionId ?? null)
+    : null;
 
   const onToggle = useCallback(
     (actionId: string) => {
+      if (toggleAction.isPending) return;
       toggleAction.mutate({ actionId });
     },
     [toggleAction],
@@ -238,10 +164,6 @@ export function DayWeekView({ listId }: { listId: string }) {
 
   if (isLoading) {
     return <ActivityIndicator style={{ marginVertical: 20 }} />;
-  }
-
-  if ((actions?.length ?? 0) === 0) {
-    return null;
   }
 
   const todaySubtitle = now.toLocaleDateString("fr-FR", {
@@ -252,28 +174,27 @@ export function DayWeekView({ listId }: { listId: string }) {
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.grid}>
+      <View style={[styles.grid, stacked && styles.gridStacked]}>
         <TaskColumnShell
+          stacked={stacked}
           isEmpty={split.today.length === 0}
           header={
             <View>
               <Text style={styles.columnTitle}>Aujourd'hui</Text>
               <Text style={styles.columnSub}>{todaySubtitle}</Text>
-              {split.today.length > 1 && (
-                <Text style={styles.dragHint}>Maintenir ⠿ pour réordonner</Text>
-              )}
             </View>
           }
         >
-          <DraggableSection
+          <TaskSection
             actions={split.today}
-            globalIds={split.globalIds}
-            onReorder={onReorder}
             onToggle={onToggle}
+            compact={compact}
+            togglingId={togglingId}
           />
         </TaskColumnShell>
 
         <TaskColumnShell
+          stacked={stacked}
           isEmpty={dayGroups.length === 0}
           emptyMessage="Rien de prévu sur cette période."
           header={
@@ -293,17 +214,17 @@ export function DayWeekView({ listId }: { listId: string }) {
             </View>
           }
         >
-          <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
+          <View>
             {dayGroups.map((group) => (
               <DayGroupBlock
                 key={group.key}
                 group={group}
-                globalIds={split.globalIds}
-                onReorder={onReorder}
                 onToggle={onToggle}
+                compact={compact}
+                togglingId={togglingId}
               />
             ))}
-          </ScrollView>
+          </View>
         </TaskColumnShell>
       </View>
 
@@ -311,7 +232,7 @@ export function DayWeekView({ listId }: { listId: string }) {
         visible={calendarOpen}
         onClose={() => setCalendarOpen(false)}
         onSelectDay={setPeriodStart}
-        actions={actions ?? []}
+        actions={normalizedActions}
         today={today}
         selectedDay={periodStart}
       />
@@ -321,25 +242,28 @@ export function DayWeekView({ listId }: { listId: string }) {
 
 const styles = StyleSheet.create({
   wrapper: { marginBottom: 20 },
-  grid: { flexDirection: "row", gap: 12, height: COLUMN_HEIGHT },
+  grid: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
+  gridStacked: { flexDirection: "column", gap: 16 },
   columnShell: {
     flex: 1,
     backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#F3F4F6",
-    overflow: "hidden",
+  },
+  columnShellStacked: {
+    flex: undefined,
+    width: "100%",
   },
   columnHeader: {
     borderBottomWidth: 1,
     borderBottomColor: "#F9FAFB",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  columnTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  columnSub: { fontSize: 12, color: "#9CA3AF", marginTop: 2 },
-  dragHint: { fontSize: 10, color: "#9CA3AF", marginTop: 4 },
-  columnBody: { flex: 1, paddingHorizontal: 8, paddingVertical: 8 },
+  columnTitle: { fontSize: 16, fontWeight: "600", color: "#111827" },
+  columnSub: { fontSize: 13, color: "#9CA3AF", marginTop: 2 },
+  columnBody: { paddingHorizontal: 10, paddingVertical: 10 },
   empty: { fontSize: 13, color: "#9CA3AF", padding: 12, fontStyle: "italic" },
   periodActions: {
     flexDirection: "row",
@@ -374,7 +298,4 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   dayGroupDate: { fontSize: 11, color: "#9CA3AF" },
-  draggableList: { flex: 1 },
-  draggableContent: { paddingBottom: 4 },
-  dragging: { opacity: 0.9 },
 });

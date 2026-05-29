@@ -17,6 +17,7 @@ import { TabListHeader } from "@/components/tab-list-header";
 import { listHubStyles as hub } from "@/lib/list-hub-styles";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth-context";
+import { usePersonalTodoList } from "@/lib/use-personal-todo-list";
 
 function ownerSubtitle(
   isOwner: boolean,
@@ -38,24 +39,35 @@ export default function DashboardScreen() {
   const utils = trpc.useUtils();
 
   const {
-    data: personalList,
+    list: personalList,
     isLoading: loadingPersonal,
+    error: personalError,
     refetch: refetchPersonal,
-  } = trpc.lists.getOrCreatePersonal.useQuery();
+  } = usePersonalTodoList();
 
-  const { data: sharedLists, refetch: refetchShared } = trpc.lists.getSharedTodos.useQuery(
-    undefined,
-    { enabled: !!personalList },
-  );
+  const { data: sharedListsPrimary, isError: sharedError, refetch: refetchShared } =
+    trpc.lists.getSharedTodos.useQuery(undefined, {
+      enabled: !!personalList,
+      retry: 1,
+    });
+
+  const { data: allLists } = trpc.lists.getAll.useQuery(undefined, {
+    enabled: !!personalList && sharedError,
+  });
+
+  const sharedLists =
+    sharedListsPrimary ??
+    allLists?.filter(
+      (list) =>
+        list.id !== personalList?.id &&
+        list.status === "ACTIVE",
+    );
 
   useFocusEffect(
     useCallback(() => {
       void utils.lists.getOrCreatePersonal.invalidate();
       void utils.lists.getSharedTodos.invalidate();
-      if (personalList) {
-        void utils.actions.getByList.invalidate({ listId: personalList.id });
-      }
-    }, [personalList, utils]),
+    }, [utils]),
   );
 
   const createSharedList = trpc.lists.create.useMutation({
@@ -72,7 +84,8 @@ export default function DashboardScreen() {
       <ScrollView
         style={hub.container}
         contentContainerStyle={hub.content}
-        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -87,6 +100,10 @@ export default function DashboardScreen() {
 
         {loadingPersonal && !personalList ? (
           <ActivityIndicator style={{ marginVertical: 24 }} />
+        ) : personalError ? (
+          <Text style={hub.empty}>
+            Impossible de charger vos tâches. Tirez pour réessayer.
+          </Text>
         ) : personalList ? (
           <>
             <DayWeekView listId={personalList.id} />
@@ -101,6 +118,10 @@ export default function DashboardScreen() {
           ) : (
             sharedLists?.map((list) => {
               const isOwner = list.ownerId === user?.id;
+              const owner =
+                "owner" in list && list.owner
+                  ? (list.owner as { name: string | null; email: string | null })
+                  : null;
               return (
                 <Pressable
                   key={list.id}
@@ -117,8 +138,8 @@ export default function DashboardScreen() {
                       {ownerSubtitle(
                         isOwner,
                         list._count.members,
-                        list.owner.name,
-                        list.owner.email,
+                        owner?.name,
+                        owner?.email,
                       )}
                     </Text>
                   </View>

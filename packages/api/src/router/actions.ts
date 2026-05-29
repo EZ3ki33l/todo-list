@@ -149,7 +149,7 @@ export const actionsRouter = router({
         if (message === "Accès refusé") {
           throw new TRPCError({ code: "FORBIDDEN", message });
         }
-        throw err;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
       }
     }),
 

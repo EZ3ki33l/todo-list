@@ -15,7 +15,11 @@ import DraggableFlatList, { type RenderItemParams } from "react-native-draggable
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { applyListOrder } from "@/lib/reorder-list";
+import { normalizeActionRows } from "@/lib/normalize-action-row";
+import { StreakBadge } from "@/components/streak-badge";
+import { useToggleAction } from "@/lib/use-toggle-action";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/lib/auth-context";
 
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
@@ -54,19 +58,10 @@ function RecurrenceBadge({
   return null;
 }
 
-function StreakBadge({ streakCount, bestStreak }: { streakCount: number; bestStreak: number }) {
-  if (streakCount <= 0) return null;
-  return (
-    <Text style={styles.badgeOrange}>
-      série {streakCount}
-      {bestStreak > streakCount ? ` · record ${bestStreak}` : ""}
-    </Text>
-  );
-}
-
 export default function ListDetailScreen() {
   const { listId } = useLocalSearchParams<{ listId: string }>();
   const router = useRouter();
+  const { signOut } = useAuth();
 
   const { data: personalList } = trpc.lists.getOrCreatePersonal.useQuery();
 
@@ -96,7 +91,7 @@ export default function ListDetailScreen() {
   );
 
   type ActionRow = NonNullable<typeof actions>[number];
-  const actionRows = actions ?? [];
+  const actionRows = useMemo(() => normalizeActionRows(actions ?? []), [actions]);
   const [orderOverride, setOrderOverride] = useState<ActionRow[] | null>(null);
   const listData = orderOverride ?? actionRows;
 
@@ -119,20 +114,7 @@ export default function ListDetailScreen() {
     },
   });
 
-  const toggleAction = trpc.actions.toggle.useMutation({
-    onSuccess: (result) => {
-      void utils.actions.invalidate();
-      void utils.lists.getAll.invalidate();
-      if (result.listClosed) {
-        Alert.alert(
-          "Liste terminée",
-          "Toutes les tâches ponctuelles sont faites. La liste est passée en « terminée ».",
-        );
-      } else if (result.listDayComplete) {
-        Alert.alert("Bravo !", "Toutes les tâches du jour sont réalisées.");
-      }
-    },
-  });
+  const toggleAction = useToggleAction(listId!, { onUnauthorized: () => void signOut() });
 
   const updateAction = trpc.actions.update.useMutation({
     onSuccess: () => {
@@ -193,8 +175,8 @@ export default function ListDetailScreen() {
     if (event.type === "set" && d) setRecurrenceTime(d);
   }
 
-  const done = actions?.filter((a) => a.done).length ?? 0;
-  const total = actions?.length ?? 0;
+  const done = actionRows.filter((a) => a.done).length;
+  const total = actionRows.length;
   const dragEnabled = !editingId;
 
   const listHeader = useMemo(
@@ -551,14 +533,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#7C3AED",
     backgroundColor: "#F5F3FF",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  badgeOrange: {
-    fontSize: 11,
-    color: "#C2410C",
-    backgroundColor: "#FFF7ED",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,

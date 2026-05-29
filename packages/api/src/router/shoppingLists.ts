@@ -1,6 +1,10 @@
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
+import {
+  getOrCreatePersonalShoppingList,
+  getSharedShoppingLists,
+} from "../lib/default-lists";
 import { notifyShoppingListShared } from "../lib/shopping-list-share-notify";
 import { protectedProcedure, router, z } from "../trpc";
 
@@ -26,6 +30,15 @@ export async function assertShoppingListAccess(
 }
 
 export const shoppingListsRouter = router({
+  getOrCreatePersonal: protectedProcedure.query(async ({ ctx }) => {
+    return getOrCreatePersonalShoppingList(ctx.userId);
+  }),
+
+  getSharedShopping: protectedProcedure.query(async ({ ctx }) => {
+    const personal = await getOrCreatePersonalShoppingList(ctx.userId);
+    return getSharedShoppingLists(ctx.userId, personal.id);
+  }),
+
   getAll: protectedProcedure.query(async ({ ctx }) => {
     return prisma.shoppingList.findMany({
       where: {

@@ -131,17 +131,21 @@ export function TaskPeriodCalendarModal({
                     onClose();
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      isSelected && styles.dayTextSelected,
-                      isToday && !isSelected && styles.dayTextToday,
-                      !cell.inMonth && styles.dayTextOutside,
-                    ]}
-                  >
-                    {cell.date.getDate()}
-                  </Text>
-                  <CalendarDayDots markers={markers} selected={isSelected} />
+                  <View style={styles.dayCellInner}>
+                    <Text
+                      style={[
+                        styles.dayText,
+                        isSelected && styles.dayTextSelected,
+                        isToday && !isSelected && styles.dayTextToday,
+                        !cell.inMonth && styles.dayTextOutside,
+                      ]}
+                    >
+                      {cell.date.getDate()}
+                    </Text>
+                    <View style={styles.dotsSlot}>
+                      <CalendarDayDots markers={markers} selected={isSelected} />
+                    </View>
+                  </View>
                 </Pressable>
               );
             })}
@@ -219,19 +223,30 @@ const styles = StyleSheet.create({
   dayCell: {
     width: `${100 / 7}%`,
     aspectRatio: 1,
-    alignItems: "center",
-    justifyContent: "center",
     borderRadius: 8,
+    padding: 2,
+  },
+  dayCellInner: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 6,
+    paddingBottom: 4,
   },
   dayCellSelected: { backgroundColor: "#4F46E5" },
   dayCellToday: { borderWidth: 2, borderColor: "#C7D2FE" },
   dayCellOutside: { opacity: 0.5 },
-  dayText: { fontSize: 14, color: "#111827" },
+  dayText: { fontSize: 14, lineHeight: 18, color: "#111827" },
   dayTextSelected: { color: "#fff", fontWeight: "600" },
   dayTextToday: { color: "#4338CA", fontWeight: "600" },
   dayTextOutside: { color: "#D1D5DB" },
-  dotsRow: { flexDirection: "row", gap: 2, position: "absolute", bottom: 4 },
-  dot: { width: 4, height: 4, borderRadius: 2 },
+  dotsSlot: {
+    minHeight: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dotsRow: { flexDirection: "row", gap: 3, alignItems: "center" },
+  dot: { width: 5, height: 5, borderRadius: 2.5 },
   dotPonctual: { backgroundColor: "#F59E0B" },
   dotPonctualSelected: { backgroundColor: "#FDE68A" },
   dotWeekly: { backgroundColor: "#A855F7" },

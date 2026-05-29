@@ -32,7 +32,7 @@ export function ActionToggleButton({ actionId, done }: Props) {
       aria-label={done ? "Marquer comme non fait" : "Marquer comme fait"}
       disabled={pending}
       onClick={handleClick}
-      className={`mt-0.5 size-4 flex-shrink-0 rounded border-2 transition-colors ${
+      className={`mt-0.5 size-4 shrink-0 rounded border-2 transition-colors ${
         done ? "border-green-500 bg-green-500" : "border-gray-300 hover:border-gray-400"
       }`}
     >

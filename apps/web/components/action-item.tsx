@@ -190,7 +190,7 @@ export function ActionItem({ action, canEdit = false, showListLink = true }: Pro
 
           {/* Boutons */}
           {canEdit && (
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
                 onClick={() => setEditing(true)}

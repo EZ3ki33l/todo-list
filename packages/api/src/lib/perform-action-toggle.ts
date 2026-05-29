@@ -1,7 +1,7 @@
 import { prisma } from "@repo/db";
 
 import { isEffectivelyDone, withEffectiveDone } from "./action-recurrence";
-import { computeStreakOnComplete } from "./action-streak";
+import { computeStreakOnComplete, computeStreakOnUndo } from "./action-streak";
 import { evaluateListAfterToggle } from "./action-toggle-effects";
 
 export type ToggleActionResult = {
@@ -47,6 +47,17 @@ export async function performActionToggle(
     streakCount = streak.streakCount;
     bestStreak = streak.bestStreak;
     lastStreakPeriod = streak.lastStreakPeriod;
+  } else if (!completing && effectivelyDone && action.recurrence !== "NONE") {
+    const streak = computeStreakOnUndo(
+      action.recurrence,
+      streakCount,
+      bestStreak,
+      lastStreakPeriod,
+      now,
+    );
+    streakCount = streak.streakCount;
+    bestStreak = streak.bestStreak;
+    lastStreakPeriod = streak.lastStreakPeriod;
   }
 
   const updated = await prisma.action.update({
@@ -61,7 +72,9 @@ export async function performActionToggle(
             lastStreakPeriod,
           }
         : { done: true, doneAt: now }
-      : { done: false, doneAt: null },
+      : action.recurrence !== "NONE"
+        ? { done: false, doneAt: null, streakCount, bestStreak, lastStreakPeriod }
+        : { done: false, doneAt: null },
   });
 
   const sideEffects = completing

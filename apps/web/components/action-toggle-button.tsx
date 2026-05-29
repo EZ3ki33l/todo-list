@@ -8,9 +8,10 @@ import { toggleAction } from "@/app/actions/action";
 interface Props {
   actionId: string;
   done: boolean;
+  onChanged?: () => void;
 }
 
-export function ActionToggleButton({ actionId, done }: Props) {
+export function ActionToggleButton({ actionId, done, onChanged }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -18,6 +19,7 @@ export function ActionToggleButton({ actionId, done }: Props) {
     startTransition(async () => {
       const result = await toggleAction(actionId);
       router.refresh();
+      onChanged?.();
       if (result.listClosed) {
         window.alert("Liste terminée : toutes les tâches ponctuelles sont faites.");
       } else if (result.listDayComplete) {

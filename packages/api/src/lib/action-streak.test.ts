@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { computeStreakOnComplete } from "./action-streak";
+import { computeStreakOnComplete, computeStreakOnUndo } from "./action-streak";
 import { areAllPonctualDone, isListDayComplete } from "./list-day-completion";
 
 describe("computeStreakOnComplete", () => {
@@ -17,6 +17,27 @@ describe("computeStreakOnComplete", () => {
   it("reset après un trou", () => {
     const r = computeStreakOnComplete("DAILY", 5, 5, "2026-05-27", new Date(2026, 4, 29));
     expect(r.streakCount).toBe(1);
+  });
+});
+
+describe("computeStreakOnUndo", () => {
+  it("décrémente si on décoche le jour même", () => {
+    const r = computeStreakOnUndo("DAILY", 4, 4, "2026-05-29", new Date(2026, 4, 29));
+    expect(r.streakCount).toBe(3);
+    expect(r.lastStreakPeriod).toBe("2026-05-28");
+    expect(r.bestStreak).toBe(4);
+  });
+
+  it("remet à zéro la première série", () => {
+    const r = computeStreakOnUndo("DAILY", 1, 1, "2026-05-29", new Date(2026, 4, 29));
+    expect(r.streakCount).toBe(0);
+    expect(r.lastStreakPeriod).toBeNull();
+  });
+
+  it("ne change rien si la série ne vient pas d'aujourd'hui", () => {
+    const r = computeStreakOnUndo("DAILY", 4, 4, "2026-05-28", new Date(2026, 4, 29));
+    expect(r.streakCount).toBe(4);
+    expect(r.lastStreakPeriod).toBe("2026-05-28");
   });
 });
 

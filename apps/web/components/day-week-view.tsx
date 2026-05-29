@@ -3,16 +3,38 @@ import { prisma } from "@repo/db";
 import type { Action } from "@repo/db";
 
 import { ActionItem } from "@/components/action-item";
+import { DayWeekViewClient } from "@/components/day-week-view-client";
+import {
+  buildLaterDayGroups,
+  buildWeekDayGroups,
+  formatWeekRangeLabel,
+} from "@/lib/day-week-split";
 
 interface Props {
   userId: string;
   listId?: string;
+  listTitle?: string;
   canEdit?: boolean;
 }
 
 type ActionWithList = Action & { list: { id: string; title: string } };
 
-export default async function DayWeekView({ userId, listId, canEdit = false }: Props) {
+export default async function DayWeekView({
+  userId,
+  listId,
+  listTitle,
+  canEdit = false,
+}: Props) {
+  if (listId && canEdit) {
+    return (
+      <DayWeekViewClient
+        listId={listId}
+        listTitle={listTitle ?? "Mes tâches"}
+        canEdit
+      />
+    );
+  }
+
   const now = new Date();
 
   const todayStart = new Date(now);
@@ -23,7 +45,6 @@ export default async function DayWeekView({ userId, listId, canEdit = false }: P
   weekEnd.setDate(weekEnd.getDate() + 7);
 
   const todayDow = now.getDay();
-  const weekDows = Array.from({ length: 7 }, (_, i) => (todayDow + i) % 7);
 
   const base = {
     OR: [
@@ -33,52 +54,45 @@ export default async function DayWeekView({ userId, listId, canEdit = false }: P
     ...(listId ? { listId } : {}),
   };
 
-  const [ponctualToday, dailyTasks, weeklyToday, ponctualWeek, weeklyWeek] =
-    await Promise.all([
-      prisma.action.findMany({
-        where: { ...base, recurrence: "NONE", dueAt: { gte: todayStart, lt: todayEnd } },
-        include: { list: { select: { id: true, title: true } } },
-        orderBy: { dueAt: "asc" },
-      }),
-      prisma.action.findMany({
-        where: { ...base, recurrence: "DAILY" },
-        include: { list: { select: { id: true, title: true } } },
-        orderBy: { recurrenceTime: "asc" },
-      }),
-      prisma.action.findMany({
-        where: { ...base, recurrence: "WEEKLY", recurrenceDow: todayDow },
-        include: { list: { select: { id: true, title: true } } },
-        orderBy: { recurrenceTime: "asc" },
-      }),
-      prisma.action.findMany({
-        where: { ...base, recurrence: "NONE", dueAt: { gte: todayEnd, lt: weekEnd } },
-        include: { list: { select: { id: true, title: true } } },
-        orderBy: { dueAt: "asc" },
-      }),
-      prisma.action.findMany({
-        where: {
-          ...base,
-          recurrence: "WEEKLY",
-          recurrenceDow: { in: weekDows.filter((d) => d !== todayDow) },
-        },
-        include: { list: { select: { id: true, title: true } } },
-        orderBy: [{ recurrenceDow: "asc" }, { recurrenceTime: "asc" }],
-      }),
-    ]);
+  const [ponctualToday, dailyTasks, weeklyToday, allForSchedule] = await Promise.all([
+    prisma.action.findMany({
+      where: { ...base, recurrence: "NONE", dueAt: { gte: todayStart, lt: todayEnd } },
+      include: { list: { select: { id: true, title: true } } },
+      orderBy: { dueAt: "asc" },
+    }),
+    prisma.action.findMany({
+      where: { ...base, recurrence: "DAILY" },
+      include: { list: { select: { id: true, title: true } } },
+      orderBy: { recurrenceTime: "asc" },
+    }),
+    prisma.action.findMany({
+      where: { ...base, recurrence: "WEEKLY", recurrenceDow: todayDow },
+      include: { list: { select: { id: true, title: true } } },
+      orderBy: { recurrenceTime: "asc" },
+    }),
+    prisma.action.findMany({
+      where: base,
+      include: { list: { select: { id: true, title: true } } },
+      orderBy: { position: "asc" },
+    }),
+  ]);
 
   const todayActions = [...ponctualToday, ...dailyTasks, ...weeklyToday].map((a) =>
     withEffectiveDone(a, now),
   );
-  const weekActions = [...ponctualWeek, ...weeklyWeek].map((a) => withEffectiveDone(a, now));
 
-  if (todayActions.length === 0 && weekActions.length === 0) return null;
+  const scheduleRows = allForSchedule.map((a) => withEffectiveDone(a, now));
+  const weekDayGroups = buildWeekDayGroups(scheduleRows, now, "schedule");
+  const laterDayGroups = buildLaterDayGroups(scheduleRows, now, "schedule");
+  const laterCount = laterDayGroups.reduce((n, g) => n + g.actions.length, 0);
+
+  if (todayActions.length === 0 && weekDayGroups.length === 0 && laterCount === 0) return null;
 
   const showListLink = !listId;
 
   return (
     <section className="mb-10">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        {/* Aujourd'hui */}
         <div>
           <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-gray-900">
             Aujourd&apos;hui
@@ -102,28 +116,85 @@ export default async function DayWeekView({ userId, listId, canEdit = false }: P
           )}
         </div>
 
-        {/* Cette semaine */}
         <div>
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-gray-900">
-            Cette semaine
-            <span className="text-sm font-normal text-gray-400">
-              jusqu&apos;au{" "}
-              {weekEnd.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
-            </span>
-          </h2>
-          {weekActions.length === 0 ? (
+          <div className="mb-3">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+              Cette semaine
+              <span className="text-sm font-normal text-gray-400">{formatWeekRangeLabel(now)}</span>
+            </h2>
+          </div>
+          {weekDayGroups.length === 0 ? (
             <p className="text-sm text-gray-400">Rien de prévu cette semaine.</p>
           ) : (
-            <ul className="space-y-2">
-              {weekActions.map((a) => (
-                <ActionItem
-                  key={a.id}
-                  action={a as ActionWithList}
-                  canEdit={canEdit}
-                  showListLink={showListLink}
-                />
-              ))}
-            </ul>
+            <div className="space-y-3">
+              {weekDayGroups.map((group) => {
+                const weekday = group.date
+                  .toLocaleDateString("fr-FR", { weekday: "short" })
+                  .replace(".", "");
+                const dayMonth = group.date.toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "short",
+                });
+                return (
+                  <div key={group.key} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
+                    <div className="mb-2 flex items-baseline gap-2">
+                      <span className="text-sm font-semibold capitalize text-gray-900">{weekday}</span>
+                      <span className="text-xs text-gray-400">{dayMonth}</span>
+                    </div>
+                    <ul className="space-y-2">
+                      {group.actions.map((a) => {
+                        const withList = allForSchedule.find((x) => x.id === a.id) as ActionWithList;
+                        return (
+                          <ActionItem
+                            key={a.id}
+                            action={withList}
+                            canEdit={canEdit}
+                            showListLink={showListLink}
+                            hideDayTag
+                            embedded
+                          />
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {laterCount > 0 && (
+            <details className="mt-4 border-t border-gray-100 pt-4">
+              <summary className="cursor-pointer text-sm text-indigo-600 hover:text-indigo-700">
+                Voir plus loin ({laterCount})
+              </summary>
+              <div className="mt-3 space-y-3">
+                <p className="text-xs text-gray-400">
+                  Tâches ponctuelles planifiées au-delà de cette semaine.
+                </p>
+                {laterDayGroups.map((group) => (
+                  <div
+                    key={group.key}
+                    className="rounded-xl border border-dashed border-gray-200 p-3"
+                  >
+                    <p className="mb-2 text-sm font-medium capitalize text-gray-700">{group.label}</p>
+                    <ul className="space-y-2">
+                      {group.actions.map((a) => {
+                        const withList = allForSchedule.find((x) => x.id === a.id) as ActionWithList;
+                        return (
+                          <ActionItem
+                            key={a.id}
+                            action={withList}
+                            canEdit={canEdit}
+                            showListLink={showListLink}
+                            hideDayTag
+                            embedded
+                          />
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </details>
           )}
         </div>
       </div>

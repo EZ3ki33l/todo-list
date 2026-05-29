@@ -23,6 +23,12 @@ export function streakPeriodKey(recurrence: Recurrence, date: Date): string | nu
   return null;
 }
 
+function previousPeriodKey(recurrence: "DAILY" | "WEEKLY", periodKey: string): string {
+  const d = parseDayKey(periodKey);
+  d.setDate(d.getDate() - (recurrence === "DAILY" ? 1 : 7));
+  return dayKey(d);
+}
+
 export function computeStreakOnComplete(
   recurrence: "DAILY" | "WEEKLY",
   streakCount: number,
@@ -47,5 +53,27 @@ export function computeStreakOnComplete(
     streakCount: next,
     bestStreak: Math.max(bestStreak, next),
     lastStreakPeriod: currentKey,
+  };
+}
+
+/** Annule l'incrément de série si on décoche dans la même période. */
+export function computeStreakOnUndo(
+  recurrence: "DAILY" | "WEEKLY",
+  streakCount: number,
+  bestStreak: number,
+  lastStreakPeriod: string | null,
+  now: Date,
+): { streakCount: number; bestStreak: number; lastStreakPeriod: string | null } {
+  const currentKey = streakPeriodKey(recurrence, now)!;
+
+  if (!lastStreakPeriod || lastStreakPeriod !== currentKey || streakCount <= 0) {
+    return { streakCount, bestStreak, lastStreakPeriod };
+  }
+
+  const next = streakCount - 1;
+  return {
+    streakCount: next,
+    bestStreak,
+    lastStreakPeriod: next === 0 ? null : previousPeriodKey(recurrence, currentKey),
   };
 }

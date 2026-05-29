@@ -28,6 +28,12 @@ import { trpc } from "@/lib/trpc";
 interface Props {
   listId: string;
   userId: string;
+  /** Intégré au dashboard unique (sans lien retour). */
+  embedded?: boolean;
+  /** Liste partagée affichée dans une section dédiée. */
+  shared?: boolean;
+  ownerLabel?: string;
+  sectionId?: string;
 }
 
 type FrequentShoppingItem = {
@@ -40,7 +46,14 @@ type FrequentShoppingItem = {
   lastUsedAt?: string | Date | null;
 };
 
-export function ShoppingListDetail({ listId, userId }: Props) {
+export function ShoppingListDetail({
+  listId,
+  userId,
+  embedded = false,
+  shared = false,
+  ownerLabel,
+  sectionId,
+}: Props) {
   const [title, setTitle] = useState("");
   const [quantityText, setQuantityText] = useState("");
   const [unit, setUnit] = useState<string | null>(null);
@@ -339,22 +352,44 @@ export function ShoppingListDetail({ listId, userId }: Props) {
     return <p className="text-sm text-gray-400">Chargement…</p>;
   }
 
-  return (
+  const inner = (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/dashboard/shopping"
-          className="text-sm text-gray-500 hover:text-gray-900"
-        >
-          ← Mes courses
-        </Link>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
+      {!embedded && (
+        <div>
+          <Link
+            href="/dashboard/shopping"
+            className="text-sm text-gray-500 hover:text-gray-900"
+          >
+            ← Courses
+          </Link>
+          <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{list.title}</h1>
+              {isShared && (
+                <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                  Partagée
+                </span>
+              )}
+              {!canWrite && (
+                <p className="mt-1 text-sm text-amber-700">Lecture seule (rôle invité)</p>
+              )}
+            </div>
+            {isOwner && <ShareShoppingListPanel listId={listId} list={list} />}
+          </div>
+        </div>
+      )}
+
+      {embedded && shared && (
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{list.title}</h1>
-            {isShared && (
-              <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-semibold text-gray-900">{list.title}</h3>
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">
                 Partagée
               </span>
+            </div>
+            {ownerLabel && (
+              <p className="mt-0.5 text-sm text-indigo-700/80">{ownerLabel}</p>
             )}
             {!canWrite && (
               <p className="mt-1 text-sm text-amber-700">Lecture seule (rôle invité)</p>
@@ -362,7 +397,7 @@ export function ShoppingListDetail({ listId, userId }: Props) {
           </div>
           {isOwner && <ShareShoppingListPanel listId={listId} list={list} />}
         </div>
-      </div>
+      )}
 
       {canWrite && frequentNotInList.length > 0 && (
         <section>
@@ -567,4 +602,17 @@ export function ShoppingListDetail({ listId, userId }: Props) {
       )}
     </div>
   );
+
+  if (embedded && shared) {
+    return (
+      <section
+        id={sectionId}
+        className="scroll-mt-8 rounded-xl border-2 border-indigo-200 bg-indigo-50/40 p-5"
+      >
+        {inner}
+      </section>
+    );
+  }
+
+  return inner;
 }

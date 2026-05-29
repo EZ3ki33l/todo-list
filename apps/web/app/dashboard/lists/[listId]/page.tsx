@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { prisma } from "@repo/db";
-import { deleteAction } from "@/app/actions/action";
 import { AddActionForm } from "@/components/add-action-form";
-import DayWeekView from "@/components/day-week-view";
+import { ActionListPanel } from "@/components/action-list-panel";
 import { EditableTitle } from "@/components/editable-title";
+import { TodoListShareHeader } from "@/components/todo-list-share-header";
+import { getOrCreatePersonalTodoList } from "@/lib/default-lists";
 
 export default async function ListPage({
   params,
@@ -17,57 +18,68 @@ export default async function ListPage({
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
+  const userId = session.user.id;
+  const personalTodo = await getOrCreatePersonalTodoList(userId);
+  if (listId === personalTodo.id) redirect("/dashboard");
+
   const list = await prisma.todoList.findUnique({
     where: { id: listId },
     include: {
       actions: { orderBy: { position: "asc" } },
-      members: { where: { userId: session.user.id } },
+      members: { where: { userId } },
+      _count: { select: { members: true } },
     },
   });
 
   if (!list) redirect("/dashboard");
 
-  const isOwner = list.ownerId === session.user.id;
+  const isOwner = list.ownerId === userId;
   const membership = list.members[0];
   if (!isOwner && !membership) redirect("/dashboard");
 
   const canWrite = isOwner || membership?.role === "membre";
+  const isShared = list._count.members > 0 || (!isOwner && !!membership);
   const total = list.actions.length;
   const done = list.actions.filter((a) => a.done).length;
 
   return (
     <>
-      {/* En-tête */}
-      <div className="mb-6 flex items-center gap-3">
-        <Link
-          href="/dashboard"
-          className="text-sm text-gray-400 hover:text-gray-700"
-        >
-          ← Mes listes
-        </Link>
-        <span className="text-gray-300">/</span>
-        {isOwner ? (
-          <EditableTitle
-            listId={list.id}
-            initialTitle={list.title}
-            className="text-2xl font-bold text-gray-900"
-          />
-        ) : (
-          <h1 className="text-2xl font-bold text-gray-900">{list.title}</h1>
-        )}
-        {total > 0 && (
-          <span className="ml-auto text-sm text-gray-400">
-            {done} / {total} fait{done > 1 ? "s" : ""}
-          </span>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <Link
+            href="/dashboard"
+            className="text-sm text-gray-500 hover:text-gray-900"
+          >
+            ← Tâches
+          </Link>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            {isOwner ? (
+              <EditableTitle
+                listId={list.id}
+                initialTitle={list.title}
+                className="text-2xl font-bold text-gray-900"
+              />
+            ) : (
+              <h1 className="text-2xl font-bold text-gray-900">{list.title}</h1>
+            )}
+            {total > 0 && (
+              <span className="text-sm text-gray-400">
+                {done} / {total} fait{done > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          {!canWrite && (
+            <p className="mt-1 text-sm text-amber-700">Lecture seule (rôle invité)</p>
+          )}
+        </div>
+        {isOwner && (
+          <TodoListShareHeader listId={list.id} isOwner isShared={isShared} />
         )}
       </div>
 
-      {/* Formulaire d'ajout */}
       {canWrite && <AddActionForm listId={list.id} />}
 
-      {/* Vue du jour / semaine filtrée sur cette liste */}
-      <DayWeekView userId={session.user.id} listId={list.id} canEdit={canWrite} />
-
+      <ActionListPanel listId={list.id} listTitle={list.title} canEdit={canWrite} />
     </>
   );
 }

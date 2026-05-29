@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { createAction } from "@/app/actions/action";
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function AddActionForm({ listId }: Props) {
+  const router = useRouter();
   const [recurrence, setRecurrence] = useState<"NONE" | "DAILY" | "WEEKLY">("NONE");
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -18,6 +20,7 @@ export function AddActionForm({ listId }: Props) {
     await createAction(formData);
     formRef.current?.reset();
     setRecurrence("NONE");
+    router.refresh();
   }
 
   return (

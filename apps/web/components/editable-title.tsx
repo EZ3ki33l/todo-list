@@ -10,14 +10,16 @@ interface Props {
   initialTitle: string;
   href?: string;
   className?: string;
+  readOnly?: boolean;
 }
 
-export function EditableTitle({ listId, initialTitle, href, className }: Props) {
+export function EditableTitle({ listId, initialTitle, href, className, readOnly }: Props) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(initialTitle);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function startEditing(e: React.MouseEvent) {
+    if (readOnly) return;
     e.preventDefault();
     setEditing(true);
     setTimeout(() => inputRef.current?.select(), 0);
@@ -64,8 +66,8 @@ export function EditableTitle({ listId, initialTitle, href, className }: Props) 
     return (
       <Link
         href={href}
-        onDoubleClick={startEditing}
-        title="Double-clic pour modifier"
+        onDoubleClick={readOnly ? undefined : startEditing}
+        title={readOnly ? undefined : "Double-clic pour modifier"}
         className={`${textClass} hover:underline underline-offset-2`}
       >
         {title}
@@ -75,9 +77,9 @@ export function EditableTitle({ listId, initialTitle, href, className }: Props) 
 
   return (
     <span
-      onDoubleClick={startEditing}
-      title="Double-clic pour modifier"
-      className={`cursor-text select-none ${textClass}`}
+      onDoubleClick={readOnly ? undefined : startEditing}
+      title={readOnly ? undefined : "Double-clic pour modifier"}
+      className={`${readOnly ? "" : "cursor-text select-none"} ${textClass}`}
     >
       {title}
     </span>

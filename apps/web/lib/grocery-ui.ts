@@ -26,7 +26,28 @@ const CATEGORY_ICONS: Record<GroceryCategory, string> = {
   AUTRE: "📦",
 };
 
+export const PICKABLE_CATEGORIES: GroceryCategory[] = [
+  "LEGUME",
+  "FRUIT",
+  "VIANDE",
+  "POISSON",
+  "BOULANGERIE",
+  "EPICERIE",
+  "LAITIER",
+  "BOISSON",
+  "HYGIENE",
+  "AUTRE",
+];
+
 export function itemIcon(category: GroceryCategory, icon?: string | null): string {
   if (icon) return icon;
   return CATEGORY_ICONS[category];
 }
+
+/** Unités ; `null` = aucune (facultatif). */
+export const SHOPPING_UNITS: { value: string | null; label: string }[] = [
+  { value: null, label: "—" },
+  { value: "kg", label: "kg" },
+  { value: "L", label: "L" },
+  { value: "pièce", label: "pièces" },
+];

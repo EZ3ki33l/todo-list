@@ -12,7 +12,7 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import DraggableFlatList, { type RenderItemParams } from "react-native-draggable-flatlist";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { applyListOrder } from "@/lib/reorder-list";
 import { trpc } from "@/lib/trpc";
@@ -66,6 +66,15 @@ function StreakBadge({ streakCount, bestStreak }: { streakCount: number; bestStr
 
 export default function ListDetailScreen() {
   const { listId } = useLocalSearchParams<{ listId: string }>();
+  const router = useRouter();
+
+  const { data: personalList } = trpc.lists.getOrCreatePersonal.useQuery();
+
+  useEffect(() => {
+    if (personalList && listId === personalList.id) {
+      router.replace("/(app)/");
+    }
+  }, [personalList, listId, router]);
 
   const [title, setTitle] = useState("");
   const [recurrence, setRecurrence] = useState<Recurrence>("NONE");

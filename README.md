@@ -74,6 +74,10 @@ pnpm --filter native dev
 | `pnpm --filter @repo/api typecheck` | Vérif TypeScript API |
 | `pnpm docker:build` | Test image Docker web en local |
 
+## Versions
+
+Historique détaillé des mises à jour : [CHANGELOG.md](CHANGELOG.md) (v0.1.0 → v1.0.0).
+
 ## Déploiement
 
 - **Serveur web (Debian + Docker)** : [deploy/todolist/README.md](deploy/todolist/README.md)

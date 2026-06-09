@@ -1,6 +1,9 @@
 # Build depuis la racine du monorepo (voir docker-compose.yml)
 FROM node:22-bookworm-slim AS base
-RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
+RUN apt-get update -y \
+  && apt-get install -y openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/* \
+  && corepack enable && corepack prepare pnpm@11.4.0 --activate
 WORKDIR /app
 
 FROM base AS deps
@@ -8,8 +11,11 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/api/package.json ./packages/api/
 COPY packages/db/package.json ./packages/db/
+COPY packages/db/prisma.config.ts ./packages/db/
+COPY packages/db/prisma ./packages/db/prisma/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
+ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?sslmode=require"
 RUN pnpm install --frozen-lockfile --filter web...
 
 FROM base AS builder
@@ -27,6 +33,9 @@ RUN pnpm --filter web run build
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
+RUN apt-get update -y \
+  && apt-get install -y openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000

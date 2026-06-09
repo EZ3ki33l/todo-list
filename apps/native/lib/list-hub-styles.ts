@@ -11,6 +11,11 @@ export const listHubStyles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   screenTitle: { fontSize: 24, fontWeight: "700", color: "#111827" },
   signOut: { fontSize: 13, color: "#6B7280" },
   section: { marginBottom: 20 },

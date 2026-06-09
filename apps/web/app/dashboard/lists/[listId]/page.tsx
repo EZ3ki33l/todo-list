@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { withEffectiveDone } from "@repo/api";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@repo/api/server";
 import { auth } from "@/auth";
 import { prisma } from "@repo/db";
 import { AddActionForm } from "@/components/add-action-form";
@@ -8,6 +11,8 @@ import { ActionListPanel } from "@/components/action-list-panel";
 import { EditableTitle } from "@/components/editable-title";
 import { TodoListShareHeader } from "@/components/todo-list-share-header";
 import { getOrCreatePersonalTodoList } from "@/lib/default-lists";
+
+type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 
 export default async function ListPage({
   params,
@@ -39,8 +44,10 @@ export default async function ListPage({
 
   const canWrite = isOwner || membership?.role === "membre";
   const isShared = list._count.members > 0 || (!isOwner && !!membership);
-  const total = list.actions.length;
-  const done = list.actions.filter((a) => a.done).length;
+  const now = new Date();
+  const initialActions = list.actions.map((a) => withEffectiveDone(a, now));
+  const total = initialActions.length;
+  const done = initialActions.filter((a) => a.done).length;
 
   return (
     <>
@@ -79,7 +86,12 @@ export default async function ListPage({
 
       {canWrite && <AddActionForm listId={list.id} />}
 
-      <ActionListPanel listId={list.id} listTitle={list.title} canEdit={canWrite} />
+      <ActionListPanel
+        listId={list.id}
+        listTitle={list.title}
+        canEdit={canWrite}
+        initialActions={initialActions as unknown as ActionRow[]}
+      />
     </>
   );
 }

@@ -2,6 +2,8 @@ import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
 import { getOrCreatePersonalTodoList, getSharedTodoLists } from "../lib/default-lists";
+import { notifyTodoListShared } from "../lib/todo-list-share-notify";
+import { findAccessibleTodoList } from "../lib/todo-list-access";
 import {
   createListInput,
   listIdInput,
@@ -13,29 +15,17 @@ import {
   updateListStatusInput,
 } from "../trpc";
 
+/** @deprecated Utiliser findAccessibleTodoList — conservé pour compat interne. */
 export async function assertListAccess(
   listId: string,
   userId: string,
   mode: "read" | "write" = "write",
 ) {
-  const list = await prisma.todoList.findUnique({
-    where: { id: listId },
-    include: { members: { where: { userId } } },
-  });
-  if (!list) throw new TRPCError({ code: "NOT_FOUND" });
-  const isOwner = list.ownerId === userId;
-  const member = list.members[0];
-  if (mode === "write" && !isOwner && member?.role !== "membre") {
-    throw new TRPCError({ code: "FORBIDDEN" });
-  }
-  if (mode === "read" && !isOwner && !member) {
-    throw new TRPCError({ code: "FORBIDDEN" });
-  }
-  return list;
+  return findAccessibleTodoList(listId, userId, mode);
 }
 
 async function assertOwner(listId: string, userId: string) {
-  const list = await assertListAccess(listId, userId);
+  const list = await findAccessibleTodoList(listId, userId, "write");
   if (list.ownerId !== userId) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Seul le propriétaire peut effectuer cette action" });
   }
@@ -68,9 +58,7 @@ export const listsRouter = router({
   getById: protectedProcedure
     .input(listIdInput)
     .query(async ({ ctx, input }) => {
-      await assertListAccess(input.listId, ctx.userId, "read");
-      return prisma.todoList.findUnique({
-        where: { id: input.listId },
+      return findAccessibleTodoList(input.listId, ctx.userId, "read", {
         include: {
           members: {
             include: { user: { select: { id: true, name: true, email: true, image: true } } },
@@ -124,11 +112,33 @@ export const listsRouter = router({
       });
       if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
       if (target.id === ctx.userId) throw new TRPCError({ code: "BAD_REQUEST", message: "Vous ne pouvez pas partager avec vous-même" });
-      return prisma.todoListMember.upsert({
+
+      const list = await prisma.todoList.findUnique({
+        where: { id: input.listId },
+        select: { title: true },
+      });
+      if (!list) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const member = await prisma.todoListMember.upsert({
         where: { listId_userId: { listId: input.listId, userId: target.id } },
         update: { role: input.role },
         create: { listId: input.listId, userId: target.id, role: input.role },
       });
+
+      const sharer = await prisma.user.findUnique({
+        where: { id: ctx.userId },
+        select: { name: true, email: true },
+      });
+
+      void notifyTodoListShared({
+        listId: input.listId,
+        listTitle: list.title,
+        targetUserId: target.id,
+        sharerUserId: ctx.userId,
+        sharerName: sharer?.name ?? sharer?.email ?? null,
+      }).catch((err) => console.error("[share] todo activity", err));
+
+      return member;
     }),
 
   unshare: protectedProcedure

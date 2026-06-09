@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AddActionForm } from "@/components/add-action-form";
@@ -62,13 +62,6 @@ export default function DashboardScreen() {
         list.id !== personalList?.id &&
         list.status === "ACTIVE",
     );
-
-  useFocusEffect(
-    useCallback(() => {
-      void utils.lists.getOrCreatePersonal.invalidate();
-      void utils.lists.getSharedTodos.invalidate();
-    }, [utils]),
-  );
 
   const createSharedList = trpc.lists.create.useMutation({
     onSuccess: () => {

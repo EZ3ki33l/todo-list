@@ -225,12 +225,15 @@ export function ShoppingListDetail({
     });
   }, [embedded, navigation, list?.title, isOwner]);
 
-  const refreshListData = async () => {
+  const invalidateItems = () => {
+    if (!listId) return;
+    void utils.shoppingItems.getByList.invalidate({ listId });
+  };
+
+  const refreshAfterCreate = async () => {
     if (!listId) return;
     await Promise.all([
       utils.shoppingItems.getByList.invalidate({ listId }),
-      utils.shoppingLists.getAll.invalidate(),
-      utils.shoppingLists.getById.invalidate({ listId }),
       utils.shoppingItems.getFrequent.invalidate(),
       utils.shoppingItems.getListCatalog.invalidate({ listId }),
     ]);
@@ -238,7 +241,7 @@ export function ShoppingListDetail({
 
   const createItem = trpc.shoppingItems.create.useMutation({
     onSuccess: async () => {
-      await refreshListData();
+      await refreshAfterCreate();
       setTitle("");
       setQuantityText("");
       setUnit(null);
@@ -249,21 +252,26 @@ export function ShoppingListDetail({
 
   const updateItem = trpc.shoppingItems.update.useMutation({
     onSuccess: async () => {
-      await refreshListData();
+      await refreshAfterCreate();
       setEditingId(null);
     },
   });
 
   const toggleItem = trpc.shoppingItems.toggle.useMutation({
-    onSuccess: refreshListData,
+    onSuccess: (updated) => {
+      if (!listId) return;
+      utils.shoppingItems.getByList.setData({ listId }, (old) =>
+        old?.map((item) => (item.id === updated.id ? { ...item, checked: updated.checked } : item)),
+      );
+    },
   });
 
   const deleteItem = trpc.shoppingItems.delete.useMutation({
-    onSuccess: refreshListData,
+    onSuccess: () => refreshAfterCreate(),
   });
 
   const clearChecked = trpc.shoppingItems.clearChecked.useMutation({
-    onSuccess: refreshListData,
+    onSuccess: () => invalidateItems(),
   });
 
   type ShoppingItemRow = NonNullable<typeof items>[number];

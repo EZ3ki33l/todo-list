@@ -19,7 +19,9 @@ focusManager.setEventListener((handleFocus) => {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: true,
+      staleTime: 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
     },
   },
 });

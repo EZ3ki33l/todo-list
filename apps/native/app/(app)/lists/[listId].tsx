@@ -105,8 +105,7 @@ export default function ListDetailScreen() {
 
   const createAction = trpc.actions.create.useMutation({
     onSuccess: () => {
-      utils.actions.invalidate();
-      utils.lists.getAll.invalidate();
+      void utils.actions.getByList.invalidate({ listId });
       setTitle("");
       setDueAt(null);
       setRecurrenceTime(null);
@@ -118,15 +117,14 @@ export default function ListDetailScreen() {
 
   const updateAction = trpc.actions.update.useMutation({
     onSuccess: () => {
-      utils.actions.invalidate();
+      void utils.actions.getByList.invalidate({ listId });
       setEditingId(null);
     },
   });
 
   const deleteAction = trpc.actions.delete.useMutation({
     onSuccess: () => {
-      utils.actions.invalidate();
-      utils.lists.getAll.invalidate();
+      void utils.actions.getByList.invalidate({ listId });
     },
   });
 

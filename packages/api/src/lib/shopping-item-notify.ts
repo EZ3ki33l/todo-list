@@ -1,5 +1,7 @@
 import { prisma } from "@repo/db";
 
+import { recordActivityEvents } from "./activity-events";
+import { filterRecipientsForNotificationType } from "./notification-preferences";
 import { sendExpoPush } from "./expo-push";
 
 /** Délai sans nouvel article avant envoi d'une notif groupée. */
@@ -67,8 +69,23 @@ export async function sendAggregatedShoppingNotification(params: {
     body = `${actorName} a ajouté ${params.itemCount} articles`;
   }
 
+  await recordActivityEvents({
+    recipientIds: targets.recipientIds,
+    actorUserId: params.actorUserId,
+    type: "SHOPPING_ITEMS_ADDED",
+    listKind: "SHOPPING",
+    listId: params.listId,
+    listTitle: targets.listTitle,
+    title: targets.listTitle,
+    body,
+  });
+
+  const pushRecipientIds = await filterRecipientsForNotificationType(
+    targets.recipientIds,
+    "SHOPPING_ITEMS_ADDED",
+  );
   const pushTokens = await prisma.pushToken.findMany({
-    where: { userId: { in: targets.recipientIds } },
+    where: { userId: { in: pushRecipientIds } },
     select: { token: true },
   });
   if (pushTokens.length === 0) return;

@@ -1,5 +1,3 @@
-import { TRPCError } from "@trpc/server";
-
 import { prisma } from "@repo/db";
 import { assertOrderedIdsMatch } from "../lib/reorder-positions";
 import { getShoppingListCatalog } from "../lib/shopping-list-catalog";
@@ -17,21 +15,10 @@ import {
   shoppingItemInputSchema,
   z,
 } from "../trpc";
-import { assertShoppingListAccess } from "./shoppingLists";
-
-async function assertShoppingItemAccess(itemId: string, userId: string) {
-  const item = await prisma.shoppingItem.findUnique({
-    where: { id: itemId },
-    include: { list: { include: { members: { where: { userId } } } } },
-  });
-  if (!item) throw new TRPCError({ code: "NOT_FOUND" });
-  const isOwner = item.list.ownerId === userId;
-  const member = item.list.members[0];
-  if (!isOwner && member?.role !== "membre") {
-    throw new TRPCError({ code: "FORBIDDEN" });
-  }
-  return item;
-}
+import {
+  findAccessibleShoppingItem,
+  findAccessibleShoppingList,
+} from "../lib/shopping-list-access";
 
 export const shoppingItemsRouter = router({
   /** Articles ajoutés souvent par l'utilisateur (toutes listes confondues). */
@@ -58,31 +45,26 @@ export const shoppingItemsRouter = router({
         }),
     )
     .query(async ({ ctx, input }) => {
-      await assertShoppingListAccess(input.listId, ctx.userId, "read");
-      const list = await prisma.shoppingList.findUnique({
-        where: { id: input.listId },
-        select: { ownerId: true, members: { select: { userId: true } } },
+      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "read", {
+        select: { members: { select: { userId: true } } },
       });
-      if (!list) throw new TRPCError({ code: "NOT_FOUND" });
-      const isShared = list.members.length > 0;
-      if (!isShared) return [];
+      if (list.members.length === 0) return [];
       return getShoppingListCatalog(input.listId, input.limit);
     }),
 
   getByList: protectedProcedure
     .input(listIdInput)
     .query(async ({ ctx, input }) => {
-      await assertShoppingListAccess(input.listId, ctx.userId, "read");
-      return prisma.shoppingItem.findMany({
-        where: { listId: input.listId },
-        orderBy: [{ checked: "asc" }, { position: "asc" }],
+      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "read", {
+        include: { items: { orderBy: [{ checked: "asc" }, { position: "asc" }] } },
       });
+      return list.items;
     }),
 
   create: protectedProcedure
     .input(shoppingItemInputSchema.extend({ listId: listIdInput.shape.listId }))
     .mutation(async ({ ctx, input }) => {
-      await assertShoppingListAccess(input.listId, ctx.userId);
+      await findAccessibleShoppingList(input.listId, ctx.userId, "write", { select: { id: true } });
       const last = await prisma.shoppingItem.findFirst({
         where: { listId: input.listId },
         orderBy: { position: "desc" },
@@ -125,7 +107,7 @@ export const shoppingItemsRouter = router({
   update: protectedProcedure
     .input(shoppingItemInputSchema.extend({ itemId: itemIdInput.shape.itemId }))
     .mutation(async ({ ctx, input }) => {
-      await assertShoppingItemAccess(input.itemId, ctx.userId);
+      await findAccessibleShoppingItem(input.itemId, ctx.userId, { select: { id: true } });
       const updated = await prisma.shoppingItem.update({
         where: { id: input.itemId },
         data: {
@@ -154,7 +136,7 @@ export const shoppingItemsRouter = router({
   toggle: protectedProcedure
     .input(itemIdInput)
     .mutation(async ({ ctx, input }) => {
-      const item = await assertShoppingItemAccess(input.itemId, ctx.userId);
+      const item = await findAccessibleShoppingItem(input.itemId, ctx.userId);
       return prisma.shoppingItem.update({
         where: { id: input.itemId },
         data: { checked: !item.checked },
@@ -164,14 +146,14 @@ export const shoppingItemsRouter = router({
   delete: protectedProcedure
     .input(itemIdInput)
     .mutation(async ({ ctx, input }) => {
-      await assertShoppingItemAccess(input.itemId, ctx.userId);
+      await findAccessibleShoppingItem(input.itemId, ctx.userId, { select: { id: true } });
       await prisma.shoppingItem.delete({ where: { id: input.itemId } });
     }),
 
   clearChecked: protectedProcedure
     .input(listIdInput)
     .mutation(async ({ ctx, input }) => {
-      await assertShoppingListAccess(input.listId, ctx.userId);
+      await findAccessibleShoppingList(input.listId, ctx.userId, "write", { select: { id: true } });
       const result = await prisma.shoppingItem.deleteMany({
         where: { listId: input.listId, checked: true },
       });
@@ -181,7 +163,7 @@ export const shoppingItemsRouter = router({
   reorder: protectedProcedure
     .input(reorderInput)
     .mutation(async ({ ctx, input }) => {
-      await assertShoppingListAccess(input.listId, ctx.userId);
+      await findAccessibleShoppingList(input.listId, ctx.userId, "write", { select: { id: true } });
       const existing = await prisma.shoppingItem.findMany({
         where: { listId: input.listId },
         select: { id: true },

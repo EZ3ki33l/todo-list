@@ -10,10 +10,11 @@ import {
   getOrCreatePersonalTodoList,
   getSharedTodoLists,
 } from "@/lib/default-lists";
-import { progressLabel, todoListProgress } from "@/lib/list-progress";
+import { progressByListIdFromActions } from "@/lib/batch-list-stats";
+import { progressLabel } from "@/lib/list-progress";
 import { prisma } from "@repo/db";
 import type { inferRouterOutputs } from "@trpc/server";
-import type { AppRouter } from "@repo/api";
+import type { AppRouter } from "@repo/api/server";
 
 type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 
@@ -47,22 +48,22 @@ export default async function DashboardPage() {
     })
   ).map((action) => withEffectiveDone(action, now));
 
-  const sharedProgress = await Promise.all(
-    sharedTodos.map(async (list) => {
-      const actions = await prisma.action.findMany({
-        where: { listId: list.id },
-        select: {
-          done: true,
-          doneAt: true,
-          recurrence: true,
-          recurrenceDow: true,
-          updatedAt: true,
-        },
-      });
-      return { listId: list.id, progress: todoListProgress(actions) };
-    }),
-  );
-  const progressByListId = new Map(sharedProgress.map((p) => [p.listId, p.progress]));
+  const sharedListIds = sharedTodos.map((l) => l.id);
+  const sharedActionRows =
+    sharedListIds.length > 0
+      ? await prisma.action.findMany({
+          where: { listId: { in: sharedListIds } },
+          select: {
+            listId: true,
+            done: true,
+            doneAt: true,
+            recurrence: true,
+            recurrenceDow: true,
+            updatedAt: true,
+          },
+        })
+      : [];
+  const progressByListId = progressByListIdFromActions(sharedListIds, sharedActionRows);
 
   return (
     <div className="space-y-10">

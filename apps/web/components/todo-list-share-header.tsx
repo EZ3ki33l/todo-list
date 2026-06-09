@@ -2,7 +2,7 @@
 
 import type { inferRouterOutputs } from "@trpc/server";
 
-import type { AppRouter } from "@repo/api";
+import type { AppRouter } from "@repo/api/server";
 import { ShareTodoListPanel } from "@/components/share-todo-list-panel";
 import { trpc } from "@/lib/trpc";
 

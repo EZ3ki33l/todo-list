@@ -6,6 +6,7 @@ import {
   getSharedShoppingLists,
 } from "../lib/default-lists";
 import { notifyShoppingListShared } from "../lib/shopping-list-share-notify";
+import { findAccessibleShoppingList } from "../lib/shopping-list-access";
 import {
   createListInput,
   listIdInput,
@@ -22,20 +23,7 @@ export async function assertShoppingListAccess(
   userId: string,
   mode: "read" | "write" = "write",
 ) {
-  const list = await prisma.shoppingList.findUnique({
-    where: { id: listId },
-    include: { members: { where: { userId } } },
-  });
-  if (!list) throw new TRPCError({ code: "NOT_FOUND" });
-  const isOwner = list.ownerId === userId;
-  const member = list.members[0];
-  if (mode === "write" && !isOwner && member?.role !== "membre") {
-    throw new TRPCError({ code: "FORBIDDEN" });
-  }
-  if (mode === "read" && !isOwner && !member) {
-    throw new TRPCError({ code: "FORBIDDEN" });
-  }
-  return list;
+  return findAccessibleShoppingList(listId, userId, mode);
 }
 
 export const shoppingListsRouter = router({
@@ -64,9 +52,7 @@ export const shoppingListsRouter = router({
   getById: protectedProcedure
     .input(listIdInput)
     .query(async ({ ctx, input }) => {
-      await assertShoppingListAccess(input.listId, ctx.userId, "read");
-      return prisma.shoppingList.findUnique({
-        where: { id: input.listId },
+      return findAccessibleShoppingList(input.listId, ctx.userId, "read", {
         include: {
           members: { include: { user: { select: { id: true, name: true, email: true, image: true } } } },
           owner: { select: { id: true, name: true, email: true, image: true } },
@@ -85,7 +71,7 @@ export const shoppingListsRouter = router({
   rename: protectedProcedure
     .input(renameListInput)
     .mutation(async ({ ctx, input }) => {
-      await assertShoppingListAccess(input.listId, ctx.userId);
+      await findAccessibleShoppingList(input.listId, ctx.userId, "write", { select: { id: true } });
       return prisma.shoppingList.update({
         where: { id: input.listId },
         data: { title: input.title },
@@ -95,8 +81,7 @@ export const shoppingListsRouter = router({
   updateStatus: protectedProcedure
     .input(updateListStatusInput)
     .mutation(async ({ ctx, input }) => {
-      // Seul le propriétaire peut archiver/terminer
-      const list = await assertShoppingListAccess(input.listId, ctx.userId);
+      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "write");
       if (list.ownerId !== ctx.userId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Seul le propriétaire peut changer le statut" });
       }
@@ -109,7 +94,7 @@ export const shoppingListsRouter = router({
   delete: protectedProcedure
     .input(listIdInput)
     .mutation(async ({ ctx, input }) => {
-      const list = await assertShoppingListAccess(input.listId, ctx.userId);
+      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "write");
       if (list.ownerId !== ctx.userId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Seul le propriétaire peut supprimer la liste" });
       }
@@ -119,7 +104,7 @@ export const shoppingListsRouter = router({
   share: protectedProcedure
     .input(shareListInput)
     .mutation(async ({ ctx, input }) => {
-      const list = await assertShoppingListAccess(input.listId, ctx.userId);
+      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "write");
       if (list.ownerId !== ctx.userId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Seul le propriétaire peut partager la liste" });
       }
@@ -147,6 +132,7 @@ export const shoppingListsRouter = router({
         listId: input.listId,
         listTitle: list.title,
         targetUserId: target.id,
+        sharerUserId: ctx.userId,
         sharerName: sharer?.name ?? sharer?.email ?? null,
       }).catch((err) => console.error("[share] push notify", err));
 
@@ -156,7 +142,7 @@ export const shoppingListsRouter = router({
   unshare: protectedProcedure
     .input(unshareListInput)
     .mutation(async ({ ctx, input }) => {
-      const list = await assertShoppingListAccess(input.listId, ctx.userId);
+      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "write");
       if (list.ownerId !== ctx.userId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Seul le propriétaire peut retirer un membre" });
       }

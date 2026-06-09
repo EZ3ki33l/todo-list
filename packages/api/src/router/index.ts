@@ -5,6 +5,7 @@ import { actionsRouter } from "./actions";
 import { shoppingListsRouter } from "./shoppingLists";
 import { shoppingItemsRouter } from "./shoppingItems";
 import { notificationsRouter } from "./notifications";
+import { activityRouter } from "./activity";
 
 export const appRouter = router({
   auth: authRouter,
@@ -13,6 +14,7 @@ export const appRouter = router({
   shoppingLists: shoppingListsRouter,
   shoppingItems: shoppingItemsRouter,
   notifications: notificationsRouter,
+  activity: activityRouter,
 });
 
 export type AppRouter = typeof appRouter;

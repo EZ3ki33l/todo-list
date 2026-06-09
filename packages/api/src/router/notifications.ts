@@ -1,5 +1,5 @@
 import { prisma } from "@repo/db";
-import { protectedProcedure, router, z } from "../trpc";
+import { protectedProcedure, registerPushInput, router } from "../trpc";
 
 export const notificationsRouter = router({
   /** True si l'utilisateur a activé les notifs (token enregistré). */
@@ -9,12 +9,7 @@ export const notificationsRouter = router({
   }),
 
   registerPushToken: protectedProcedure
-    .input(
-      z.object({
-        token: z.string().min(1),
-        platform: z.enum(["android", "ios", "web"]).optional(),
-      }),
-    )
+    .input(registerPushInput)
     .mutation(async ({ ctx, input }) => {
       return prisma.pushToken.upsert({
         where: { token: input.token },
@@ -31,7 +26,7 @@ export const notificationsRouter = router({
     }),
 
   unregisterPushToken: protectedProcedure
-    .input(z.object({ token: z.string().min(1) }))
+    .input(registerPushInput.pick({ token: true }))
     .mutation(async ({ ctx, input }) => {
       await prisma.pushToken.deleteMany({
         where: { token: input.token, userId: ctx.userId },

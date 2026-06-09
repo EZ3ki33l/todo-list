@@ -1,8 +1,21 @@
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
+import {
+  getOrCreatePersonalShoppingList,
+  getSharedShoppingLists,
+} from "../lib/default-lists";
 import { notifyShoppingListShared } from "../lib/shopping-list-share-notify";
-import { protectedProcedure, router, z } from "../trpc";
+import {
+  createListInput,
+  listIdInput,
+  protectedProcedure,
+  renameListInput,
+  router,
+  shareListInput,
+  unshareListInput,
+  updateListStatusInput,
+} from "../trpc";
 
 export async function assertShoppingListAccess(
   listId: string,
@@ -26,6 +39,15 @@ export async function assertShoppingListAccess(
 }
 
 export const shoppingListsRouter = router({
+  getOrCreatePersonal: protectedProcedure.query(async ({ ctx }) => {
+    return getOrCreatePersonalShoppingList(ctx.userId);
+  }),
+
+  getSharedShopping: protectedProcedure.query(async ({ ctx }) => {
+    const personal = await getOrCreatePersonalShoppingList(ctx.userId);
+    return getSharedShoppingLists(ctx.userId, personal.id);
+  }),
+
   getAll: protectedProcedure.query(async ({ ctx }) => {
     return prisma.shoppingList.findMany({
       where: {
@@ -40,7 +62,7 @@ export const shoppingListsRouter = router({
   }),
 
   getById: protectedProcedure
-    .input(z.object({ listId: z.string() }))
+    .input(listIdInput)
     .query(async ({ ctx, input }) => {
       await assertShoppingListAccess(input.listId, ctx.userId, "read");
       return prisma.shoppingList.findUnique({
@@ -53,7 +75,7 @@ export const shoppingListsRouter = router({
     }),
 
   create: protectedProcedure
-    .input(z.object({ title: z.string().min(1) }))
+    .input(createListInput)
     .mutation(async ({ ctx, input }) => {
       return prisma.shoppingList.create({
         data: { title: input.title, ownerId: ctx.userId },
@@ -61,7 +83,7 @@ export const shoppingListsRouter = router({
     }),
 
   rename: protectedProcedure
-    .input(z.object({ listId: z.string(), title: z.string().min(1) }))
+    .input(renameListInput)
     .mutation(async ({ ctx, input }) => {
       await assertShoppingListAccess(input.listId, ctx.userId);
       return prisma.shoppingList.update({
@@ -71,7 +93,7 @@ export const shoppingListsRouter = router({
     }),
 
   updateStatus: protectedProcedure
-    .input(z.object({ listId: z.string(), status: z.enum(["ACTIVE", "ARCHIVED", "DONE"]) }))
+    .input(updateListStatusInput)
     .mutation(async ({ ctx, input }) => {
       // Seul le propriétaire peut archiver/terminer
       const list = await assertShoppingListAccess(input.listId, ctx.userId);
@@ -85,7 +107,7 @@ export const shoppingListsRouter = router({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ listId: z.string() }))
+    .input(listIdInput)
     .mutation(async ({ ctx, input }) => {
       const list = await assertShoppingListAccess(input.listId, ctx.userId);
       if (list.ownerId !== ctx.userId) {
@@ -95,11 +117,7 @@ export const shoppingListsRouter = router({
     }),
 
   share: protectedProcedure
-    .input(z.object({
-      listId: z.string(),
-      emailOrId: z.string().min(1),
-      role: z.enum(["membre", "invité"]),
-    }))
+    .input(shareListInput)
     .mutation(async ({ ctx, input }) => {
       const list = await assertShoppingListAccess(input.listId, ctx.userId);
       if (list.ownerId !== ctx.userId) {
@@ -136,7 +154,7 @@ export const shoppingListsRouter = router({
     }),
 
   unshare: protectedProcedure
-    .input(z.object({ listId: z.string(), userId: z.string() }))
+    .input(unshareListInput)
     .mutation(async ({ ctx, input }) => {
       const list = await assertShoppingListAccess(input.listId, ctx.userId);
       if (list.ownerId !== ctx.userId) {

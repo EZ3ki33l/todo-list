@@ -5,13 +5,25 @@ import Link from "next/link";
 
 import { deleteAction, updateAction } from "@/app/actions/action";
 import { ActionToggleButton } from "@/components/action-toggle-button";
-import type { Action } from "@repo/db";
 
-type ActionWithList = Action & { list: { id: string; title: string } };
+export type ActionItemData = {
+  id: string;
+  title: string;
+  done: boolean;
+  recurrence: string;
+  recurrenceTime: string | null;
+  recurrenceDow: number | null;
+  dueAt: Date | string | null;
+  streakCount: number;
+  bestStreak: number;
+  list: { id: string; title: string };
+};
+
+type ActionWithList = ActionItemData;
 
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
-function toDateInputValue(date: Date | null) {
+function toDateInputValue(date: Date | string | null) {
   if (!date) return "";
   return new Date(date).toISOString().slice(0, 10);
 }
@@ -20,15 +32,29 @@ interface Props {
   action: ActionWithList;
   canEdit?: boolean;
   showListLink?: boolean;
+  onChanged?: () => void;
+  /** Dans ActionListPanel : évite un `<li>` dans un `<li>`. */
+  embedded?: boolean;
+  /** Masque le jour dans le badge hebdo (quand le jour est affiché dans un en-tête). */
+  hideDayTag?: boolean;
 }
 
-function EditForm({ action, onClose }: { action: ActionWithList; onClose: () => void }) {
+function EditForm({
+  action,
+  onClose,
+  onChanged,
+}: {
+  action: ActionWithList;
+  onClose: () => void;
+  onChanged?: () => void;
+}) {
   const [recurrence, setRecurrence] = useState<"NONE" | "DAILY" | "WEEKLY">(
     action.recurrence as "NONE" | "DAILY" | "WEEKLY",
   );
 
   async function handleSubmit(formData: FormData) {
     await updateAction(formData);
+    onChanged?.();
     onClose();
   }
 
@@ -141,7 +167,14 @@ function EditForm({ action, onClose }: { action: ActionWithList; onClose: () => 
   );
 }
 
-export function ActionItem({ action, canEdit = false, showListLink = true }: Props) {
+export function ActionItem({
+  action,
+  canEdit = false,
+  showListLink = true,
+  onChanged,
+  embedded = false,
+  hideDayTag = false,
+}: Props) {
   const [editing, setEditing] = useState(false);
 
   const time = action.recurrenceTime
@@ -150,14 +183,16 @@ export function ActionItem({ action, canEdit = false, showListLink = true }: Pro
       ? new Date(action.dueAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
       : null;
 
-  return (
-    <li className="rounded-lg border border-gray-100 bg-white px-3 py-2.5 shadow-sm">
+  const className = "rounded-lg border border-gray-100 bg-white px-3 py-2.5 shadow-sm";
+
+  const content = (
+    <>
       {editing ? (
-        <EditForm action={action} onClose={() => setEditing(false)} />
+        <EditForm action={action} onClose={() => setEditing(false)} onChanged={onChanged} />
       ) : (
         <div className="flex items-start gap-3">
           {/* Checkbox */}
-          <ActionToggleButton actionId={action.id} done={action.done} />
+          <ActionToggleButton actionId={action.id} done={action.done} onChanged={onChanged} />
 
           {/* Titre + méta */}
           <div className="min-w-0 flex-1">
@@ -174,10 +209,13 @@ export function ActionItem({ action, canEdit = false, showListLink = true }: Pro
               {action.recurrence === "DAILY" && (
                 <span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-600">quotidien</span>
               )}
-              {action.recurrence === "WEEKLY" && (
+              {action.recurrence === "WEEKLY" && !hideDayTag && (
                 <span className="rounded bg-purple-50 px-1.5 py-0.5 text-xs text-purple-600">
                   hebdo · {action.recurrenceDow !== null ? DOW_LABELS[action.recurrenceDow!] : ""}
                 </span>
+              )}
+              {action.recurrence === "WEEKLY" && hideDayTag && (
+                <span className="rounded bg-purple-50 px-1.5 py-0.5 text-xs text-purple-600">hebdo</span>
               )}
               {action.recurrence !== "NONE" && action.streakCount > 0 && (
                 <span className="rounded bg-orange-50 px-1.5 py-0.5 text-xs text-orange-600">
@@ -201,21 +239,29 @@ export function ActionItem({ action, canEdit = false, showListLink = true }: Pro
                   <path d="M12.854 0.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3ZM9.793 2.5 1.5 10.793V14.5h3.707l8.293-8.293L9.793 2.5ZM1 15a.5.5 0 0 1 0-1h14a.5.5 0 0 1 0 1H1Z"/>
                 </svg>
               </button>
-              <form action={deleteAction.bind(null, action.id)}>
-                <button
-                  type="submit"
-                  aria-label="Supprimer"
-                  className="rounded p-1 text-gray-300 hover:text-red-500 transition-colors"
-                >
+              <button
+                type="button"
+                onClick={async () => {
+                  await deleteAction(action.id);
+                  onChanged?.();
+                }}
+                aria-label="Supprimer"
+                className="rounded p-1 text-gray-300 hover:text-red-500 transition-colors"
+              >
                   <svg viewBox="0 0 16 16" className="size-4" fill="currentColor">
                     <path d="M6.5 1h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1 0-1ZM3 4h10l-.867 9.143A1.5 1.5 0 0 1 10.637 14H5.363a1.5 1.5 0 0 1-1.496-1.357L3 4Zm2.5 2a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 1 0v-5a.5.5 0 0 0-.5-.5Zm3 0a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 1 0v-5a.5.5 0 0 0-.5-.5Z" />
                   </svg>
-                </button>
-              </form>
+              </button>
             </div>
           )}
         </div>
       )}
-    </li>
+    </>
   );
+
+  if (embedded) {
+    return <div className={className}>{content}</div>;
+  }
+
+  return <li className={className}>{content}</li>;
 }

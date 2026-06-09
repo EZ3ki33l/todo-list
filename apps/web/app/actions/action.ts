@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
-import { performActionToggle } from "@repo/api";
+import {
+  formatZodFormError,
+  parseActionId,
+  parseCreateActionForm,
+  parseTitle,
+  parseUpdateActionForm,
+  performActionToggle,
+} from "@repo/api";
 import { prisma } from "@repo/db";
 
 async function requireListAccess(listId: string, mode: "read" | "write" = "write") {
@@ -57,106 +64,106 @@ async function requireActionAccess(actionId: string, mode: "read" | "write" = "w
 }
 
 export async function createAction(formData: FormData) {
-  const listId = formData.get("listId") as string;
-  const title = (formData.get("title") as string)?.trim();
-  if (!title) throw new Error("Le titre est requis");
+  try {
+    const input = parseCreateActionForm(formData);
+    await requireListAccess(input.listId, "write");
 
-  await requireListAccess(listId, "write");
+    const last = await prisma.action.findFirst({
+      where: { listId: input.listId },
+      orderBy: { position: "desc" },
+      select: { position: true },
+    });
 
-  const recurrence = (formData.get("recurrence") as string | null) ?? "NONE";
-  const recurrenceTime = (formData.get("recurrenceTime") as string | null) ?? null;
-  const dueAtRaw = formData.get("dueAt") as string | null;
-  const recurrenceDowRaw = formData.get("recurrenceDow") as string | null;
+    await prisma.action.create({
+      data: {
+        listId: input.listId,
+        title: input.title,
+        position: (last?.position ?? -1) + 1,
+        recurrence: input.recurrence,
+        recurrenceTime: input.recurrence !== "NONE" ? input.recurrenceTime : null,
+        recurrenceDow: input.recurrence === "WEEKLY" ? input.recurrenceDow : null,
+        dueAt: input.recurrence === "NONE" && input.dueAt ? new Date(input.dueAt) : null,
+      },
+    });
 
-  const last = await prisma.action.findFirst({
-    where: { listId },
-    orderBy: { position: "desc" },
-    select: { position: true },
-  });
-
-  await prisma.action.create({
-    data: {
-      listId,
-      title,
-      position: (last?.position ?? -1) + 1,
-      recurrence: recurrence as "NONE" | "DAILY" | "WEEKLY",
-      recurrenceTime: recurrence !== "NONE" ? recurrenceTime : null,
-      recurrenceDow: recurrence === "WEEKLY" && recurrenceDowRaw
-        ? parseInt(recurrenceDowRaw, 10)
-        : null,
-      dueAt: recurrence === "NONE" && dueAtRaw ? new Date(dueAtRaw) : null,
-    },
-  });
-
-  revalidatePath(`/dashboard/lists/${listId}`);
-  revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/lists/${input.listId}`);
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function toggleAction(actionId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Non authentifié");
 
-  const result = await performActionToggle(actionId, session.user.id);
+  try {
+    const id = parseActionId(actionId);
+    const result = await performActionToggle(id, session.user.id);
 
-  revalidatePath(`/dashboard/lists/${result.listId}`);
-  revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/lists/${result.listId}`);
+    revalidatePath("/dashboard");
 
-  return {
-    listDayComplete: result.listDayComplete,
-    listClosed: result.listClosed,
-  };
+    return {
+      listDayComplete: result.listDayComplete,
+      listClosed: result.listClosed,
+    };
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function deleteAction(actionId: string) {
-  const { action } = await requireActionAccess(actionId, "write");
+  try {
+    const id = parseActionId(actionId);
+    const { action } = await requireActionAccess(id, "write");
 
-  await prisma.action.delete({ where: { id: actionId } });
+    await prisma.action.delete({ where: { id } });
 
-  revalidatePath(`/dashboard/lists/${action.listId}`);
-  revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/lists/${action.listId}`);
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function renameAction(actionId: string, title: string) {
-  const trimmed = title.trim();
-  if (!trimmed) throw new Error("Le titre ne peut pas être vide");
+  try {
+    const id = parseActionId(actionId);
+    const trimmed = parseTitle(title);
+    const { action } = await requireActionAccess(id, "write");
 
-  const { action } = await requireActionAccess(actionId, "write");
+    await prisma.action.update({
+      where: { id },
+      data: { title: trimmed },
+    });
 
-  await prisma.action.update({
-    where: { id: actionId },
-    data: { title: trimmed },
-  });
-
-  revalidatePath(`/dashboard/lists/${action.listId}`);
-  revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/lists/${action.listId}`);
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function updateAction(formData: FormData) {
-  const actionId = formData.get("actionId") as string;
-  const title = (formData.get("title") as string)?.trim();
-  if (!title) throw new Error("Le titre est requis");
+  try {
+    const input = parseUpdateActionForm(formData);
+    const { action } = await requireActionAccess(input.actionId, "write");
 
-  const { action } = await requireActionAccess(actionId, "write");
+    await prisma.action.update({
+      where: { id: input.actionId },
+      data: {
+        title: input.title,
+        recurrence: input.recurrence,
+        recurrenceTime: input.recurrence !== "NONE" ? input.recurrenceTime : null,
+        recurrenceDow: input.recurrence === "WEEKLY" ? input.recurrenceDow : null,
+        dueAt: input.recurrence === "NONE" && input.dueAt ? new Date(input.dueAt) : null,
+      },
+    });
 
-  const recurrence = (formData.get("recurrence") as string | null) ?? "NONE";
-  const recurrenceTime = (formData.get("recurrenceTime") as string | null) ?? null;
-  const dueAtRaw = formData.get("dueAt") as string | null;
-  const recurrenceDowRaw = formData.get("recurrenceDow") as string | null;
-
-  await prisma.action.update({
-    where: { id: actionId },
-    data: {
-      title,
-      recurrence: recurrence as "NONE" | "DAILY" | "WEEKLY",
-      recurrenceTime: recurrence !== "NONE" ? recurrenceTime : null,
-      recurrenceDow:
-        recurrence === "WEEKLY" && recurrenceDowRaw
-          ? parseInt(recurrenceDowRaw, 10)
-          : null,
-      dueAt: recurrence === "NONE" && dueAtRaw ? new Date(dueAtRaw) : null,
-    },
-  });
-
-  revalidatePath(`/dashboard/lists/${action.listId}`);
-  revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/lists/${action.listId}`);
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }

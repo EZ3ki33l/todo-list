@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { CategoryChips } from "@/components/category-chips";
 import { ShareShoppingListPanel } from "@/components/share-shopping-list-panel";
+import {
+  ShoppingItemRow,
+  type ShoppingItemRowData,
+} from "@/components/shopping-item-row";
 import { TitleSuggestionList } from "@/components/title-suggestion-list";
+import { UnitPicker } from "@/components/unit-picker";
 import {
   detectCategory,
   getTitleSuggestions,
@@ -14,28 +20,73 @@ import {
   type SuggestionHistoryEntry,
   type TitleSuggestion,
 } from "@/lib/grocery-detect";
+import { CATEGORY_LABELS, itemIcon } from "@/lib/grocery-ui";
+import { applyListOrder } from "@/lib/reorder-list";
+import { parseQuantity } from "@/lib/shopping-quantity";
 import { trpc } from "@/lib/trpc";
 
 interface Props {
   listId: string;
   userId: string;
+  /** Intégré au dashboard unique (sans lien retour). */
+  embedded?: boolean;
+  /** Liste partagée affichée dans une section dédiée. */
+  shared?: boolean;
+  ownerLabel?: string;
+  sectionId?: string;
 }
 
-export function ShoppingListDetail({ listId, userId }: Props) {
+type FrequentShoppingItem = {
+  title: string;
+  titleNorm: string;
+  category: GroceryCategory;
+  quantity: number | null;
+  unit: string | null;
+  useCount: number;
+  lastUsedAt?: string | Date | null;
+};
+
+export function ShoppingListDetail({
+  listId,
+  userId,
+  embedded = false,
+  shared = false,
+  ownerLabel,
+  sectionId,
+}: Props) {
   const [title, setTitle] = useState("");
-  const [pickedCategory, setPickedCategory] = useState<GroceryCategory | null>(null);
+  const [quantityText, setQuantityText] = useState("");
+  const [unit, setUnit] = useState<string | null>(null);
+  const [manualCategory, setManualCategory] = useState<GroceryCategory>("AUTRE");
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editQuantityText, setEditQuantityText] = useState("");
+  const [editUnit, setEditUnit] = useState<string | null>(null);
+  const [editCategory, setEditCategory] = useState<GroceryCategory>("AUTRE");
+  const [editShowCategory, setEditShowCategory] = useState(false);
+
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [uncheckedOverride, setUncheckedOverride] = useState<ShoppingItemRowData[] | null>(
+    null,
+  );
+
   const utils = trpc.useUtils();
 
   const { data: list } = trpc.shoppingLists.getById.useQuery({ listId });
   const { data: items, isLoading } = trpc.shoppingItems.getByList.useQuery({ listId });
 
   const isOwner = list?.ownerId === userId;
-  const isShared = (list?.members.length ?? 0) > 0;
+  const isShared =
+    (list?.members.length ?? 0) > 0 ||
+    (!!userId && !isOwner && !!list?.members.some((m) => m.userId === userId));
   const myMember = list?.members.find((m) => m.userId === userId);
   const canWrite = isOwner || myMember?.role === "membre";
 
   const { data: frequentItems } = trpc.shoppingItems.getFrequent.useQuery(
-    undefined,
+    { limit: 24, minUseCount: 1 },
     { enabled: canWrite },
   );
   const { data: listCatalog } = trpc.shoppingItems.getListCatalog.useQuery(
@@ -91,6 +142,17 @@ export function ShoppingListDetail({ listId, userId }: Props) {
     return out;
   }, [frequentItems, listCatalog, isShared]);
 
+  const detectedCategory = useMemo(
+    () => detectCategory(title, itemMemory),
+    [title, itemMemory],
+  );
+  const resolvedCategory = detectedCategory ?? manualCategory;
+  const needsCategoryPicker = !detectedCategory && title.trim().length > 0;
+
+  useEffect(() => {
+    setShowCategoryPicker(needsCategoryPicker);
+  }, [needsCategoryPicker]);
+
   const titleSuggestions = useMemo(() => {
     if (!canWrite || title.trim().length < 1) return [];
     const norm = normalizeItemTitle(title);
@@ -98,6 +160,51 @@ export function ShoppingListDetail({ listId, userId }: Props) {
       (s) => normalizeItemTitle(s.title) !== norm,
     );
   }, [canWrite, title, suggestionHistory]);
+
+  const editTitleSuggestions = useMemo(() => {
+    if (!editingId || editTitle.trim().length < 1) return [];
+    const norm = normalizeItemTitle(editTitle);
+    return getTitleSuggestions(editTitle, suggestionHistory).filter(
+      (s) => normalizeItemTitle(s.title) !== norm,
+    );
+  }, [editingId, editTitle, suggestionHistory]);
+
+  const checkedItems = useMemo(
+    () => (items ?? []).filter((i) => i.checked),
+    [items],
+  );
+  const uncheckedItems = useMemo(
+    () => (items ?? []).filter((i) => !i.checked),
+    [items],
+  );
+  const uncheckedListData = uncheckedOverride ?? uncheckedItems;
+
+  const uncheckedIdsKey = useMemo(
+    () => uncheckedItems.map((i) => i.id).sort().join(","),
+    [uncheckedItems],
+  );
+  useEffect(() => {
+    setUncheckedOverride(null);
+  }, [uncheckedIdsKey]);
+
+  const checkedIdsRef = useRef<string[]>([]);
+  checkedIdsRef.current = checkedItems.map((i) => i.id);
+
+  const titlesInList = useMemo(
+    () => new Set((items ?? []).map((i) => normalizeItemTitle(i.title))),
+    [items],
+  );
+
+  const frequentNotInList = useMemo((): FrequentShoppingItem[] => {
+    if (!frequentItems?.length) return [];
+    return frequentItems
+      .filter((f) => f.useCount >= 2 && !titlesInList.has(f.titleNorm))
+      .sort((a, b) => {
+        const ta = a.lastUsedAt ? new Date(a.lastUsedAt).getTime() : 0;
+        const tb = b.lastUsedAt ? new Date(b.lastUsedAt).getTime() : 0;
+        return tb - ta || b.useCount - a.useCount;
+      }) as FrequentShoppingItem[];
+  }, [frequentItems, titlesInList]);
 
   const invalidate = () => {
     void utils.shoppingItems.getByList.invalidate({ listId });
@@ -107,54 +214,182 @@ export function ShoppingListDetail({ listId, userId }: Props) {
     void utils.shoppingItems.getListCatalog.invalidate({ listId });
   };
 
+  const resetAddForm = () => {
+    setTitle("");
+    setQuantityText("");
+    setUnit(null);
+    setManualCategory("AUTRE");
+    setShowCategoryPicker(false);
+  };
+
   const createItem = trpc.shoppingItems.create.useMutation({
     onSuccess: () => {
       invalidate();
-      setTitle("");
-      setPickedCategory(null);
+      resetAddForm();
+    },
+  });
+
+  const updateItem = trpc.shoppingItems.update.useMutation({
+    onSuccess: () => {
+      invalidate();
+      setEditingId(null);
     },
   });
 
   const toggleItem = trpc.shoppingItems.toggle.useMutation({ onSuccess: invalidate });
   const deleteItem = trpc.shoppingItems.delete.useMutation({ onSuccess: invalidate });
+  const clearChecked = trpc.shoppingItems.clearChecked.useMutation({ onSuccess: invalidate });
 
-  const unchecked = items?.filter((i) => !i.checked) ?? [];
-  const checked = items?.filter((i) => i.checked) ?? [];
+  const reorderItems = trpc.shoppingItems.reorder.useMutation({
+    onSuccess: (_result, { listId: lid, orderedIds }) => {
+      utils.shoppingItems.getByList.setData({ listId: lid }, (old) =>
+        old ? applyListOrder(old, orderedIds) : old,
+      );
+      setUncheckedOverride(null);
+    },
+    onError: (_err, input) => {
+      setUncheckedOverride(null);
+      void utils.shoppingItems.getByList.invalidate({ listId: input.listId });
+    },
+  });
 
   function applyTitleSuggestion(s: TitleSuggestion) {
     setTitle(s.title);
-    setPickedCategory(detectCategory(s.title, itemMemory) ?? s.category);
+    const detected = detectCategory(s.title, itemMemory);
+    if (detected) {
+      setManualCategory(detected);
+      setShowCategoryPicker(false);
+    } else {
+      setManualCategory(s.category);
+      setShowCategoryPicker(true);
+    }
+  }
+
+  function applyEditTitleSuggestion(s: TitleSuggestion) {
+    setEditTitle(s.title);
+    const detected = detectCategory(s.title, itemMemory);
+    if (detected) {
+      setEditCategory(detected);
+      setEditShowCategory(false);
+    } else {
+      setEditCategory(s.category);
+      setEditShowCategory(true);
+    }
+  }
+
+  function handleCreate(quick?: {
+    title: string;
+    category: GroceryCategory;
+    quantity?: number | null;
+    unit?: string | null;
+  }) {
+    const t = quick?.title ?? title.trim();
+    if (!t || !canWrite) return;
+    const cat = quick?.category ?? resolvedCategory;
+    createItem.mutate({
+      listId,
+      title: t,
+      quantity: quick ? (quick.quantity ?? null) : parseQuantity(quantityText),
+      unit: quick ? (quick.unit ?? null) : unit,
+      category: cat,
+    });
   }
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    const t = title.trim();
-    if (!t || !canWrite) return;
-    const category =
-      detectCategory(t, itemMemory) ?? pickedCategory ?? ("AUTRE" as GroceryCategory);
-    createItem.mutate({ listId, title: t, category });
+    handleCreate();
   }
+
+  function startEdit(item: ShoppingItemRowData) {
+    setEditingId(item.id);
+    setEditTitle(item.title);
+    setEditQuantityText(item.quantity != null ? String(item.quantity) : "");
+    setEditUnit(item.unit ?? null);
+    setEditCategory(item.category as GroceryCategory);
+    setEditShowCategory(false);
+  }
+
+  function handleSaveEdit(itemId: string) {
+    if (!editTitle.trim()) return;
+    const cat = detectCategory(editTitle, itemMemory) ?? editCategory;
+    updateItem.mutate({
+      itemId,
+      title: editTitle.trim(),
+      quantity: parseQuantity(editQuantityText),
+      unit: editUnit,
+      category: cat,
+    });
+  }
+
+  const dragEnabled = canWrite && !editingId;
+
+  const moveUnchecked = useCallback(
+    (fromId: string, toId: string) => {
+      if (fromId === toId) return uncheckedListData;
+      const list = [...uncheckedListData];
+      const fromIdx = list.findIndex((i) => i.id === fromId);
+      const toIdx = list.findIndex((i) => i.id === toId);
+      if (fromIdx < 0 || toIdx < 0) return list;
+      const [moved] = list.splice(fromIdx, 1);
+      list.splice(toIdx, 0, moved);
+      return list;
+    },
+    [uncheckedListData],
+  );
+
+  const commitReorder = useCallback(
+    (nextUnchecked: ShoppingItemRowData[]) => {
+      setUncheckedOverride(nextUnchecked);
+      reorderItems.mutate({
+        listId,
+        orderedIds: [...nextUnchecked.map((i) => i.id), ...checkedIdsRef.current],
+      });
+    },
+    [listId, reorderItems],
+  );
 
   if (!list) {
     return <p className="text-sm text-gray-400">Chargement…</p>;
   }
 
-  return (
+  const inner = (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/dashboard/shopping"
-          className="text-sm text-gray-500 hover:text-gray-900"
-        >
-          ← Mes courses
-        </Link>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
+      {!embedded && (
+        <div>
+          <Link
+            href="/dashboard/shopping"
+            className="text-sm text-gray-500 hover:text-gray-900"
+          >
+            ← Courses
+          </Link>
+          <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{list.title}</h1>
+              {isShared && (
+                <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                  Partagée
+                </span>
+              )}
+              {!canWrite && (
+                <p className="mt-1 text-sm text-amber-700">Lecture seule (rôle invité)</p>
+              )}
+            </div>
+            {isOwner && <ShareShoppingListPanel listId={listId} list={list} />}
+          </div>
+        </div>
+      )}
+
+      {embedded && shared && (
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{list.title}</h1>
-            {isShared && (
-              <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-semibold text-gray-900">{list.title}</h3>
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">
                 Partagée
               </span>
+            </div>
+            {ownerLabel && (
+              <p className="mt-0.5 text-sm text-indigo-700/80">{ownerLabel}</p>
             )}
             {!canWrite && (
               <p className="mt-1 text-sm text-amber-700">Lecture seule (rôle invité)</p>
@@ -162,133 +397,222 @@ export function ShoppingListDetail({ listId, userId }: Props) {
           </div>
           {isOwner && <ShareShoppingListPanel listId={listId} list={list} />}
         </div>
-      </div>
+      )}
+
+      {canWrite && frequentNotInList.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-xs font-semibold text-gray-500">Ajout rapide</h2>
+          <div className="flex flex-wrap gap-2">
+            {frequentNotInList.map((f) => (
+              <button
+                key={f.titleNorm}
+                type="button"
+                onClick={() =>
+                  handleCreate({
+                    title: f.title,
+                    category: f.category,
+                    quantity: f.quantity,
+                    unit: f.unit,
+                  })
+                }
+                disabled={createItem.isPending}
+                className="inline-flex max-w-48 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-40"
+              >
+                <span aria-hidden>{itemIcon(f.category)}</span>
+                <span className="truncate">{f.title}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {canWrite && (
-        <form onSubmit={handleAdd} className="space-y-0">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setPickedCategory(null);
-              }}
-              placeholder="Ajouter un article..."
-              autoComplete="off"
-              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-            />
-            <button
-              type="submit"
-              disabled={!title.trim() || createItem.isPending}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-40"
-            >
-              Ajouter
-            </button>
-          </div>
+        <form
+          onSubmit={handleAdd}
+          className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
+        >
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Article (ex. tomates, lait…)"
+            autoComplete="off"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+          />
           <TitleSuggestionList
             suggestions={titleSuggestions}
             onSelect={applyTitleSuggestion}
           />
+          <input
+            type="text"
+            inputMode="decimal"
+            value={quantityText}
+            onChange={(e) => setQuantityText(e.target.value)}
+            placeholder="Qté (ex. 2, 0.5…)"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+          />
+          <UnitPicker value={unit} onChange={setUnit} />
+          {detectedCategory && title.trim() ? (
+            <p className="text-xs text-gray-500">
+              Catégorie : {CATEGORY_LABELS[detectedCategory]}
+            </p>
+          ) : null}
+          {(showCategoryPicker || needsCategoryPicker) && title.trim() ? (
+            <div>
+              <p className="mb-1.5 text-xs text-gray-500">Choisir une catégorie</p>
+              <CategoryChips value={manualCategory} onChange={setManualCategory} />
+            </div>
+          ) : null}
+          <button
+            type="submit"
+            disabled={!title.trim() || createItem.isPending}
+            className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-40"
+          >
+            Ajouter
+          </button>
         </form>
+      )}
+
+      {checkedItems.length > 0 && canWrite && (
+        <button
+          type="button"
+          onClick={() => clearChecked.mutate({ listId })}
+          disabled={clearChecked.isPending}
+          className="text-sm text-red-600 hover:text-red-800 disabled:opacity-40"
+        >
+          Vider les articles cochés ({checkedItems.length})
+        </button>
       )}
 
       {isLoading ? (
         <p className="text-sm text-gray-400">Chargement…</p>
       ) : (
         <div className="space-y-6">
-          <ItemSection
-            label="À acheter"
-            items={unchecked}
-            canWrite={canWrite}
-            onToggle={(id) => toggleItem.mutate({ itemId: id })}
-            onDelete={(id) => deleteItem.mutate({ itemId: id })}
-          />
-          {checked.length > 0 && (
-            <ItemSection
-              label="Dans le panier"
-              items={checked}
-              canWrite={canWrite}
-              onToggle={(id) => toggleItem.mutate({ itemId: id })}
-              onDelete={(id) => deleteItem.mutate({ itemId: id })}
-              muted
-            />
+          <section>
+            <div className="mb-2 flex items-baseline justify-between gap-2">
+              <h2 className="text-sm font-semibold text-gray-700">
+                À acheter ({uncheckedListData.length})
+              </h2>
+              {uncheckedListData.length > 1 && dragEnabled && (
+                <p className="text-xs text-gray-400">Glisser ⠿ pour réordonner</p>
+              )}
+            </div>
+            {uncheckedListData.length === 0 ? (
+              <p className="text-sm text-gray-400">Rien à acheter.</p>
+            ) : (
+              <ul className="space-y-1">
+                {uncheckedListData.map((item) => (
+                  <ShoppingItemRow
+                    key={item.id}
+                    item={item}
+                    canWrite={canWrite}
+                    draggable={dragEnabled}
+                    isDragging={draggingId === item.id}
+                    isDragOver={dragOverId === item.id && draggingId !== item.id}
+                    isEditing={editingId === item.id}
+                    edit={{
+                      title: editTitle,
+                      quantityText: editQuantityText,
+                      unit: editUnit,
+                      category: editCategory,
+                      showCategory: editShowCategory,
+                    }}
+                    itemMemory={itemMemory}
+                    editSuggestions={editTitleSuggestions}
+                    onToggle={() => toggleItem.mutate({ itemId: item.id })}
+                    onDelete={() => deleteItem.mutate({ itemId: item.id })}
+                    onStartEdit={() => startEdit(item)}
+                    onEditTitleChange={setEditTitle}
+                    onEditQuantityChange={setEditQuantityText}
+                    onEditUnitChange={setEditUnit}
+                    onEditCategoryChange={setEditCategory}
+                    onEditShowCategory={setEditShowCategory}
+                    onApplyEditSuggestion={applyEditTitleSuggestion}
+                    onSaveEdit={() => handleSaveEdit(item.id)}
+                    onCancelEdit={() => setEditingId(null)}
+                    onDragStart={() => setDraggingId(item.id)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverId(item.id);
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverId === item.id) setDragOverId(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const fromId = e.dataTransfer.getData("text/plain");
+                      if (!fromId || fromId === item.id) return;
+                      commitReorder(moveUnchecked(fromId, item.id));
+                      setDragOverId(null);
+                      setDraggingId(null);
+                    }}
+                    onDragEnd={() => {
+                      setDragOverId(null);
+                      setDraggingId(null);
+                    }}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {checkedItems.length > 0 && (
+            <section>
+              <h2 className="mb-2 text-sm font-semibold text-gray-400">
+                Dans le panier ({checkedItems.length})
+              </h2>
+              <ul className="space-y-1">
+                {checkedItems.map((item) => (
+                  <ShoppingItemRow
+                    key={item.id}
+                    item={item}
+                    canWrite={canWrite}
+                    muted
+                    isEditing={editingId === item.id}
+                    edit={{
+                      title: editTitle,
+                      quantityText: editQuantityText,
+                      unit: editUnit,
+                      category: editCategory,
+                      showCategory: editShowCategory,
+                    }}
+                    itemMemory={itemMemory}
+                    editSuggestions={editTitleSuggestions}
+                    onToggle={() => toggleItem.mutate({ itemId: item.id })}
+                    onDelete={() => deleteItem.mutate({ itemId: item.id })}
+                    onStartEdit={() => startEdit(item)}
+                    onEditTitleChange={setEditTitle}
+                    onEditQuantityChange={setEditQuantityText}
+                    onEditUnitChange={setEditUnit}
+                    onEditCategoryChange={setEditCategory}
+                    onEditShowCategory={setEditShowCategory}
+                    onApplyEditSuggestion={applyEditTitleSuggestion}
+                    onSaveEdit={() => handleSaveEdit(item.id)}
+                    onCancelEdit={() => setEditingId(null)}
+                  />
+                ))}
+              </ul>
+            </section>
           )}
-          {unchecked.length === 0 && checked.length === 0 && (
+
+          {uncheckedListData.length === 0 && checkedItems.length === 0 && (
             <p className="text-sm text-gray-400">Liste vide.</p>
           )}
         </div>
       )}
     </div>
   );
-}
 
-function ItemSection({
-  label,
-  items,
-  canWrite,
-  onToggle,
-  onDelete,
-  muted,
-}: {
-  label: string;
-  items: {
-    id: string;
-    title: string;
-    quantity: number | null;
-    unit: string | null;
-    checked: boolean;
-  }[];
-  canWrite: boolean;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
-  muted?: boolean;
-}) {
-  return (
-    <section>
-      <h2 className={`mb-2 text-sm font-semibold ${muted ? "text-gray-400" : "text-gray-700"}`}>
-        {label} ({items.length})
-      </h2>
-      <ul className="space-y-1">
-        {items.map((item) => {
-          const qty =
-            item.quantity != null
-              ? `${item.quantity}${item.unit ? ` ${item.unit}` : ""} `
-              : "";
-          return (
-            <li
-              key={item.id}
-              className={`flex items-center gap-3 rounded-md border border-gray-100 px-3 py-2 ${
-                muted ? "bg-gray-50 opacity-75" : "bg-white"
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={item.checked}
-                disabled={!canWrite}
-                onChange={() => onToggle(item.id)}
-                className="size-4 rounded border-gray-300"
-              />
-              <span
-                className={`flex-1 text-sm ${item.checked ? "text-gray-400 line-through" : "text-gray-900"}`}
-              >
-                {qty}
-                {item.title}
-              </span>
-              {canWrite && (
-                <button
-                  type="button"
-                  onClick={() => onDelete(item.id)}
-                  className="text-xs text-red-500 hover:text-red-700"
-                  aria-label="Supprimer"
-                >
-                  ✕
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
+  if (embedded && shared) {
+    return (
+      <section
+        id={sectionId}
+        className="scroll-mt-8 rounded-xl border-2 border-indigo-200 bg-indigo-50/40 p-5"
+      >
+        {inner}
+      </section>
+    );
+  }
+
+  return inner;
 }

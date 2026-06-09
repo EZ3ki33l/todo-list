@@ -3,14 +3,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { DayWeekViewSkeleton } from "@/components/dashboard-skeleton";
 import { trpc, createTrpcClient } from "@/lib/trpc";
 
-export function TrpcProvider({ children }: { children: React.ReactNode }) {
+export function TrpcProvider({
+  children,
+  initialToken,
+}: {
+  children: React.ReactNode;
+  initialToken?: string | null;
+}) {
   const [queryClient] = useState(() => new QueryClient());
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(initialToken ?? null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (token) return;
+
     let cancelled = false;
     fetch("/api/auth/trpc-token")
       .then((res) => {
@@ -26,7 +35,7 @@ export function TrpcProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [token]);
 
   const trpcClient = useMemo(
     () => (token ? createTrpcClient(() => token) : null),
@@ -42,7 +51,7 @@ export function TrpcProvider({ children }: { children: React.ReactNode }) {
   }
 
   if (!trpcClient) {
-    return <p className="text-sm text-gray-400">Chargement…</p>;
+    return <DayWeekViewSkeleton />;
   }
 
   return (

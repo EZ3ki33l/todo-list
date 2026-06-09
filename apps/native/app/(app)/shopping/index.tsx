@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,225 +11,192 @@ import {
 import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { PushOptInCard } from "@/components/push-opt-in-card";
+import { ShoppingListDetail } from "@/components/shopping-list-detail";
 import { TabListHeader } from "@/components/tab-list-header";
 import { useAuth } from "@/lib/auth-context";
 import { listHubStyles as hub } from "@/lib/list-hub-styles";
 import { trpc } from "@/lib/trpc";
+import { usePersonalShoppingList } from "@/lib/use-personal-shopping-list";
 
-export default function ShoppingListsScreen() {
+function ownerSubtitle(
+  isOwner: boolean,
+  memberCount: number,
+  ownerName: string | null | undefined,
+  ownerEmail: string | null | undefined,
+) {
+  if (isOwner) {
+    return memberCount > 0 ? "Vous êtes propriétaire" : "Ajoutez des membres depuis la liste";
+  }
+  return `Avec ${ownerName ?? ownerEmail ?? "quelqu'un"}`;
+}
+
+function itemsSubtitle(total: number) {
+  if (total === 0) return "Liste vide";
+  return `${total} article${total !== 1 ? "s" : ""}`;
+}
+
+function SharedShoppingSection({
+  personalId,
+  newSharedTitle,
+  setNewSharedTitle,
+}: {
+  personalId: string;
+  newSharedTitle: string;
+  setNewSharedTitle: (value: string) => void;
+}) {
   const router = useRouter();
-  const { signOut, user } = useAuth();
-  const [newTitle, setNewTitle] = useState("");
-  const [showSection, setShowSection] = useState<"ARCHIVED" | "DONE" | null>(null);
-
+  const { user } = useAuth();
   const utils = trpc.useUtils();
-  const { data: lists, isLoading, refetch } = trpc.shoppingLists.getAll.useQuery();
+
+  const { data: sharedListsPrimary, isError: sharedError } =
+    trpc.shoppingLists.getSharedShopping.useQuery(undefined, {
+      enabled: !!personalId,
+      retry: 1,
+    });
+
+  const { data: allLists } = trpc.shoppingLists.getAll.useQuery(undefined, {
+    enabled: !!personalId && sharedError,
+  });
+
+  const sharedLists =
+    sharedListsPrimary ??
+    allLists?.filter(
+      (list) => list.id !== personalId && list.status === "ACTIVE",
+    );
+
+  const createSharedList = trpc.shoppingLists.create.useMutation({
+    onSuccess: () => {
+      void utils.shoppingLists.getSharedShopping.invalidate();
+      setNewSharedTitle("");
+    },
+  });
+
+  return (
+    <View style={hub.section}>
+      <Text style={hub.sectionTitle}>Listes partagées</Text>
+      {(sharedLists?.length ?? 0) === 0 ? (
+        <Text style={hub.empty}>Aucune liste de courses partagée.</Text>
+      ) : (
+        sharedLists?.map((list) => {
+          const isOwner = list.ownerId === user?.id;
+          const owner =
+            "owner" in list && list.owner
+              ? (list.owner as { name: string | null; email: string | null })
+              : null;
+          return (
+            <Pressable
+              key={list.id}
+              style={hub.listCard}
+              onPress={() => router.push(`/(app)/shopping/${list.id}`)}
+            >
+              <View style={hub.listMain}>
+                <View style={hub.listTitleRow}>
+                  <Text style={hub.listTitle}>{list.title}</Text>
+                  <Text style={hub.sharedBadge}>partagée</Text>
+                </View>
+                <Text style={hub.listMeta}>
+                  {itemsSubtitle(list._count.items)} ·{" "}
+                  {ownerSubtitle(
+                    isOwner,
+                    list._count.members,
+                    owner?.name,
+                    owner?.email,
+                  )}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })
+      )}
+
+      <View style={[hub.createRow, { marginTop: 12 }]}>
+        <TextInput
+          style={hub.input}
+          placeholder="Ex. Courses du chalet…"
+          placeholderTextColor="#9CA3AF"
+          value={newSharedTitle}
+          onChangeText={setNewSharedTitle}
+          returnKeyType="done"
+          onSubmitEditing={() => {
+            if (newSharedTitle.trim()) {
+              createSharedList.mutate({ title: newSharedTitle.trim() });
+            }
+          }}
+        />
+        <Pressable
+          style={[hub.createBtn, !newSharedTitle.trim() && { opacity: 0.4 }]}
+          onPress={() => {
+            if (newSharedTitle.trim()) {
+              createSharedList.mutate({ title: newSharedTitle.trim() });
+            }
+          }}
+          disabled={!newSharedTitle.trim() || createSharedList.isPending}
+        >
+          <Text style={hub.createBtnText}>+</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+export default function ShoppingScreen() {
+  const { signOut } = useAuth();
+  const [newSharedTitle, setNewSharedTitle] = useState("");
+  const utils = trpc.useUtils();
+
+  const {
+    list: personalList,
+    isLoading: loadingPersonal,
+    error: personalError,
+    refetch: refetchPersonal,
+  } = usePersonalShoppingList();
 
   useFocusEffect(
     useCallback(() => {
-      void utils.shoppingLists.getAll.invalidate();
-    }, [utils]),
+      void utils.shoppingLists.getOrCreatePersonal.invalidate();
+      void utils.shoppingLists.getSharedShopping.invalidate();
+      if (personalList) {
+        void utils.shoppingItems.getByList.invalidate({ listId: personalList.id });
+      }
+    }, [personalList, utils]),
   );
 
-  const createList = trpc.shoppingLists.create.useMutation({
-    onSuccess: () => {
-      utils.shoppingLists.getAll.invalidate();
-      setNewTitle("");
-    },
-  });
-
-  const updateStatus = trpc.shoppingLists.updateStatus.useMutation({
-    onSuccess: () => utils.shoppingLists.getAll.invalidate(),
-  });
-
-  const deleteList = trpc.shoppingLists.delete.useMutation({
-    onMutate: async ({ listId }) => {
-      await utils.shoppingLists.getAll.cancel();
-      const previous = utils.shoppingLists.getAll.getData();
-      utils.shoppingLists.getAll.setData(
-        undefined,
-        (old) => old?.filter((l) => l.id !== listId),
-      );
-      return { previous };
-    },
-    onError: (_err, _input, ctx) => {
-      if (ctx?.previous) {
-        utils.shoppingLists.getAll.setData(undefined, ctx.previous);
-      }
-      Alert.alert("Erreur", "Impossible de supprimer la liste. Réessayez.");
-    },
-    onSettled: async (_data, _err, { listId }) => {
-      utils.shoppingLists.getById.remove({ listId });
-      await utils.shoppingLists.getAll.invalidate();
-      await refetch();
-    },
-  });
-
-  function confirmDeleteList(listId: string, title: string) {
-    Alert.alert(
-      "Supprimer cette liste ?",
-      `« ${title} » sera supprimée pour vous et pour les personnes avec qui elle est partagée.`,
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          style: "destructive",
-          onPress: () => deleteList.mutate({ listId }),
-        },
-      ],
-    );
-  }
-
-  const activeLists = lists?.filter((l) => l.status === "ACTIVE") ?? [];
-  const archivedLists = lists?.filter((l) => l.status === "ARCHIVED") ?? [];
-  const doneLists = lists?.filter((l) => l.status === "DONE") ?? [];
-
-  const hasSharedList =
-    lists?.some((l) =>
-      l.ownerId === user?.id ? l._count.members > 0 : true,
-    ) ?? false;
+  const sharedFooter =
+    personalList != null ? (
+      <SharedShoppingSection
+        personalId={personalList.id}
+        newSharedTitle={newSharedTitle}
+        setNewSharedTitle={setNewSharedTitle}
+      />
+    ) : null;
 
   return (
     <SafeAreaView style={hub.safe} edges={["top"]}>
-      <ScrollView
-        style={hub.container}
-        contentContainerStyle={hub.content}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
-      >
-        <TabListHeader title="Mes courses" onSignOut={signOut} />
+      <TabListHeader title="Courses" onSignOut={signOut} />
 
-        <PushOptInCard visible={hasSharedList} />
-
-        <View style={hub.section}>
-          <View style={hub.createRow}>
-            <TextInput
-              style={hub.input}
-              placeholder="Nouvelle liste de courses..."
-              placeholderTextColor="#9CA3AF"
-              value={newTitle}
-              onChangeText={setNewTitle}
-              onSubmitEditing={() => {
-                if (newTitle.trim()) createList.mutate({ title: newTitle.trim() });
-              }}
-              returnKeyType="done"
-            />
-            <Pressable
-              style={({ pressed }) => [
-                hub.createBtn,
-                pressed && { opacity: 0.8 },
-                !newTitle.trim() && { opacity: 0.4 },
-              ]}
-              onPress={() => {
-                if (newTitle.trim()) createList.mutate({ title: newTitle.trim() });
-              }}
-              disabled={!newTitle.trim() || createList.isPending}
-            >
-              <Text style={hub.createBtnText}>+</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={hub.section}>
-          <Text style={hub.sectionTitle}>
-            En cours <Text style={hub.count}>({activeLists.length})</Text>
-          </Text>
-          {activeLists.map((list) => {
-            const isSharedWithMe = list.ownerId !== user?.id;
-            return (
-            <View key={list.id} style={hub.listCard}>
-              <Pressable
-                style={hub.listMain}
-                onPress={() => router.push(`/(app)/shopping/${list.id}`)}
-              >
-                <View style={hub.listTitleRow}>
-                  <Text style={hub.listTitle}>{list.title}</Text>
-                  {isSharedWithMe ? (
-                    <Text style={hub.sharedBadge}>Partagée</Text>
-                  ) : list._count.members > 0 ? (
-                    <Text style={hub.sharedBadge}>Partagée</Text>
-                  ) : null}
-                </View>
-                <Text style={hub.listMeta}>
-                  {list._count.items} article{list._count.items !== 1 ? "s" : ""}
-                  {isSharedWithMe ? " · avec vous" : ""}
-                </Text>
-              </Pressable>
-              <View style={hub.listActions}>
-                <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "DONE" })}>
-                  <Text style={hub.actionBtnGreen}>✓</Text>
-                </Pressable>
-                <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "ARCHIVED" })}>
-                  <Text style={hub.actionBtnGray}>⊟</Text>
-                </Pressable>
-                <Pressable onPress={() => confirmDeleteList(list.id, list.title)}>
-                  <Text style={hub.actionBtnRed}>✕</Text>
-                </Pressable>
-              </View>
-            </View>
-          );
-          })}
-          {activeLists.length === 0 && <Text style={hub.empty}>Aucune liste en cours.</Text>}
-        </View>
-
-        <Pressable
-          onPress={() => setShowSection(showSection === "ARCHIVED" ? null : "ARCHIVED")}
-          style={hub.collapseHeader}
+      {loadingPersonal && !personalList ? (
+        <ActivityIndicator style={{ marginVertical: 24 }} />
+      ) : personalError ? (
+        <ScrollView
+          style={hub.container}
+          contentContainerStyle={hub.content}
+          refreshControl={
+            <RefreshControl refreshing={loadingPersonal} onRefresh={() => void refetchPersonal()} />
+          }
         >
-          <Text style={hub.sectionTitle}>
-            {showSection === "ARCHIVED" ? "▾" : "▸"} Archivées{" "}
-            <Text style={hub.count}>({archivedLists.length})</Text>
+          <Text style={hub.empty}>
+            Impossible de charger vos courses. Tirez pour réessayer.
           </Text>
-        </Pressable>
-        {showSection === "ARCHIVED" &&
-          archivedLists.map((list) => (
-            <View key={list.id} style={hub.listCard}>
-              <Pressable
-                style={hub.listMain}
-                onPress={() => router.push(`/(app)/shopping/${list.id}`)}
-              >
-                <Text style={hub.listTitle}>{list.title}</Text>
-              </Pressable>
-              <View style={hub.listActions}>
-                <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "ACTIVE" })}>
-                  <Text style={hub.actionBtnGreen}>↩</Text>
-                </Pressable>
-                <Pressable onPress={() => confirmDeleteList(list.id, list.title)}>
-                  <Text style={hub.actionBtnRed}>✕</Text>
-                </Pressable>
-              </View>
-            </View>
-          ))}
-
-        <Pressable
-          onPress={() => setShowSection(showSection === "DONE" ? null : "DONE")}
-          style={hub.collapseHeader}
-        >
-          <Text style={hub.sectionTitle}>
-            {showSection === "DONE" ? "▾" : "▸"} Terminées{" "}
-            <Text style={hub.count}>({doneLists.length})</Text>
-          </Text>
-        </Pressable>
-        {showSection === "DONE" &&
-          doneLists.map((list) => (
-            <View key={list.id} style={hub.listCard}>
-              <Pressable
-                style={hub.listMain}
-                onPress={() => router.push(`/(app)/shopping/${list.id}`)}
-              >
-                <Text style={hub.listTitle}>{list.title}</Text>
-              </Pressable>
-              <View style={hub.listActions}>
-                <Pressable onPress={() => updateStatus.mutate({ listId: list.id, status: "ACTIVE" })}>
-                  <Text style={hub.actionBtnGreen}>↩</Text>
-                </Pressable>
-                <Pressable onPress={() => confirmDeleteList(list.id, list.title)}>
-                  <Text style={hub.actionBtnRed}>✕</Text>
-                </Pressable>
-              </View>
-            </View>
-          ))}
-      </ScrollView>
+        </ScrollView>
+      ) : personalList ? (
+        <View style={{ flex: 1 }}>
+          <ShoppingListDetail
+            listId={personalList.id}
+            embedded
+            footer={sharedFooter}
+          />
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }

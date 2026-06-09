@@ -1,3 +1,4 @@
+import { withEffectiveDone } from "@repo/api";
 import { prisma } from "@repo/db";
 import type { TodoList } from "@repo/db";
 
@@ -15,78 +16,159 @@ interface Props {
   userId: string;
 }
 
-function ListCard({ list, variant }: { list: TodoList; variant: "active" | "archived" | "done" }) {
+type ListWithCounts = TodoList & {
+  _count: { members: number; actions: number };
+  actions: {
+    done: boolean;
+    doneAt: Date | null;
+    recurrence: string;
+    recurrenceDow: number | null;
+    updatedAt: Date;
+  }[];
+};
+
+const listInclude = {
+  _count: { select: { members: true, actions: true } },
+  actions: {
+    select: {
+      done: true,
+      doneAt: true,
+      recurrence: true,
+      recurrenceDow: true,
+      updatedAt: true,
+    },
+  },
+} as const;
+
+function listProgress(list: ListWithCounts) {
+  const total = list.actions.length;
+  if (total === 0) return null;
+  const done = list.actions.filter((a) =>
+    withEffectiveDone({
+      ...a,
+      recurrence: a.recurrence as "NONE" | "DAILY" | "WEEKLY",
+    }).done,
+  ).length;
+  return { done, total };
+}
+
+function listAccessWhere(userId: string) {
+  return {
+    OR: [{ ownerId: userId }, { members: { some: { userId } } }],
+  };
+}
+
+function ListCard({
+  list,
+  userId,
+  variant,
+}: {
+  list: ListWithCounts;
+  userId: string;
+  variant: "active" | "archived" | "done";
+}) {
+  const isOwner = list.ownerId === userId;
+  const isSharedWithMe = !isOwner;
+  const isShared = isSharedWithMe || list._count.members > 0;
+  const progress = listProgress(list);
+
   return (
-    <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
-      <EditableTitle
-        listId={list.id}
-        initialTitle={list.title}
-        href={`/dashboard/lists/${list.id}`}
-      />
-      <div className="flex items-center gap-2">
-        {variant === "active" && (
-          <>
-            <form action={completeTodoList.bind(null, list.id)}>
+    <div className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <EditableTitle
+            listId={list.id}
+            initialTitle={list.title}
+            href={`/dashboard/lists/${list.id}`}
+            readOnly={!isOwner}
+          />
+          {isShared && (
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+              Partagée
+            </span>
+          )}
+        </div>
+        <p className="mt-0.5 text-sm text-gray-500">
+          {progress ? (
+            <>
+              {progress.done} / {progress.total} fait{progress.done > 1 ? "s" : ""}
+            </>
+          ) : (
+            <>Aucune action</>
+          )}
+          {isSharedWithMe ? " · avec vous" : ""}
+        </p>
+      </div>
+      {isOwner && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {variant === "active" && (
+            <>
+              <form action={completeTodoList.bind(null, list.id)}>
+                <button
+                  type="submit"
+                  className="rounded border border-green-200 px-2 py-1 text-xs text-green-700 hover:bg-green-50"
+                >
+                  Terminer
+                </button>
+              </form>
+              <form action={archiveTodoList.bind(null, list.id)}>
+                <button
+                  type="submit"
+                  className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+                >
+                  Archiver
+                </button>
+              </form>
+              <ShareListForm listId={list.id} />
+            </>
+          )}
+          {(variant === "archived" || variant === "done") && (
+            <form action={restoreTodoList.bind(null, list.id)}>
               <button
                 type="submit"
-                className="rounded px-2 py-1 text-xs text-green-700 hover:bg-green-50 border border-green-200"
+                className="rounded border border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
               >
-                Terminer
+                Restaurer
               </button>
             </form>
-            <form action={archiveTodoList.bind(null, list.id)}>
-              <button
-                type="submit"
-                className="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 border border-gray-200"
-              >
-                Archiver
-              </button>
-            </form>
-            <ShareListForm listId={list.id} />
-          </>
-        )}
-        {(variant === "archived" || variant === "done") && (
-          <form action={restoreTodoList.bind(null, list.id)}>
+          )}
+          <form action={deleteTodoList.bind(null, list.id)}>
             <button
               type="submit"
-              className="rounded px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 border border-blue-200"
+              className="rounded border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
             >
-              Restaurer
+              Supprimer
             </button>
           </form>
-        )}
-        <form action={deleteTodoList.bind(null, list.id)}>
-          <button
-            type="submit"
-            className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 border border-red-200"
-          >
-            Supprimer
-          </button>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default async function TodoDashboard({ userId }: Props) {
+  const access = listAccessWhere(userId);
+
   const [activeLists, archivedLists, doneLists] = await Promise.all([
     prisma.todoList.findMany({
-      where: { ownerId: userId, status: "ACTIVE" },
+      where: { ...access, status: "ACTIVE" },
+      include: listInclude,
       orderBy: { updatedAt: "desc" },
     }),
     prisma.todoList.findMany({
-      where: { ownerId: userId, status: "ARCHIVED" },
+      where: { ...access, status: "ARCHIVED" },
+      include: listInclude,
       orderBy: { updatedAt: "desc" },
     }),
     prisma.todoList.findMany({
-      where: { ownerId: userId, status: "DONE" },
+      where: { ...access, status: "DONE" },
+      include: listInclude,
       orderBy: { updatedAt: "desc" },
     }),
   ]);
 
   return (
     <div className="space-y-8">
-      {/* Formulaire de création */}
       <section>
         <form action={createTodoList} className="flex gap-2">
           <input
@@ -105,7 +187,6 @@ export default async function TodoDashboard({ userId }: Props) {
         </form>
       </section>
 
-      {/* Listes en cours */}
       <section>
         <h2 className="mb-3 text-lg font-semibold text-gray-900">
           Vos listes en cours{" "}
@@ -117,14 +198,13 @@ export default async function TodoDashboard({ userId }: Props) {
           <ul className="space-y-2">
             {activeLists.map((list) => (
               <li key={list.id}>
-                <ListCard list={list} variant="active" />
+                <ListCard list={list} userId={userId} variant="active" />
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      {/* Listes archivées */}
       <details className="group">
         <summary className="mb-3 cursor-pointer list-none text-lg font-semibold text-gray-900 select-none">
           <span className="flex items-center gap-2">
@@ -147,7 +227,7 @@ export default async function TodoDashboard({ userId }: Props) {
             <ul className="space-y-2">
               {archivedLists.map((list) => (
                 <li key={list.id}>
-                  <ListCard list={list} variant="archived" />
+                  <ListCard list={list} userId={userId} variant="archived" />
                 </li>
               ))}
             </ul>
@@ -155,7 +235,6 @@ export default async function TodoDashboard({ userId }: Props) {
         </div>
       </details>
 
-      {/* Listes terminées */}
       <details className="group">
         <summary className="mb-3 cursor-pointer list-none text-lg font-semibold text-gray-900 select-none">
           <span className="flex items-center gap-2">
@@ -178,7 +257,7 @@ export default async function TodoDashboard({ userId }: Props) {
             <ul className="space-y-2">
               {doneLists.map((list) => (
                 <li key={list.id}>
-                  <ListCard list={list} variant="done" />
+                  <ListCard list={list} userId={userId} variant="done" />
                 </li>
               ))}
             </ul>

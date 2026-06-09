@@ -167,6 +167,46 @@ docker compose up -d
 
 ---
 
+## Sécurité (Nginx recommandé)
+
+Ajouter dans le `server` HTTPS, **avant** le `location /` :
+
+```nginx
+# Limite globale par IP (anti-abus / flood applicatif)
+limit_req_zone $binary_remote_addr zone=todolist_api:10m rate=30r/s;
+
+client_max_body_size 1m;
+
+location /api/ {
+    limit_req zone=todolist_api burst=60 nodelay;
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+# En-têtes HTTPS (complément de Next.js)
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+```
+
+Variables d'environnement utiles côté app :
+
+| Variable | Rôle |
+|----------|------|
+| `GOOGLE_ANDROID_CLIENT_ID` | Validation `aud` du token Google mobile |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Idem (client Expo web si utilisé) |
+
+---
+
 ## Dépannage
 
 | Symptôme | Cause probable |

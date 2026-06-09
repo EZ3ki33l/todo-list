@@ -23,9 +23,9 @@ export default function AppLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Mes listes",
+          title: "Tâches",
           headerShown: false,
-          tabBarLabel: "Listes",
+          tabBarLabel: "Tâches",
           tabBarIcon: tabIcon("📋"),
         }}
       />

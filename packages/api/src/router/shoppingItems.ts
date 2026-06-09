@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
-import { protectedProcedure, router, z } from "../trpc";
 import { assertOrderedIdsMatch } from "../lib/reorder-positions";
 import { getShoppingListCatalog } from "../lib/shopping-list-catalog";
 import {
@@ -9,28 +8,16 @@ import {
   recordShoppingItemStat,
 } from "../lib/shopping-item-stat";
 import { scheduleShoppingItemNotification } from "../lib/shopping-notify-scheduler";
+import {
+  itemIdInput,
+  listIdInput,
+  protectedProcedure,
+  reorderInput,
+  router,
+  shoppingItemInputSchema,
+  z,
+} from "../trpc";
 import { assertShoppingListAccess } from "./shoppingLists";
-
-const groceryCategoryEnum = z.enum([
-  "LEGUME",
-  "FRUIT",
-  "VIANDE",
-  "POISSON",
-  "BOULANGERIE",
-  "EPICERIE",
-  "LAITIER",
-  "BOISSON",
-  "HYGIENE",
-  "AUTRE",
-]);
-
-const itemInput = z.object({
-  title: z.string().min(1),
-  quantity: z.number().positive().nullable().optional(),
-  unit: z.string().max(20).nullable().optional(),
-  category: groceryCategoryEnum.default("AUTRE"),
-  icon: z.string().max(64).nullable().optional(),
-});
 
 async function assertShoppingItemAccess(itemId: string, userId: string) {
   const item = await prisma.shoppingItem.findUnique({
@@ -64,10 +51,11 @@ export const shoppingItemsRouter = router({
   /** Articles déjà vus sur cette liste (tous les membres), pour listes partagées. */
   getListCatalog: protectedProcedure
     .input(
-      z.object({
-        listId: z.string(),
-        limit: z.number().int().min(1).max(48).optional(),
-      }),
+      z
+        .object({
+          listId: listIdInput.shape.listId,
+          limit: z.number().int().min(1).max(48).optional(),
+        }),
     )
     .query(async ({ ctx, input }) => {
       await assertShoppingListAccess(input.listId, ctx.userId, "read");
@@ -82,7 +70,7 @@ export const shoppingItemsRouter = router({
     }),
 
   getByList: protectedProcedure
-    .input(z.object({ listId: z.string() }))
+    .input(listIdInput)
     .query(async ({ ctx, input }) => {
       await assertShoppingListAccess(input.listId, ctx.userId, "read");
       return prisma.shoppingItem.findMany({
@@ -92,7 +80,7 @@ export const shoppingItemsRouter = router({
     }),
 
   create: protectedProcedure
-    .input(itemInput.extend({ listId: z.string() }))
+    .input(shoppingItemInputSchema.extend({ listId: listIdInput.shape.listId }))
     .mutation(async ({ ctx, input }) => {
       await assertShoppingListAccess(input.listId, ctx.userId);
       const last = await prisma.shoppingItem.findFirst({
@@ -135,7 +123,7 @@ export const shoppingItemsRouter = router({
     }),
 
   update: protectedProcedure
-    .input(itemInput.extend({ itemId: z.string() }))
+    .input(shoppingItemInputSchema.extend({ itemId: itemIdInput.shape.itemId }))
     .mutation(async ({ ctx, input }) => {
       await assertShoppingItemAccess(input.itemId, ctx.userId);
       const updated = await prisma.shoppingItem.update({
@@ -164,7 +152,7 @@ export const shoppingItemsRouter = router({
     }),
 
   toggle: protectedProcedure
-    .input(z.object({ itemId: z.string() }))
+    .input(itemIdInput)
     .mutation(async ({ ctx, input }) => {
       const item = await assertShoppingItemAccess(input.itemId, ctx.userId);
       return prisma.shoppingItem.update({
@@ -174,14 +162,14 @@ export const shoppingItemsRouter = router({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ itemId: z.string() }))
+    .input(itemIdInput)
     .mutation(async ({ ctx, input }) => {
       await assertShoppingItemAccess(input.itemId, ctx.userId);
       await prisma.shoppingItem.delete({ where: { id: input.itemId } });
     }),
 
   clearChecked: protectedProcedure
-    .input(z.object({ listId: z.string() }))
+    .input(listIdInput)
     .mutation(async ({ ctx, input }) => {
       await assertShoppingListAccess(input.listId, ctx.userId);
       const result = await prisma.shoppingItem.deleteMany({
@@ -191,7 +179,7 @@ export const shoppingItemsRouter = router({
     }),
 
   reorder: protectedProcedure
-    .input(z.object({ listId: z.string(), orderedIds: z.array(z.string()).min(1) }))
+    .input(reorderInput)
     .mutation(async ({ ctx, input }) => {
       await assertShoppingListAccess(input.listId, ctx.userId);
       const existing = await prisma.shoppingItem.findMany({

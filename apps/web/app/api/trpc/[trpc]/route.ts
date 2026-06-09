@@ -1,6 +1,6 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
-import { appRouter, createContext } from "@repo/api";
+import { appRouter, createContext } from "@repo/api/server";
 
 import { guardApiRequest } from "@/lib/api-guard";
 

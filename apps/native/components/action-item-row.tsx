@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { StreakBadge } from "@/components/streak-badge";
@@ -16,7 +17,7 @@ type Props = {
   disabled?: boolean;
 };
 
-export function ActionItemRow({
+function ActionItemRowInner({
   action,
   onToggle,
   onLongPressDrag,
@@ -138,5 +139,29 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
 });
+
+function actionRowPropsEqual(prev: Props, next: Props): boolean {
+  const a = prev.action;
+  const b = next.action;
+  return (
+    a.id === b.id &&
+    a.title === b.title &&
+    a.done === b.done &&
+    a.recurrence === b.recurrence &&
+    a.recurrenceTime === b.recurrenceTime &&
+    a.recurrenceDow === b.recurrenceDow &&
+    String(a.dueAt ?? "") === String(b.dueAt ?? "") &&
+    a.streakCount === b.streakCount &&
+    a.bestStreak === b.bestStreak &&
+    prev.onToggle === next.onToggle &&
+    prev.onLongPressDrag === next.onLongPressDrag &&
+    prev.dragEnabled === next.dragEnabled &&
+    prev.hideDayTag === next.hideDayTag &&
+    prev.compact === next.compact &&
+    prev.disabled === next.disabled
+  );
+}
+
+export const ActionItemRow = memo(ActionItemRowInner, actionRowPropsEqual);
 
 export type { ActionRow };

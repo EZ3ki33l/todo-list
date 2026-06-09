@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState, type FormEvent } from "react";
 import Link from "next/link";
 
-import { deleteAction, updateAction } from "@/app/actions/action";
 import { ActionToggleButton } from "@/components/action-toggle-button";
+import { HydratableSvg } from "@/components/hydratable-svg";
+import { useDeleteAction, useUpdateAction } from "@/lib/use-action-mutations";
+import { useMounted } from "@/lib/use-mounted";
 
 export type ActionItemData = {
   id: string;
@@ -48,21 +50,51 @@ function EditForm({
   onClose: () => void;
   onChanged?: () => void;
 }) {
+  const listId = action.list.id;
+  const update = useUpdateAction(listId);
   const [recurrence, setRecurrence] = useState<"NONE" | "DAILY" | "WEEKLY">(
     action.recurrence as "NONE" | "DAILY" | "WEEKLY",
   );
 
-  async function handleSubmit(formData: FormData) {
-    await updateAction(formData);
-    onChanged?.();
-    onClose();
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const title = String(fd.get("title") ?? "").trim();
+    if (!title) return;
+
+    const dueAtRaw = fd.get("dueAt");
+    const recurrenceTimeRaw = fd.get("recurrenceTime");
+    const recurrenceDowRaw = fd.get("recurrenceDow");
+
+    update.mutate(
+      {
+        actionId: action.id,
+        title,
+        recurrence,
+        dueAt:
+          recurrence === "NONE" && typeof dueAtRaw === "string" && dueAtRaw
+            ? new Date(`${dueAtRaw}T12:00:00`).toISOString()
+            : null,
+        recurrenceTime:
+          recurrence !== "NONE" && typeof recurrenceTimeRaw === "string" && recurrenceTimeRaw
+            ? recurrenceTimeRaw
+            : null,
+        recurrenceDow:
+          recurrence === "WEEKLY" && typeof recurrenceDowRaw === "string" && recurrenceDowRaw !== ""
+            ? Number(recurrenceDowRaw)
+            : null,
+      },
+      {
+        onSuccess: () => {
+          onChanged?.();
+          onClose();
+        },
+      },
+    );
   }
 
   return (
-    <form action={handleSubmit} className="space-y-3 pt-1">
-      <input type="hidden" name="actionId" value={action.id} />
-
-      {/* Titre */}
+    <form onSubmit={handleSubmit} className="space-y-3 pt-1">
       <input
         type="text"
         name="title"
@@ -72,7 +104,6 @@ function EditForm({
         className="w-full rounded border border-indigo-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
       />
 
-      {/* Type */}
       <div className="flex gap-3 text-sm">
         {(["NONE", "DAILY", "WEEKLY"] as const).map((r) => (
           <label key={r} className="flex cursor-pointer items-center gap-1.5">
@@ -91,7 +122,6 @@ function EditForm({
         ))}
       </div>
 
-      {/* Date — NONE */}
       {recurrence === "NONE" && (
         <div className="flex items-center gap-2 text-sm">
           <label className="text-gray-500 whitespace-nowrap">À faire le</label>
@@ -104,7 +134,6 @@ function EditForm({
         </div>
       )}
 
-      {/* Heure — DAILY */}
       {recurrence === "DAILY" && (
         <div className="flex items-center gap-2 text-sm">
           <label className="text-gray-500 whitespace-nowrap">À</label>
@@ -117,7 +146,6 @@ function EditForm({
         </div>
       )}
 
-      {/* Jour + Heure — WEEKLY */}
       {recurrence === "WEEKLY" && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <label className="text-gray-500 whitespace-nowrap">Chaque</label>
@@ -147,11 +175,11 @@ function EditForm({
         </div>
       )}
 
-      {/* Boutons */}
       <div className="flex gap-2 pt-1">
         <button
           type="submit"
-          className="rounded-md bg-gray-900 px-3 py-1.5 text-xs text-white hover:bg-gray-700"
+          disabled={update.isPending}
+          className="rounded-md bg-gray-900 px-3 py-1.5 text-xs text-white hover:bg-gray-700 disabled:opacity-50"
         >
           Enregistrer
         </button>
@@ -167,7 +195,7 @@ function EditForm({
   );
 }
 
-export function ActionItem({
+function ActionItemInner({
   action,
   canEdit = false,
   showListLink = true,
@@ -176,10 +204,12 @@ export function ActionItem({
   hideDayTag = false,
 }: Props) {
   const [editing, setEditing] = useState(false);
+  const deleteAction = useDeleteAction(action.list.id);
+  const mounted = useMounted();
 
   const time = action.recurrenceTime
     ? action.recurrenceTime.slice(0, 5)
-    : action.dueAt
+    : action.dueAt && mounted
       ? new Date(action.dueAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
       : null;
 
@@ -191,10 +221,12 @@ export function ActionItem({
         <EditForm action={action} onClose={() => setEditing(false)} onChanged={onChanged} />
       ) : (
         <div className="flex items-start gap-3">
-          {/* Checkbox */}
-          <ActionToggleButton actionId={action.id} done={action.done} onChanged={onChanged} />
+          <ActionToggleButton
+            listId={action.list.id}
+            actionId={action.id}
+            done={action.done}
+          />
 
-          {/* Titre + méta */}
           <div className="min-w-0 flex-1">
             <p className={`text-sm ${action.done ? "text-gray-400 line-through" : "text-gray-800"}`}>
               {action.title}
@@ -226,7 +258,6 @@ export function ActionItem({
             </div>
           </div>
 
-          {/* Boutons */}
           {canEdit && (
             <div className="flex items-center gap-1 shrink-0">
               <button
@@ -235,22 +266,31 @@ export function ActionItem({
                 aria-label="Modifier"
                 className="rounded p-1 text-gray-300 hover:text-indigo-500 transition-colors"
               >
-                <svg viewBox="0 0 16 16" className="size-4" fill="currentColor">
-                  <path d="M12.854 0.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3ZM9.793 2.5 1.5 10.793V14.5h3.707l8.293-8.293L9.793 2.5ZM1 15a.5.5 0 0 1 0-1h14a.5.5 0 0 1 0 1H1Z"/>
-                </svg>
+                <HydratableSvg viewBox="0 0 16 16" className="size-4" fill="currentColor">
+                  <path
+                    d="M12.854 0.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3ZM9.793 2.5 1.5 10.793V14.5h3.707l8.293-8.293L9.793 2.5ZM1 15a.5.5 0 0 1 0-1h14a.5.5 0 0 1 0 1H1Z"
+                    suppressHydrationWarning
+                  />
+                </HydratableSvg>
               </button>
               <button
                 type="button"
-                onClick={async () => {
-                  await deleteAction(action.id);
-                  onChanged?.();
+                disabled={deleteAction.isPending}
+                onClick={() => {
+                  deleteAction.mutate(
+                    { actionId: action.id },
+                    { onSuccess: () => onChanged?.() },
+                  );
                 }}
                 aria-label="Supprimer"
-                className="rounded p-1 text-gray-300 hover:text-red-500 transition-colors"
+                className="rounded p-1 text-gray-300 hover:text-red-500 transition-colors disabled:opacity-40"
               >
-                  <svg viewBox="0 0 16 16" className="size-4" fill="currentColor">
-                    <path d="M6.5 1h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1 0-1ZM3 4h10l-.867 9.143A1.5 1.5 0 0 1 10.637 14H5.363a1.5 1.5 0 0 1-1.496-1.357L3 4Zm2.5 2a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 1 0v-5a.5.5 0 0 0-.5-.5Zm3 0a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 1 0v-5a.5.5 0 0 0-.5-.5Z" />
-                  </svg>
+                <HydratableSvg viewBox="0 0 16 16" className="size-4" fill="currentColor">
+                  <path
+                    d="M6.5 1h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1 0-1ZM3 4h10l-.867 9.143A1.5 1.5 0 0 1 10.637 14H5.363a1.5 1.5 0 0 1-1.496-1.357L3 4Zm2.5 2a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 1 0v-5a.5.5 0 0 0-.5-.5Zm3 0a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 1 0v-5a.5.5 0 0 0-.5-.5Z"
+                    suppressHydrationWarning
+                  />
+                </HydratableSvg>
               </button>
             </div>
           )}
@@ -265,3 +305,28 @@ export function ActionItem({
 
   return <li className={className}>{content}</li>;
 }
+
+function actionPropsEqual(prev: Props, next: Props): boolean {
+  const a = prev.action;
+  const b = next.action;
+  return (
+    a.id === b.id &&
+    a.title === b.title &&
+    a.done === b.done &&
+    a.recurrence === b.recurrence &&
+    a.recurrenceTime === b.recurrenceTime &&
+    a.recurrenceDow === b.recurrenceDow &&
+    String(a.dueAt ?? "") === String(b.dueAt ?? "") &&
+    a.streakCount === b.streakCount &&
+    a.bestStreak === b.bestStreak &&
+    a.list.id === b.list.id &&
+    a.list.title === b.list.title &&
+    prev.canEdit === next.canEdit &&
+    prev.showListLink === next.showListLink &&
+    prev.embedded === next.embedded &&
+    prev.hideDayTag === next.hideDayTag &&
+    prev.onChanged === next.onChanged
+  );
+}
+
+export const ActionItem = memo(ActionItemInner, actionPropsEqual);

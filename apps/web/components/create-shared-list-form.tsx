@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { trpc } from "@/lib/trpc";
@@ -12,7 +11,7 @@ export function CreateSharedListForm({
   kind: "todo" | "shopping";
   placeholder: string;
 }) {
-  const router = useRouter();
+  const utils = trpc.useUtils();
   const [title, setTitle] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -20,7 +19,8 @@ export function CreateSharedListForm({
     onSuccess: () => {
       setTitle("");
       setOpen(false);
-      router.refresh();
+      void utils.lists.getSharedTodos.invalidate();
+      void utils.lists.getAll.invalidate();
     },
   });
 
@@ -28,7 +28,8 @@ export function CreateSharedListForm({
     onSuccess: () => {
       setTitle("");
       setOpen(false);
-      router.refresh();
+      void utils.shoppingLists.getSharedShopping.invalidate();
+      void utils.shoppingLists.getAll.invalidate();
     },
   });
 

@@ -3,7 +3,7 @@
 import type { inferRouterOutputs } from "@trpc/server";
 import { useState } from "react";
 
-import type { AppRouter } from "@repo/api";
+import type { AppRouter } from "@repo/api/server";
 import { trpc } from "@/lib/trpc";
 
 type TodoList = NonNullable<inferRouterOutputs<AppRouter>["lists"]["getById"]>;

@@ -13,7 +13,18 @@ export function TrpcProvider({
   children: React.ReactNode;
   initialToken?: string | null;
 }) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60_000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+          },
+        },
+      }),
+  );
   const [token, setToken] = useState<string | null>(initialToken ?? null);
   const [failed, setFailed] = useState(false);
 

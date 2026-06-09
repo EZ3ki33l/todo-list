@@ -2,9 +2,8 @@
 
 import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
-import type { AppRouter } from "@repo/api";
+import type { AppRouter } from "@repo/api/server";
 import { ActionItem } from "@/components/action-item";
 import { applyListOrder } from "@/lib/reorder-list";
 import { trpc } from "@/lib/trpc";
@@ -16,19 +15,26 @@ export function ActionListPanel({
   listId,
   listTitle,
   canEdit,
+  initialActions,
 }: {
   listId: string;
   listTitle: string;
   canEdit: boolean;
+  initialActions?: ActionRow[];
 }) {
-  const router = useRouter();
   const utils = trpc.useUtils();
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [orderOverride, setOrderOverride] = useState<ActionWithList[] | null>(null);
 
-  const { data: actions, isLoading } = trpc.actions.getByList.useQuery({ listId });
+  const { data: actions, isLoading } = trpc.actions.getByList.useQuery(
+    { listId },
+    {
+      initialData: initialActions,
+      staleTime: initialActions ? 60_000 : 0,
+    },
+  );
 
   const actionRows: ActionWithList[] = useMemo(
     () =>
@@ -51,8 +57,7 @@ export function ActionListPanel({
 
   const refresh = useCallback(() => {
     void utils.actions.getByList.invalidate({ listId });
-    router.refresh();
-  }, [listId, router, utils.actions.getByList]);
+  }, [listId, utils.actions.getByList]);
 
   const reorderActions = trpc.actions.reorder.useMutation({
     onSuccess: (_result, { listId: lid, orderedIds }) => {

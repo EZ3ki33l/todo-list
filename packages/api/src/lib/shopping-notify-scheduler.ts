@@ -16,6 +16,8 @@ type MemoryPending = {
 };
 
 const memoryPending = new Map<string, MemoryPending>();
+let lastFlushAt = 0;
+const FLUSH_MIN_INTERVAL_MS = 30_000;
 
 function batchKey(listId: string, actorUserId: string) {
   return `${listId}:${actorUserId}`;
@@ -77,7 +79,11 @@ export async function scheduleShoppingItemNotification(params: {
   quantity?: number | null;
   unit?: string | null;
 }): Promise<void> {
-  await flushExpiredShoppingNotifyBatches();
+  const now = Date.now();
+  if (now - lastFlushAt >= FLUSH_MIN_INTERVAL_MS) {
+    lastFlushAt = now;
+    await flushExpiredShoppingNotifyBatches();
+  }
 
   const key = batchKey(params.listId, params.actorUserId);
   const sendAfter = new Date(Date.now() + SHOPPING_NOTIFY_BATCH_MS);

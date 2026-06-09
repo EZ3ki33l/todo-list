@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ShoppingListDetail } from "@/components/shopping-list-detail";
@@ -150,16 +150,6 @@ export default function ShoppingScreen() {
     error: personalError,
     refetch: refetchPersonal,
   } = usePersonalShoppingList();
-
-  useFocusEffect(
-    useCallback(() => {
-      void utils.shoppingLists.getOrCreatePersonal.invalidate();
-      void utils.shoppingLists.getSharedShopping.invalidate();
-      if (personalList) {
-        void utils.shoppingItems.getByList.invalidate({ listId: personalList.id });
-      }
-    }, [personalList, utils]),
-  );
 
   const sharedFooter =
     personalList != null ? (

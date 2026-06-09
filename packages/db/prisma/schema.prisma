@@ -59,7 +59,65 @@ model User {
   ownedShoppingLists  ShoppingList[]       @relation("ShoppingListOwner")
   shoppingMemberships ShoppingListMember[]
   pushTokens          PushToken[]
+  webPushSubscriptions WebPushSubscription[]
   shoppingItemStats   ShoppingItemStat[]
+  activityEvents           ActivityEvent[]           @relation("ActivityRecipient")
+  activityAsActor          ActivityEvent[]           @relation("ActivityActor")
+  notificationPreferences  NotificationPreferences?
+}
+
+/// Préférences de notifications par utilisateur (web + native).
+model NotificationPreferences {
+  userId String @id
+
+  alertsEnabled      Boolean @default(true)
+  shoppingItemsAdded Boolean @default(true)
+  shoppingListShared Boolean @default(true)
+  todoListShared     Boolean @default(true)
+
+  /// Popups Notification API (web uniquement).
+  browserPopups      Boolean @default(false)
+  /// Compteur dans le titre de l'onglet (web uniquement).
+  browserTitleBadge  Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Type d'événement affiché dans l'historique / cloche.
+enum ActivityEventType {
+  SHOPPING_LIST_SHARED
+  SHOPPING_ITEMS_ADDED
+  TODO_LIST_SHARED
+}
+
+/// Liste concernée par un événement d'activité.
+enum ActivityListKind {
+  TODO
+  SHOPPING
+}
+
+/// Événement persistant pour l'historique in-app (web + native).
+model ActivityEvent {
+  id          String             @id @default(cuid())
+  userId      String
+  actorUserId String?
+  type        ActivityEventType
+  listKind    ActivityListKind?
+  listId      String?
+  listTitle   String?
+  title       String
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime           @default(now())
+
+  user  User  @relation("ActivityRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("ActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }
 
 /// Habitudes d'achat par utilisateur (articles récurrents + catégorie mémorisée).
@@ -78,6 +136,21 @@ model ShoppingItemStat {
 
   @@unique([userId, titleNorm])
   @@index([userId, useCount])
+}
+
+/// Abonnement Web Push (navigateur) pour notifications hors onglet.
+model WebPushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// Token Expo Push (app native) pour les notifications.
@@ -154,6 +227,8 @@ model TodoList {
   owner   User             @relation("ListOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members TodoListMember[]
   actions Action[]
+
+  @@index([ownerId, status])
 }
 
 /// Accès à une liste partagée (en plus du propriétaire défini par ownerId).
@@ -169,6 +244,7 @@ model TodoListMember {
 
   @@unique([listId, userId])
   @@index([userId])
+  @@index([listId])
 }
 
 /// Une action dans une liste : titre, fait / pas fait, planification optionnelle.
@@ -208,6 +284,8 @@ model ShoppingList {
   owner   User                 @relation("ShoppingListOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members ShoppingListMember[]
   items   ShoppingItem[]
+
+  @@index([ownerId, status])
 }
 
 /// Accès à une liste de courses partagée (en plus du propriétaire défini par ownerId).
@@ -223,6 +301,7 @@ model ShoppingListMember {
 
   @@unique([listId, userId])
   @@index([userId])
+  @@index([listId])
 }
 
 /// Un article dans une liste de courses : titre, quantité optionnelle, catégorie et icône.

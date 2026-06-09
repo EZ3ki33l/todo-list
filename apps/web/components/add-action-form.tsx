@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 
-import { createAction } from "@/app/actions/action";
+import { trpc } from "@/lib/trpc";
 
 const DAYS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
@@ -12,22 +11,51 @@ interface Props {
 }
 
 export function AddActionForm({ listId }: Props) {
-  const router = useRouter();
   const [recurrence, setRecurrence] = useState<"NONE" | "DAILY" | "WEEKLY">("NONE");
   const formRef = useRef<HTMLFormElement>(null);
+  const utils = trpc.useUtils();
 
-  async function handleSubmit(formData: FormData) {
-    await createAction(formData);
-    formRef.current?.reset();
-    setRecurrence("NONE");
-    router.refresh();
+  const createAction = trpc.actions.create.useMutation({
+    onSuccess: () => {
+      void utils.actions.getByList.invalidate({ listId });
+      formRef.current?.reset();
+      setRecurrence("NONE");
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const title = String(fd.get("title") ?? "").trim();
+    if (!title) return;
+
+    const recurrenceValue = (fd.get("recurrence") as "NONE" | "DAILY" | "WEEKLY") || "NONE";
+    const dueAtRaw = fd.get("dueAt");
+    const recurrenceTimeRaw = fd.get("recurrenceTime");
+    const recurrenceDowRaw = fd.get("recurrenceDow");
+
+    createAction.mutate({
+      listId,
+      title,
+      recurrence: recurrenceValue,
+      dueAt:
+        recurrenceValue === "NONE" && typeof dueAtRaw === "string" && dueAtRaw
+          ? new Date(`${dueAtRaw}T12:00:00`).toISOString()
+          : null,
+      recurrenceTime:
+        recurrenceValue !== "NONE" && typeof recurrenceTimeRaw === "string" && recurrenceTimeRaw
+          ? recurrenceTimeRaw
+          : null,
+      recurrenceDow:
+        recurrenceValue === "WEEKLY" && recurrenceDowRaw != null
+          ? Number(recurrenceDowRaw)
+          : null,
+    });
   }
 
   return (
-    <form ref={formRef} action={handleSubmit} className="mb-6 space-y-3">
-      <input type="hidden" name="listId" value={listId} />
-
-      {/* Titre */}
+    <form ref={formRef} onSubmit={handleSubmit} className="mb-6 space-y-3">
       <div className="flex gap-2">
         <input
           type="text"
@@ -38,13 +66,13 @@ export function AddActionForm({ listId }: Props) {
         />
         <button
           type="submit"
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700"
+          disabled={createAction.isPending}
+          className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
         >
           Ajouter
         </button>
       </div>
 
-      {/* Type de planification */}
       <div className="flex gap-3 text-sm">
         {(["NONE", "DAILY", "WEEKLY"] as const).map((r) => (
           <label key={r} className="flex cursor-pointer items-center gap-1.5">
@@ -63,7 +91,6 @@ export function AddActionForm({ listId }: Props) {
         ))}
       </div>
 
-      {/* Date d'échéance — NONE */}
       {recurrence === "NONE" && (
         <div className="flex items-center gap-2 text-sm">
           <label className="text-gray-500 whitespace-nowrap">À faire le</label>
@@ -75,7 +102,6 @@ export function AddActionForm({ listId }: Props) {
         </div>
       )}
 
-      {/* Heure — DAILY */}
       {recurrence === "DAILY" && (
         <div className="flex items-center gap-2 text-sm">
           <label className="text-gray-500 whitespace-nowrap">À</label>
@@ -87,7 +113,6 @@ export function AddActionForm({ listId }: Props) {
         </div>
       )}
 
-      {/* Jour + Heure — WEEKLY */}
       {recurrence === "WEEKLY" && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <label className="text-gray-500 whitespace-nowrap">Chaque</label>

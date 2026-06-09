@@ -2,10 +2,9 @@
 
 import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-
-import type { AppRouter } from "@repo/api";
+import type { AppRouter } from "@repo/api/server";
 import { ActionItem, type ActionItemData } from "@/components/action-item";
+import { HydratableSvg } from "@/components/hydratable-svg";
 import { DayWeekViewSkeleton } from "@/components/dashboard-skeleton";
 import {
   defaultPeriodStart,
@@ -28,6 +27,7 @@ import {
 import { sameDay } from "@/lib/task-agenda";
 import { applyListOrder } from "@/lib/reorder-list";
 import { trpc } from "@/lib/trpc";
+import { useMounted } from "@/lib/use-mounted";
 
 type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 
@@ -260,8 +260,13 @@ function DayGroupList({
     [globalIds, listData, onReorder],
   );
 
-  const weekday = group.date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
-  const dayMonth = group.date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  const mounted = useMounted();
+  const weekday = mounted
+    ? group.date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "")
+    : "\u00a0";
+  const dayMonth = mounted
+    ? group.date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })
+    : "\u00a0";
 
   return (
     <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
@@ -371,9 +376,12 @@ function WeekPeriodColumn({
                 onClick={() => setCalendarOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
               >
-                <svg viewBox="0 0 16 16" className="size-3.5 text-gray-400" fill="currentColor" aria-hidden>
-                  <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1.5A1.5 1.5 0 0 1 16 2.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-11A1.5 1.5 0 0 1 1.5 1H3V.5a.5.5 0 0 1 .5-.5M1 4v9.5a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5V4z" />
-                </svg>
+                <HydratableSvg viewBox="0 0 16 16" className="size-3.5 text-gray-400" fill="currentColor" aria-hidden>
+                  <path
+                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1.5A1.5 1.5 0 0 1 16 2.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-11A1.5 1.5 0 0 1 1.5 1H3V.5a.5.5 0 0 1 .5-.5M1 4v9.5a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5V4z"
+                    suppressHydrationWarning
+                  />
+                </HydratableSvg>
                 Changer la période
               </button>
             </div>
@@ -418,13 +426,23 @@ export function DayWeekViewClient({
   canEdit: boolean;
   initialActions?: ActionRow[];
 }) {
-  const router = useRouter();
   const utils = trpc.useUtils();
   const [now] = useState(() => new Date());
+  const mounted = useMounted();
+  const todaySubtitle = mounted
+    ? now.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      })
+    : "\u00a0";
 
   const { data: actions, isLoading } = trpc.actions.getByList.useQuery(
     { listId },
-    { initialData: initialActions },
+    {
+      initialData: initialActions,
+      staleTime: initialActions ? 60_000 : 0,
+    },
   );
 
   const split = useMemo(() => {
@@ -458,8 +476,7 @@ export function DayWeekViewClient({
 
   const refresh = useCallback(() => {
     void utils.actions.getByList.invalidate({ listId });
-    router.refresh();
-  }, [listId, router, utils.actions.getByList]);
+  }, [listId, utils.actions.getByList]);
 
   const reorderActions = trpc.actions.reorder.useMutation({
     onSuccess: (_result, { listId: lid, orderedIds }) => {
@@ -488,11 +505,7 @@ export function DayWeekViewClient({
       <div className={DAY_WEEK_GRID_CLASS}>
         <ActionColumn
           title="Aujourd'hui"
-          subtitle={now.toLocaleDateString("fr-FR", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          })}
+          subtitle={todaySubtitle}
           actions={todayItems}
           sectionIds={todayItems.map((a) => a.id)}
           globalIds={split.globalIds}

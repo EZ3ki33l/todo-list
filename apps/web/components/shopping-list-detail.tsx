@@ -206,10 +206,12 @@ export function ShoppingListDetail({
       }) as FrequentShoppingItem[];
   }, [frequentItems, titlesInList]);
 
-  const invalidate = () => {
+  const invalidateItems = () => {
     void utils.shoppingItems.getByList.invalidate({ listId });
-    void utils.shoppingLists.getAll.invalidate();
-    void utils.shoppingLists.getById.invalidate({ listId });
+  };
+
+  const invalidateAfterCreate = () => {
+    invalidateItems();
     void utils.shoppingItems.getFrequent.invalidate();
     void utils.shoppingItems.getListCatalog.invalidate({ listId });
   };
@@ -224,21 +226,31 @@ export function ShoppingListDetail({
 
   const createItem = trpc.shoppingItems.create.useMutation({
     onSuccess: () => {
-      invalidate();
+      invalidateAfterCreate();
       resetAddForm();
     },
   });
 
   const updateItem = trpc.shoppingItems.update.useMutation({
     onSuccess: () => {
-      invalidate();
+      invalidateAfterCreate();
       setEditingId(null);
     },
   });
 
-  const toggleItem = trpc.shoppingItems.toggle.useMutation({ onSuccess: invalidate });
-  const deleteItem = trpc.shoppingItems.delete.useMutation({ onSuccess: invalidate });
-  const clearChecked = trpc.shoppingItems.clearChecked.useMutation({ onSuccess: invalidate });
+  const toggleItem = trpc.shoppingItems.toggle.useMutation({
+    onSuccess: (updated) => {
+      utils.shoppingItems.getByList.setData({ listId }, (old) =>
+        old?.map((item) => (item.id === updated.id ? { ...item, checked: updated.checked } : item)),
+      );
+    },
+  });
+  const deleteItem = trpc.shoppingItems.delete.useMutation({
+    onSuccess: () => invalidateAfterCreate(),
+  });
+  const clearChecked = trpc.shoppingItems.clearChecked.useMutation({
+    onSuccess: () => invalidateItems(),
+  });
 
   const reorderItems = trpc.shoppingItems.reorder.useMutation({
     onSuccess: (_result, { listId: lid, orderedIds }) => {

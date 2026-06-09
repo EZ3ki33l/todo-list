@@ -12,20 +12,29 @@ export async function evaluateListAfterToggle(
   userId: string,
   now: Date,
 ): Promise<ToggleSideEffects> {
-  const list = await prisma.todoList.findUnique({
-    where: { id: listId },
-    include: { actions: true },
-  });
+  const [list, actions] = await Promise.all([
+    prisma.todoList.findUnique({
+      where: { id: listId },
+      select: { status: true, ownerId: true },
+    }),
+    prisma.action.findMany({
+      where: { listId },
+      select: {
+        done: true,
+        doneAt: true,
+        recurrence: true,
+        dueAt: true,
+        recurrenceDow: true,
+        updatedAt: true,
+      },
+    }),
+  ]);
   if (!list) return { listDayComplete: false, listClosed: false };
 
-  const listDayComplete = isListDayComplete(list.actions, now);
+  const listDayComplete = isListDayComplete(actions, now);
   let listClosed = false;
 
-  if (
-    list.status === "ACTIVE" &&
-    list.ownerId === userId &&
-    areAllPonctualDone(list.actions)
-  ) {
+  if (list.status === "ACTIVE" && list.ownerId === userId && areAllPonctualDone(actions)) {
     await prisma.todoList.update({
       where: { id: listId },
       data: { status: "DONE" },

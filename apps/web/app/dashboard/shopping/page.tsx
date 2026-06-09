@@ -8,6 +8,7 @@ import {
   getOrCreatePersonalShoppingList,
   getSharedShoppingLists,
 } from "@/lib/default-lists";
+import { shoppingCountsByListId } from "@/lib/batch-list-stats";
 import { prisma } from "@repo/db";
 
 function ownerSubtitle(
@@ -38,21 +39,16 @@ export default async function ShoppingPage() {
   const personalShopping = await getOrCreatePersonalShoppingList(userId);
   const sharedShopping = await getSharedShoppingLists(userId, personalShopping.id);
 
-  const sharedCounts = await Promise.all(
-    sharedShopping.map((list) =>
-      prisma.shoppingItem.groupBy({
-        by: ["checked"],
-        where: { listId: list.id },
-        _count: { _all: true },
-      }),
-    ),
-  );
-
-  function countUnchecked(groups: { checked: boolean; _count: { _all: number } }[]) {
-    const total = groups.reduce((n, g) => n + g._count._all, 0);
-    const unchecked = groups.find((g) => !g.checked)?._count._all ?? 0;
-    return { total, unchecked };
-  }
+  const sharedListIds = sharedShopping.map((l) => l.id);
+  const countGroups =
+    sharedListIds.length > 0
+      ? await prisma.shoppingItem.groupBy({
+          by: ["listId", "checked"],
+          where: { listId: { in: sharedListIds } },
+          _count: { _all: true },
+        })
+      : [];
+  const countsByListId = shoppingCountsByListId(sharedListIds, countGroups);
 
   return (
     <div className="space-y-10">
@@ -72,9 +68,9 @@ export default async function ShoppingPage() {
           <p className="text-sm text-gray-400">Aucune liste de courses partagée.</p>
         ) : (
           <ul className="space-y-2">
-            {sharedShopping.map((list, index) => {
+            {sharedShopping.map((list) => {
               const isOwner = list.ownerId === userId;
-              const counts = countUnchecked(sharedCounts[index] ?? []);
+              const counts = countsByListId.get(list.id) ?? { total: 0, unchecked: 0 };
               return (
                 <li key={list.id}>
                   <ListLinkCard

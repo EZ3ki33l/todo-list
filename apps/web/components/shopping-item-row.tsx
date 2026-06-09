@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 import { CategoryChips } from "@/components/category-chips";
 import { TitleSuggestionList } from "@/components/title-suggestion-list";
 import { UnitPicker } from "@/components/unit-picker";
@@ -29,7 +31,7 @@ type EditState = {
   showCategory: boolean;
 };
 
-export function ShoppingItemRow({
+function ShoppingItemRowInner({
   item,
   canWrite,
   muted,
@@ -213,3 +215,47 @@ export function ShoppingItemRow({
     </li>
   );
 }
+
+function shoppingRowPropsEqual(
+  prev: Parameters<typeof ShoppingItemRowInner>[0],
+  next: Parameters<typeof ShoppingItemRowInner>[0],
+): boolean {
+  const a = prev.item;
+  const b = next.item;
+  return (
+    a.id === b.id &&
+    a.title === b.title &&
+    a.quantity === b.quantity &&
+    a.unit === b.unit &&
+    a.category === b.category &&
+    a.icon === b.icon &&
+    a.checked === b.checked &&
+    prev.canWrite === next.canWrite &&
+    prev.muted === next.muted &&
+    prev.draggable === next.draggable &&
+    prev.isDragOver === next.isDragOver &&
+    prev.isDragging === next.isDragging &&
+    prev.isEditing === next.isEditing &&
+    prev.edit === next.edit &&
+    prev.itemMemory === next.itemMemory &&
+    prev.editSuggestions === next.editSuggestions &&
+    prev.onToggle === next.onToggle &&
+    prev.onDelete === next.onDelete &&
+    prev.onStartEdit === next.onStartEdit &&
+    prev.onEditTitleChange === next.onEditTitleChange &&
+    prev.onEditQuantityChange === next.onEditQuantityChange &&
+    prev.onEditUnitChange === next.onEditUnitChange &&
+    prev.onEditCategoryChange === next.onEditCategoryChange &&
+    prev.onEditShowCategory === next.onEditShowCategory &&
+    prev.onApplyEditSuggestion === next.onApplyEditSuggestion &&
+    prev.onSaveEdit === next.onSaveEdit &&
+    prev.onCancelEdit === next.onCancelEdit &&
+    prev.onDragStart === next.onDragStart &&
+    prev.onDragOver === next.onDragOver &&
+    prev.onDragLeave === next.onDragLeave &&
+    prev.onDrop === next.onDrop &&
+    prev.onDragEnd === next.onDragEnd
+  );
+}
+
+export const ShoppingItemRow = memo(ShoppingItemRowInner, shoppingRowPropsEqual);

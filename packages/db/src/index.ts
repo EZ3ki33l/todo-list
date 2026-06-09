@@ -21,6 +21,7 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 
+export type { Prisma } from "./generated/prisma/client";
 export type {
   Account,
   Action,

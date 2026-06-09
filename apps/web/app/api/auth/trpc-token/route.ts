@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { checkRateLimit, getClientIp, issueJwt } from "@repo/api";
+import { checkRateLimit, getClientIp } from "@repo/api";
+import { issueJwt } from "@repo/api/server";
 
 import { auth } from "@/auth";
 

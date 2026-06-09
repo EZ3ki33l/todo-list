@@ -1,6 +1,6 @@
 import type { inferRouterOutputs } from "@trpc/server";
 
-import type { AppRouter } from "@repo/api";
+import type { AppRouter } from "@repo/api/server";
 
 export type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 

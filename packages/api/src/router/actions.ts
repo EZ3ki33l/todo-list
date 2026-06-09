@@ -5,6 +5,10 @@ import { assertOrderedIdsMatch } from "../lib/reorder-positions";
 import { withEffectiveDone } from "../lib/action-recurrence";
 import { performActionToggle } from "../lib/perform-action-toggle";
 import {
+  findAccessibleAction,
+  findAccessibleTodoList,
+} from "../lib/todo-list-access";
+import {
   actionIdInput,
   createActionInput,
   listIdInput,
@@ -14,39 +18,14 @@ import {
   updateActionInput,
 } from "../trpc";
 
-async function assertListAccess(listId: string, userId: string, mode: "read" | "write" = "write") {
-  const list = await prisma.todoList.findUnique({
-    where: { id: listId },
-    include: { members: { where: { userId } } },
-  });
-  if (!list) throw new TRPCError({ code: "NOT_FOUND" });
-  const isOwner = list.ownerId === userId;
-  const member = list.members[0];
-  if (mode === "write" && !isOwner && member?.role !== "membre") throw new TRPCError({ code: "FORBIDDEN" });
-  if (mode === "read" && !isOwner && !member) throw new TRPCError({ code: "FORBIDDEN" });
-}
-
-async function assertActionAccess(actionId: string, userId: string) {
-  const action = await prisma.action.findUnique({
-    where: { id: actionId },
-    include: { list: { include: { members: { where: { userId } } } } },
-  });
-  if (!action) throw new TRPCError({ code: "NOT_FOUND" });
-  const isOwner = action.list.ownerId === userId;
-  const member = action.list.members[0];
-  if (!isOwner && member?.role !== "membre") throw new TRPCError({ code: "FORBIDDEN" });
-  return action;
-}
-
 export const actionsRouter = router({
   getByList: protectedProcedure
     .input(listIdInput)
     .query(async ({ ctx, input }) => {
-      await assertListAccess(input.listId, ctx.userId, "read");
-      return prisma.action.findMany({
-        where: { listId: input.listId },
-        orderBy: { position: "asc" },
-      }).then((rows) => rows.map((a) => withEffectiveDone(a)));
+      const list = await findAccessibleTodoList(input.listId, ctx.userId, "read", {
+        include: { actions: { orderBy: { position: "asc" } } },
+      });
+      return list.actions.map((a) => withEffectiveDone(a));
     }),
 
   getToday: protectedProcedure.query(async ({ ctx }) => {
@@ -101,7 +80,7 @@ export const actionsRouter = router({
   create: protectedProcedure
     .input(createActionInput)
     .mutation(async ({ ctx, input }) => {
-      await assertListAccess(input.listId, ctx.userId);
+      await findAccessibleTodoList(input.listId, ctx.userId, "write", { select: { id: true } });
       const last = await prisma.action.findFirst({
         where: { listId: input.listId }, orderBy: { position: "desc" }, select: { position: true },
       });
@@ -121,7 +100,7 @@ export const actionsRouter = router({
   update: protectedProcedure
     .input(updateActionInput)
     .mutation(async ({ ctx, input }) => {
-      await assertActionAccess(input.actionId, ctx.userId);
+      await findAccessibleAction(input.actionId, ctx.userId, { select: { id: true } });
       return prisma.action.update({
         where: { id: input.actionId },
         data: {
@@ -154,14 +133,14 @@ export const actionsRouter = router({
   delete: protectedProcedure
     .input(actionIdInput)
     .mutation(async ({ ctx, input }) => {
-      await assertActionAccess(input.actionId, ctx.userId);
+      await findAccessibleAction(input.actionId, ctx.userId, { select: { id: true } });
       await prisma.action.delete({ where: { id: input.actionId } });
     }),
 
   reorder: protectedProcedure
     .input(reorderInput)
     .mutation(async ({ ctx, input }) => {
-      await assertListAccess(input.listId, ctx.userId);
+      await findAccessibleTodoList(input.listId, ctx.userId, "write", { select: { id: true } });
       const existing = await prisma.action.findMany({
         where: { listId: input.listId },
         select: { id: true },

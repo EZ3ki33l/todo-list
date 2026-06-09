@@ -1,6 +1,8 @@
 import { withEffectiveDone } from "@repo/api";
 import { prisma } from "@repo/db";
 import type { Action } from "@repo/db";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@repo/api";
 
 import { ActionItem } from "@/components/action-item";
 import { DayWeekViewClient } from "@/components/day-week-view-client";
@@ -10,11 +12,14 @@ import {
   formatWeekRangeLabel,
 } from "@/lib/day-week-split";
 
+type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
+
 interface Props {
   userId: string;
   listId?: string;
   listTitle?: string;
   canEdit?: boolean;
+  initialActions?: ActionRow[];
 }
 
 type ActionWithList = Action & { list: { id: string; title: string } };
@@ -24,6 +29,7 @@ export default async function DayWeekView({
   listId,
   listTitle,
   canEdit = false,
+  initialActions,
 }: Props) {
   if (listId && canEdit) {
     return (
@@ -31,6 +37,7 @@ export default async function DayWeekView({
         listId={listId}
         listTitle={listTitle ?? "Mes tâches"}
         canEdit
+        initialActions={initialActions}
       />
     );
   }

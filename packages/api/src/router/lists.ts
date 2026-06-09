@@ -2,7 +2,16 @@ import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
 import { getOrCreatePersonalTodoList, getSharedTodoLists } from "../lib/default-lists";
-import { protectedProcedure, router, z } from "../trpc";
+import {
+  createListInput,
+  listIdInput,
+  protectedProcedure,
+  renameListInput,
+  router,
+  shareListInput,
+  unshareListInput,
+  updateListStatusInput,
+} from "../trpc";
 
 export async function assertListAccess(
   listId: string,
@@ -57,7 +66,7 @@ export const listsRouter = router({
   }),
 
   getById: protectedProcedure
-    .input(z.object({ listId: z.string() }))
+    .input(listIdInput)
     .query(async ({ ctx, input }) => {
       await assertListAccess(input.listId, ctx.userId, "read");
       return prisma.todoList.findUnique({
@@ -72,7 +81,7 @@ export const listsRouter = router({
     }),
 
   create: protectedProcedure
-    .input(z.object({ title: z.string().min(1) }))
+    .input(createListInput)
     .mutation(async ({ ctx, input }) => {
       return prisma.todoList.create({
         data: { title: input.title, ownerId: ctx.userId },
@@ -80,7 +89,7 @@ export const listsRouter = router({
     }),
 
   rename: protectedProcedure
-    .input(z.object({ listId: z.string(), title: z.string().min(1) }))
+    .input(renameListInput)
     .mutation(async ({ ctx, input }) => {
       await assertOwner(input.listId, ctx.userId);
       return prisma.todoList.update({
@@ -90,7 +99,7 @@ export const listsRouter = router({
     }),
 
   updateStatus: protectedProcedure
-    .input(z.object({ listId: z.string(), status: z.enum(["ACTIVE", "ARCHIVED", "DONE"]) }))
+    .input(updateListStatusInput)
     .mutation(async ({ ctx, input }) => {
       await assertOwner(input.listId, ctx.userId);
       return prisma.todoList.update({
@@ -100,18 +109,14 @@ export const listsRouter = router({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ listId: z.string() }))
+    .input(listIdInput)
     .mutation(async ({ ctx, input }) => {
       await assertOwner(input.listId, ctx.userId);
       await prisma.todoList.delete({ where: { id: input.listId } });
     }),
 
   share: protectedProcedure
-    .input(z.object({
-      listId: z.string(),
-      emailOrId: z.string().min(1),
-      role: z.enum(["membre", "invité"]),
-    }))
+    .input(shareListInput)
     .mutation(async ({ ctx, input }) => {
       await assertOwner(input.listId, ctx.userId);
       const target = await prisma.user.findFirst({
@@ -127,7 +132,7 @@ export const listsRouter = router({
     }),
 
   unshare: protectedProcedure
-    .input(z.object({ listId: z.string(), userId: z.string() }))
+    .input(unshareListInput)
     .mutation(async ({ ctx, input }) => {
       await assertOwner(input.listId, ctx.userId);
       await prisma.todoListMember.delete({

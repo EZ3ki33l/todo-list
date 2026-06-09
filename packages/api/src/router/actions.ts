@@ -4,9 +4,15 @@ import { prisma } from "@repo/db";
 import { assertOrderedIdsMatch } from "../lib/reorder-positions";
 import { withEffectiveDone } from "../lib/action-recurrence";
 import { performActionToggle } from "../lib/perform-action-toggle";
-import { protectedProcedure, router, z } from "../trpc";
-
-const recurrenceEnum = z.enum(["NONE", "DAILY", "WEEKLY"]);
+import {
+  actionIdInput,
+  createActionInput,
+  listIdInput,
+  protectedProcedure,
+  reorderInput,
+  router,
+  updateActionInput,
+} from "../trpc";
 
 async function assertListAccess(listId: string, userId: string, mode: "read" | "write" = "write") {
   const list = await prisma.todoList.findUnique({
@@ -32,17 +38,9 @@ async function assertActionAccess(actionId: string, userId: string) {
   return action;
 }
 
-const actionInput = z.object({
-  title: z.string().min(1),
-  recurrence: recurrenceEnum.default("NONE"),
-  recurrenceTime: z.string().nullable().optional(),
-  recurrenceDow: z.number().int().min(0).max(6).nullable().optional(),
-  dueAt: z.string().datetime().nullable().optional(),
-});
-
 export const actionsRouter = router({
   getByList: protectedProcedure
-    .input(z.object({ listId: z.string() }))
+    .input(listIdInput)
     .query(async ({ ctx, input }) => {
       await assertListAccess(input.listId, ctx.userId, "read");
       return prisma.action.findMany({
@@ -101,7 +99,7 @@ export const actionsRouter = router({
   }),
 
   create: protectedProcedure
-    .input(actionInput.extend({ listId: z.string() }))
+    .input(createActionInput)
     .mutation(async ({ ctx, input }) => {
       await assertListAccess(input.listId, ctx.userId);
       const last = await prisma.action.findFirst({
@@ -121,7 +119,7 @@ export const actionsRouter = router({
     }),
 
   update: protectedProcedure
-    .input(actionInput.extend({ actionId: z.string() }))
+    .input(updateActionInput)
     .mutation(async ({ ctx, input }) => {
       await assertActionAccess(input.actionId, ctx.userId);
       return prisma.action.update({
@@ -137,7 +135,7 @@ export const actionsRouter = router({
     }),
 
   toggle: protectedProcedure
-    .input(z.object({ actionId: z.string() }))
+    .input(actionIdInput)
     .mutation(async ({ ctx, input }) => {
       try {
         return await performActionToggle(input.actionId, ctx.userId);
@@ -154,14 +152,14 @@ export const actionsRouter = router({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ actionId: z.string() }))
+    .input(actionIdInput)
     .mutation(async ({ ctx, input }) => {
       await assertActionAccess(input.actionId, ctx.userId);
       await prisma.action.delete({ where: { id: input.actionId } });
     }),
 
   reorder: protectedProcedure
-    .input(z.object({ listId: z.string(), orderedIds: z.array(z.string()).min(1) }))
+    .input(reorderInput)
     .mutation(async ({ ctx, input }) => {
       await assertListAccess(input.listId, ctx.userId);
       const existing = await prisma.action.findMany({

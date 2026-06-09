@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { withEffectiveDone } from "@repo/api";
 import { auth } from "@/auth";
 import { AddActionForm } from "@/components/add-action-form";
 import { CreateSharedListForm } from "@/components/create-shared-list-form";
@@ -11,6 +12,10 @@ import {
 } from "@/lib/default-lists";
 import { progressLabel, todoListProgress } from "@/lib/list-progress";
 import { prisma } from "@repo/db";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@repo/api";
+
+type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 
 function ownerSubtitle(
   isOwner: boolean,
@@ -33,6 +38,14 @@ export default async function DashboardPage() {
   const userId = session.user.id;
   const personalTodo = await getOrCreatePersonalTodoList(userId);
   const sharedTodos = await getSharedTodoLists(userId, personalTodo.id);
+
+  const now = new Date();
+  const personalActions = (
+    await prisma.action.findMany({
+      where: { listId: personalTodo.id },
+      orderBy: { position: "asc" },
+    })
+  ).map((action) => withEffectiveDone(action, now));
 
   const sharedProgress = await Promise.all(
     sharedTodos.map(async (list) => {
@@ -62,6 +75,7 @@ export default async function DashboardPage() {
         listId={personalTodo.id}
         listTitle={personalTodo.title}
         canEdit
+        initialActions={personalActions as unknown as ActionRow[]}
       />
 
       <AddActionForm listId={personalTodo.id} />

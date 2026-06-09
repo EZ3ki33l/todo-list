@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import type { AppRouter } from "@repo/api";
 import { ActionItem, type ActionItemData } from "@/components/action-item";
+import { DayWeekViewSkeleton } from "@/components/dashboard-skeleton";
 import {
   defaultPeriodStart,
   formatPeriodRangeLabel,
@@ -19,6 +20,11 @@ import {
   startOfDay,
   type DayGroup,
 } from "@/lib/day-week-split";
+import {
+  DAY_WEEK_GRID_CLASS,
+  DAY_WEEK_SECTION_CLASS,
+  EMPTY_TASKS_MESSAGE,
+} from "@/lib/day-week-layout";
 import { sameDay } from "@/lib/task-agenda";
 import { applyListOrder } from "@/lib/reorder-list";
 import { trpc } from "@/lib/trpc";
@@ -30,7 +36,7 @@ function TaskColumnShell({
   header,
   children,
   isEmpty,
-  emptyMessage = "Rien de prévu.",
+  emptyMessage = EMPTY_TASKS_MESSAGE,
 }: {
   header: React.ReactNode;
   children: React.ReactNode;
@@ -124,6 +130,7 @@ function ActionColumn({
   canEdit,
   showListLink,
   hideDayTag,
+  emptyMessage = EMPTY_TASKS_MESSAGE,
   onReorder,
   onChanged,
 }: {
@@ -135,6 +142,7 @@ function ActionColumn({
   canEdit: boolean;
   showListLink: boolean;
   hideDayTag?: boolean;
+  emptyMessage?: string;
   onReorder: (orderedIds: string[]) => void;
   onChanged: () => void;
 }) {
@@ -163,6 +171,7 @@ function ActionColumn({
   return (
     <TaskColumnShell
       isEmpty={listData.length === 0}
+      emptyMessage={emptyMessage}
       header={
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
@@ -336,7 +345,7 @@ function WeekPeriodColumn({
     <>
       <TaskColumnShell
         isEmpty={dayGroups.length === 0}
-        emptyMessage="Rien de prévu sur cette période."
+        emptyMessage={EMPTY_TASKS_MESSAGE}
         header={
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -402,16 +411,21 @@ export function DayWeekViewClient({
   listId,
   listTitle,
   canEdit,
+  initialActions,
 }: {
   listId: string;
   listTitle: string;
   canEdit: boolean;
+  initialActions?: ActionRow[];
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const [now] = useState(() => new Date());
 
-  const { data: actions, isLoading } = trpc.actions.getByList.useQuery({ listId });
+  const { data: actions, isLoading } = trpc.actions.getByList.useQuery(
+    { listId },
+    { initialData: initialActions },
+  );
 
   const split = useMemo(() => {
     if (!actions?.length) {
@@ -465,17 +479,13 @@ export function DayWeekViewClient({
     [listId, reorderActions],
   );
 
-  if (isLoading) {
-    return <p className="text-sm text-gray-400">Chargement…</p>;
-  }
-
-  if (todayItems.length === 0 && scheduleActions.length === 0) {
-    return null;
+  if (isLoading && actions === undefined) {
+    return <DayWeekViewSkeleton />;
   }
 
   return (
-    <section className="mb-10">
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:h-[min(30rem,calc(100dvh-13rem))]">
+    <section className={DAY_WEEK_SECTION_CLASS}>
+      <div className={DAY_WEEK_GRID_CLASS}>
         <ActionColumn
           title="Aujourd'hui"
           subtitle={now.toLocaleDateString("fr-FR", {
@@ -488,6 +498,7 @@ export function DayWeekViewClient({
           globalIds={split.globalIds}
           canEdit={canEdit}
           showListLink={false}
+          emptyMessage={EMPTY_TASKS_MESSAGE}
           onReorder={onReorder}
           onChanged={refresh}
         />

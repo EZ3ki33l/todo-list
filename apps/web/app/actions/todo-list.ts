@@ -3,6 +3,13 @@
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
+import {
+  formatZodFormError,
+  parseCreateListForm,
+  parseListId,
+  parseShareListForm,
+  parseTitle,
+} from "@repo/api";
 import { prisma } from "@repo/db";
 
 async function requireSession() {
@@ -12,105 +19,127 @@ async function requireSession() {
 }
 
 async function assertListOwner(listId: string, userId: string) {
-  const list = await prisma.todoList.findUnique({ where: { id: listId } });
+  const id = parseListId(listId);
+  const list = await prisma.todoList.findUnique({ where: { id } });
   if (!list || list.ownerId !== userId) throw new Error("Accès refusé");
   return list;
 }
 
 export async function createTodoList(formData: FormData) {
-  const userId = await requireSession();
-  const title = (formData.get("title") as string | null)?.trim();
-  if (!title) throw new Error("Le titre est requis");
+  try {
+    const userId = await requireSession();
+    const { title } = parseCreateListForm(formData);
 
-  await prisma.todoList.create({
-    data: { title, ownerId: userId },
-  });
+    await prisma.todoList.create({
+      data: { title, ownerId: userId },
+    });
 
-  revalidatePath("/dashboard");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function archiveTodoList(listId: string) {
-  const userId = await requireSession();
-  await assertListOwner(listId, userId);
+  try {
+    const userId = await requireSession();
+    await assertListOwner(listId, userId);
 
-  await prisma.todoList.update({
-    where: { id: listId },
-    data: { status: "ARCHIVED" },
-  });
+    await prisma.todoList.update({
+      where: { id: parseListId(listId) },
+      data: { status: "ARCHIVED" },
+    });
 
-  revalidatePath("/dashboard");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function completeTodoList(listId: string) {
-  const userId = await requireSession();
-  await assertListOwner(listId, userId);
+  try {
+    const userId = await requireSession();
+    await assertListOwner(listId, userId);
 
-  await prisma.todoList.update({
-    where: { id: listId },
-    data: { status: "DONE" },
-  });
+    await prisma.todoList.update({
+      where: { id: parseListId(listId) },
+      data: { status: "DONE" },
+    });
 
-  revalidatePath("/dashboard");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function restoreTodoList(listId: string) {
-  const userId = await requireSession();
-  await assertListOwner(listId, userId);
+  try {
+    const userId = await requireSession();
+    await assertListOwner(listId, userId);
 
-  await prisma.todoList.update({
-    where: { id: listId },
-    data: { status: "ACTIVE" },
-  });
+    await prisma.todoList.update({
+      where: { id: parseListId(listId) },
+      data: { status: "ACTIVE" },
+    });
 
-  revalidatePath("/dashboard");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function deleteTodoList(listId: string) {
-  const userId = await requireSession();
-  await assertListOwner(listId, userId);
+  try {
+    const userId = await requireSession();
+    await assertListOwner(listId, userId);
 
-  await prisma.todoList.delete({ where: { id: listId } });
+    await prisma.todoList.delete({ where: { id: parseListId(listId) } });
 
-  revalidatePath("/dashboard");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function renameTodoList(listId: string, title: string) {
-  const userId = await requireSession();
-  await assertListOwner(listId, userId);
+  try {
+    const userId = await requireSession();
+    await assertListOwner(listId, userId);
+    const trimmed = parseTitle(title);
 
-  const trimmed = title.trim();
-  if (!trimmed) throw new Error("Le titre ne peut pas être vide");
+    await prisma.todoList.update({
+      where: { id: parseListId(listId) },
+      data: { title: trimmed },
+    });
 
-  await prisma.todoList.update({
-    where: { id: listId },
-    data: { title: trimmed },
-  });
-
-  revalidatePath("/dashboard");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }
 
 export async function shareTodoList(formData: FormData) {
-  const userId = await requireSession();
-  const listId = formData.get("listId") as string;
-  const emailOrId = (formData.get("emailOrId") as string)?.trim();
-  const role = formData.get("role") as "membre" | "invité";
+  try {
+    const userId = await requireSession();
+    const input = parseShareListForm(formData);
 
-  if (!listId || !emailOrId || !role) throw new Error("Paramètres manquants");
+    await assertListOwner(input.listId, userId);
 
-  await assertListOwner(listId, userId);
+    const target = await prisma.user.findFirst({
+      where: { OR: [{ email: input.emailOrId }, { id: input.emailOrId }] },
+    });
 
-  const target = await prisma.user.findFirst({
-    where: { OR: [{ email: emailOrId }, { id: emailOrId }] },
-  });
+    if (!target) throw new Error("Utilisateur introuvable");
+    if (target.id === userId) throw new Error("Vous ne pouvez pas partager une liste avec vous-même");
 
-  if (!target) throw new Error("Utilisateur introuvable");
-  if (target.id === userId) throw new Error("Vous ne pouvez pas partager une liste avec vous-même");
+    await prisma.todoListMember.upsert({
+      where: { listId_userId: { listId: input.listId, userId: target.id } },
+      update: { role: input.role },
+      create: { listId: input.listId, userId: target.id, role: input.role },
+    });
 
-  await prisma.todoListMember.upsert({
-    where: { listId_userId: { listId, userId: target.id } },
-    update: { role },
-    create: { listId, userId: target.id, role },
-  });
-
-  revalidatePath("/dashboard");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    throw new Error(formatZodFormError(err));
+  }
 }

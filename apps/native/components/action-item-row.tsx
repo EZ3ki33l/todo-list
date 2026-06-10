@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { StreakBadge } from "@/components/streak-badge";
 import type { ActionRow } from "@/lib/day-week-split";
@@ -12,9 +12,17 @@ type Props = {
   onLongPressDrag?: () => void;
   dragEnabled?: boolean;
   hideDayTag?: boolean;
-  /** Colonne étroite (2 colonnes côte à côte sur tablette). */
   compact?: boolean;
   disabled?: boolean;
+  canEdit?: boolean;
+  editing?: boolean;
+  editTitle?: string;
+  onEditTitleChange?: (value: string) => void;
+  onStartEdit?: () => void;
+  onSaveEdit?: () => void;
+  onCancelEdit?: () => void;
+  onDelete?: () => void;
+  deletePending?: boolean;
 };
 
 function ActionItemRowInner({
@@ -25,6 +33,15 @@ function ActionItemRowInner({
   hideDayTag = false,
   compact = false,
   disabled = false,
+  canEdit = false,
+  editing = false,
+  editTitle = "",
+  onEditTitleChange,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  onDelete,
+  deletePending = false,
 }: Props) {
   const time = action.recurrenceTime
     ? action.recurrenceTime.slice(0, 5)
@@ -35,13 +52,31 @@ function ActionItemRowInner({
         })
       : null;
 
+  if (editing) {
+    return (
+      <View style={styles.card}>
+        <TextInput
+          style={styles.editInput}
+          value={editTitle}
+          onChangeText={onEditTitleChange}
+          autoFocus
+          placeholder="Titre de la tâche"
+          placeholderTextColor="#9CA3AF"
+        />
+        <View style={styles.editBtns}>
+          <Pressable style={styles.saveBtn} onPress={onSaveEdit}>
+            <Text style={styles.saveBtnText}>Enregistrer</Text>
+          </Pressable>
+          <Pressable style={styles.cancelBtn} onPress={onCancelEdit}>
+            <Text style={styles.cancelBtnText}>Annuler</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <Pressable
-      onPress={onToggle}
-      disabled={disabled}
-      style={({ pressed }) => [styles.card, pressed && !disabled && styles.cardPressed]}
-      android_ripple={{ color: "rgba(0,0,0,0.06)" }}
-    >
+    <View style={styles.card}>
       <View style={styles.row}>
         {dragEnabled && (
           <Pressable
@@ -49,15 +84,22 @@ function ActionItemRowInner({
             delayLongPress={120}
             hitSlop={8}
             style={styles.dragHandleBtn}
-            onPress={(e) => e.stopPropagation()}
           >
             <Text style={styles.dragHandle}>⠿</Text>
           </Pressable>
         )}
-        <View style={[styles.checkbox, action.done && styles.checkboxDone]}>
+        <Pressable
+          style={[styles.checkbox, action.done && styles.checkboxDone]}
+          onPress={onToggle}
+          disabled={disabled}
+        >
           {action.done && <Text style={styles.checkmark}>✓</Text>}
-        </View>
-        <View style={styles.content}>
+        </Pressable>
+        <Pressable
+          style={styles.content}
+          onPress={onToggle}
+          disabled={disabled}
+        >
           <Text
             style={[styles.title, action.done && styles.titleDone]}
             numberOfLines={compact ? 3 : undefined}
@@ -81,9 +123,24 @@ function ActionItemRowInner({
               <StreakBadge streakCount={action.streakCount} bestStreak={action.bestStreak} />
             )}
           </View>
-        </View>
+        </Pressable>
+        {canEdit && (
+          <View style={styles.rowBtns}>
+            <Pressable onPress={onStartEdit} hitSlop={6} accessibilityLabel="Modifier">
+              <Text style={styles.actionIcon}>✏️</Text>
+            </Pressable>
+            <Pressable
+              onPress={onDelete}
+              hitSlop={6}
+              disabled={deletePending}
+              accessibilityLabel="Supprimer"
+            >
+              <Text style={[styles.actionIcon, deletePending && styles.actionIconDisabled]}>🗑</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -96,9 +153,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     marginBottom: 10,
-  },
-  cardPressed: {
-    backgroundColor: "#F9FAFB",
   },
   row: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   dragHandleBtn: { paddingTop: 3 },
@@ -138,6 +192,37 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
+  rowBtns: { flexDirection: "row", gap: 8, flexShrink: 0, paddingTop: 1 },
+  actionIcon: { fontSize: 16 },
+  actionIconDisabled: { opacity: 0.4 },
+  editInput: {
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: "#111827",
+    marginBottom: 8,
+  },
+  editBtns: { flexDirection: "row", gap: 8 },
+  saveBtn: {
+    flex: 1,
+    backgroundColor: "#111827",
+    borderRadius: 6,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  saveBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+  cancelBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 6,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  cancelBtnText: { color: "#6B7280", fontSize: 13 },
 });
 
 function actionRowPropsEqual(prev: Props, next: Props): boolean {
@@ -158,7 +243,16 @@ function actionRowPropsEqual(prev: Props, next: Props): boolean {
     prev.dragEnabled === next.dragEnabled &&
     prev.hideDayTag === next.hideDayTag &&
     prev.compact === next.compact &&
-    prev.disabled === next.disabled
+    prev.disabled === next.disabled &&
+    prev.canEdit === next.canEdit &&
+    prev.editing === next.editing &&
+    prev.editTitle === next.editTitle &&
+    prev.deletePending === next.deletePending &&
+    prev.onEditTitleChange === next.onEditTitleChange &&
+    prev.onStartEdit === next.onStartEdit &&
+    prev.onSaveEdit === next.onSaveEdit &&
+    prev.onCancelEdit === next.onCancelEdit &&
+    prev.onDelete === next.onDelete
   );
 }
 

@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  AppState,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useFocusEffect } from "expo-router";
 
 import {
   disablePushNotifications,
@@ -11,24 +20,53 @@ import {
 import { isPushOptIn } from "@/lib/push-preferences";
 import { trpc } from "@/lib/trpc";
 
+const PUSH_HELP_MESSAGES = {
+  shopping:
+    "Quand quelqu'un ajoute des articles sur une liste partagée, vous recevez un seul résumé environ 45 secondes après — pas une alerte par produit.",
+  todo:
+    "Recevez une alerte quand une liste de tâches vous est partagée ou qu'un événement important concerne vos listes partagées.",
+} as const;
+
 type Props = {
   /** Liste partagée avec au moins une autre personne impliquée. */
   visible: boolean;
+  /** Dans la ligne « Partager la liste », sans marge basse. */
+  embedded?: boolean;
+  listKind?: keyof typeof PUSH_HELP_MESSAGES;
 };
 
-export function PushOptInCard({ visible }: Props) {
+export function PushOptInCard({ visible, embedded, listKind = "shopping" }: Props) {
+  const helpMessage = PUSH_HELP_MESSAGES[listKind];
   const [permission, setPermission] = useState<PushPermissionStatus>("undetermined");
   const [optIn, setOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const registerPush = trpc.notifications.registerPushToken.useMutation();
-  const unregisterPush = trpc.notifications.unregisterPushToken.useMutation();
+  const utils = trpc.useUtils();
+  const registerPush = trpc.notifications.registerPushToken.useMutation({
+    onSuccess: () => {
+      utils.notifications.getPreferences.setData(undefined, (old) =>
+        old ? { ...old, pushRegistered: true } : old,
+      );
+      utils.notifications.isPushRegistered.setData(undefined, { registered: true });
+    },
+  });
+  const unregisterPush = trpc.notifications.unregisterPushToken.useMutation({
+    onSuccess: () => {
+      utils.notifications.getPreferences.setData(undefined, (old) =>
+        old ? { ...old, pushRegistered: false } : old,
+      );
+      utils.notifications.isPushRegistered.setData(undefined, { registered: false });
+    },
+  });
+
   const { data: serverRegistered, refetch } = trpc.notifications.isPushRegistered.useQuery(
     undefined,
     { enabled: visible },
   );
+  const { data: prefs } = trpc.notifications.getPreferences.useQuery(undefined, {
+    enabled: visible,
+  });
 
   const refresh = useCallback(async () => {
     setChecking(true);
@@ -43,32 +81,60 @@ export function PushOptInCard({ visible }: Props) {
 
   useEffect(() => {
     if (visible) void refresh();
-  }, [visible, refresh, serverRegistered?.registered]);
+  }, [visible, refresh, serverRegistered?.registered, prefs?.pushRegistered]);
 
-  if (!visible || checking) return null;
+  useFocusEffect(
+    useCallback(() => {
+      if (!visible) return;
+      void refresh();
+      void refetch();
+    }, [visible, refresh, refetch]),
+  );
 
-  const active = optIn && serverRegistered?.registered;
+  useEffect(() => {
+    if (!visible) return;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void refresh();
+        void refetch();
+      }
+    });
+    return () => sub.remove();
+  }, [visible, refresh, refetch]);
+
+  const active =
+    optIn && (serverRegistered?.registered ?? prefs?.pushRegistered ?? false);
 
   async function handleEnable() {
-    setErrorMessage(null);
     setLoading(true);
     try {
       const result = await enablePushNotifications((input) =>
         registerPush.mutateAsync(input),
       );
       if (result.ok) {
+        utils.notifications.getPreferences.setData(undefined, (old) =>
+          old ? { ...old, pushRegistered: true } : old,
+        );
+        utils.notifications.isPushRegistered.setData(undefined, { registered: true });
         await refetch();
         await refresh();
         return;
       }
       setPermission(result.permission);
       if (result.permission === "denied") {
-        setErrorMessage("Autorisez les notifications dans les réglages du téléphone.");
-      } else {
-        setErrorMessage(result.reason ?? "Impossible d'activer les notifications.");
+        Alert.alert(
+          "Notifications",
+          "Autorisez les notifications dans les réglages du téléphone.",
+          [
+            { text: "Réglages", onPress: openSystemNotificationSettings },
+            { text: "OK", style: "cancel" },
+          ],
+        );
+      } else if (result.reason) {
+        Alert.alert("Notifications", result.reason);
       }
     } catch {
-      setErrorMessage("Erreur réseau ou serveur. Réessayez.");
+      Alert.alert("Notifications", "Erreur réseau ou serveur. Réessayez.");
     } finally {
       setLoading(false);
     }
@@ -78,6 +144,10 @@ export function PushOptInCard({ visible }: Props) {
     setLoading(true);
     try {
       await disablePushNotifications((input) => unregisterPush.mutateAsync(input));
+      utils.notifications.getPreferences.setData(undefined, (old) =>
+        old ? { ...old, pushRegistered: false } : old,
+      );
+      utils.notifications.isPushRegistered.setData(undefined, { registered: false });
       await refetch();
       await refresh();
     } finally {
@@ -85,96 +155,114 @@ export function PushOptInCard({ visible }: Props) {
     }
   }
 
-  if (active) {
-    return (
-      <View style={[styles.card, styles.cardOk]}>
-        <Text style={styles.titleOk}>Notifications activées</Text>
-        <Text style={styles.hint}>
-          Un seul résumé ~45 s après des ajouts sur une liste partagée.
-        </Text>
-        <Pressable onPress={handleDisable} disabled={loading}>
-          <Text style={styles.link}>Désactiver</Text>
-        </Pressable>
-      </View>
-    );
+  function openMenu() {
+    if (active) {
+      Alert.alert("Notifications activées", helpMessage, [
+        { text: "Désactiver", style: "destructive", onPress: () => void handleDisable() },
+        { text: "OK", style: "cancel" },
+      ]);
+      return;
+    }
+
+    if (permission === "denied") {
+      Alert.alert(
+        "Notifications désactivées",
+        "Autorisez les notifications pour cette app dans les réglages du téléphone.",
+        [
+          { text: "Ouvrir les réglages", onPress: openSystemNotificationSettings },
+          { text: "Annuler", style: "cancel" },
+        ],
+      );
+      return;
+    }
+
+    Alert.alert("Notifications", helpMessage, [
+      { text: "Activer", onPress: () => void handleEnable() },
+      { text: "Plus tard", style: "cancel" },
+    ]);
   }
 
-  if (permission === "denied") {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.title}>Notifications désactivées</Text>
-        <Text style={styles.hint}>
-          Ouvrez les réglages du téléphone et autorisez les notifications pour cette app.
-        </Text>
-        <Pressable style={styles.btnSecondary} onPress={openSystemNotificationSettings}>
-          <Text style={styles.btnSecondaryText}>Ouvrir les réglages</Text>
-        </Pressable>
-      </View>
-    );
-  }
+  if (!visible || checking) return null;
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>Liste partagée</Text>
-      <Text style={styles.hint}>
-        Recevez un résumé quand l'autre personne ajoute des articles — pas une alerte par
-        produit.
-      </Text>
-      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-      <Pressable
-        style={[styles.btn, loading && styles.btnDisabled]}
-        onPress={handleEnable}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.btnText}>Activer les notifications</Text>
-        )}
-      </Pressable>
-      {errorMessage ? (
-        <Pressable style={styles.btnSecondary} onPress={openSystemNotificationSettings}>
-          <Text style={styles.btnSecondaryText}>Ouvrir les réglages</Text>
-        </Pressable>
-      ) : null}
-    </View>
+    <Pressable
+      onPress={openMenu}
+      disabled={loading}
+      hitSlop={8}
+      accessibilityLabel={
+        active
+          ? "Alertes activées pour cette liste"
+          : "Alertes désactivées pour cette liste"
+      }
+      accessibilityRole="button"
+      style={[styles.wrap, embedded && styles.wrapEmbedded]}
+    >
+      {loading ? (
+        <ActivityIndicator size="small" color={active ? "#22C55E" : "#EF4444"} />
+      ) : (
+        <View style={[styles.chip, active ? styles.chipOn : styles.chipOff]}>
+          <Text style={styles.bell} accessibilityElementsHidden importantForAccessibility="no">
+            🔔
+          </Text>
+          <Text style={[styles.label, active ? styles.labelOn : styles.labelOff]}>
+            Alertes
+          </Text>
+          <View style={[styles.dot, active ? styles.dotOn : styles.dotOff]} />
+        </View>
+      )}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    padding: 14,
-    marginBottom: 16,
+  wrap: {
+    alignSelf: "flex-end",
+    marginBottom: 8,
   },
-  cardOk: {
+  wrapEmbedded: {
+    alignSelf: "center",
+    marginBottom: 0,
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  chipOn: {
     backgroundColor: "#F0FDF4",
     borderColor: "#BBF7D0",
   },
-  title: { fontSize: 15, fontWeight: "600", color: "#0F172A", marginBottom: 6 },
-  titleOk: { fontSize: 15, fontWeight: "600", color: "#166534", marginBottom: 6 },
-  hint: { fontSize: 13, color: "#475569", lineHeight: 19, marginBottom: 12 },
-  error: { fontSize: 13, color: "#DC2626", marginBottom: 10 },
-  btn: {
-    backgroundColor: "#111827",
-    borderRadius: 8,
-    paddingVertical: 11,
-    alignItems: "center",
+  chipOff: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
   },
-  btnDisabled: { opacity: 0.6 },
-  btnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  btnSecondary: {
-    marginTop: 10,
-    borderRadius: 8,
-    paddingVertical: 11,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    backgroundColor: "#fff",
+  bell: {
+    fontSize: 12,
+    lineHeight: 14,
   },
-  btnSecondaryText: { color: "#334155", fontWeight: "600", fontSize: 14 },
-  link: { fontSize: 13, color: "#6B7280", textDecorationLine: "underline" },
+  label: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  labelOn: {
+    color: "#15803D",
+  },
+  labelOff: {
+    color: "#B91C1C",
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  dotOn: {
+    backgroundColor: "#22C55E",
+  },
+  dotOff: {
+    backgroundColor: "#EF4444",
+  },
 });

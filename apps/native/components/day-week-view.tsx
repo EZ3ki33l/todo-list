@@ -20,7 +20,9 @@ import {
   startOfDay,
   type DayGroup,
 } from "@/lib/day-week-split";
+import { useDeleteAction, useUpdateAction } from "@/lib/use-action-mutations";
 import { normalizeActionRows } from "@/lib/normalize-action-row";
+import { useRefetchTasksOnFocus } from "@/lib/use-refetch-tasks-on-focus";
 import { sameDay } from "@/lib/task-agenda";
 import { useToggleAction } from "@/lib/use-toggle-action";
 import { trpc } from "@/lib/trpc";
@@ -53,19 +55,39 @@ function TaskColumnShell({
   );
 }
 
+type TaskSectionProps = {
+  actions: ActionRow[];
+  onToggle: (id: string) => void;
+  hideDayTag?: boolean;
+  compact?: boolean;
+  togglingId?: string | null;
+  canEdit?: boolean;
+  editingId: string | null;
+  editTitle: string;
+  onEditTitleChange: (value: string) => void;
+  onStartEdit: (action: ActionRow) => void;
+  onSaveEdit: (action: ActionRow) => void;
+  onCancelEdit: () => void;
+  onDelete: (actionId: string) => void;
+  deletePendingId?: string | null;
+};
+
 function TaskSection({
   actions,
   onToggle,
   hideDayTag,
   compact,
   togglingId,
-}: {
-  actions: ActionRow[];
-  onToggle: (id: string) => void;
-  hideDayTag?: boolean;
-  compact?: boolean;
-  togglingId?: string | null;
-}) {
+  canEdit,
+  editingId,
+  editTitle,
+  onEditTitleChange,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  onDelete,
+  deletePendingId,
+}: TaskSectionProps) {
   return (
     <>
       {actions.map((action) => (
@@ -76,6 +98,15 @@ function TaskSection({
           hideDayTag={hideDayTag}
           compact={compact}
           disabled={togglingId === action.id}
+          canEdit={canEdit}
+          editing={editingId === action.id}
+          editTitle={editTitle}
+          onEditTitleChange={onEditTitleChange}
+          onStartEdit={() => onStartEdit(action)}
+          onSaveEdit={() => onSaveEdit(action)}
+          onCancelEdit={onCancelEdit}
+          onDelete={() => onDelete(action.id)}
+          deletePending={deletePendingId === action.id}
         />
       ))}
     </>
@@ -84,14 +115,12 @@ function TaskSection({
 
 function DayGroupBlock({
   group,
-  onToggle,
+  sectionProps,
   compact,
-  togglingId,
 }: {
   group: DayGroup<ActionRow>;
-  onToggle: (id: string) => void;
+  sectionProps: Omit<TaskSectionProps, "actions" | "hideDayTag" | "compact">;
   compact?: boolean;
-  togglingId?: string | null;
 }) {
   const weekday = group.date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
   const dayMonth = group.date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
@@ -104,16 +133,15 @@ function DayGroupBlock({
       </View>
       <TaskSection
         actions={group.actions}
-        onToggle={onToggle}
         hideDayTag
         compact={compact}
-        togglingId={togglingId}
+        {...sectionProps}
       />
     </View>
   );
 }
 
-export function DayWeekView({ listId }: { listId: string }) {
+export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdit?: boolean }) {
   const { width } = useWindowDimensions();
   const stacked = width < STACK_BREAKPOINT;
   const compact = !stacked;
@@ -123,11 +151,15 @@ export function DayWeekView({ listId }: { listId: string }) {
   const defaultStart = defaultPeriodStart(today);
   const [periodStart, setPeriodStart] = useState(defaultStart);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
 
   const { data: actions, isLoading } = trpc.actions.getByList.useQuery(
     { listId },
-    { staleTime: 15_000 },
+    { staleTime: 15_000, refetchInterval: 30_000 },
   );
+
+  useRefetchTasksOnFocus(listId);
 
   const normalizedActions = useMemo(
     () => normalizeActionRows(actions ?? []),
@@ -149,9 +181,16 @@ export function DayWeekView({ listId }: { listId: string }) {
   const isDefaultPeriod = sameDay(periodStart, defaultStart);
 
   const { signOut } = useAuth();
-  const toggleAction = useToggleAction(listId, { onUnauthorized: () => void signOut() });
+  const authOpts = { onUnauthorized: () => void signOut() };
+  const toggleAction = useToggleAction(listId, authOpts);
+  const updateAction = useUpdateAction(listId, authOpts);
+  const deleteAction = useDeleteAction(listId, authOpts);
+
   const togglingId = toggleAction.isPending
     ? (toggleAction.variables?.actionId ?? null)
+    : null;
+  const deletePendingId = deleteAction.isPending
+    ? (deleteAction.variables?.actionId ?? null)
     : null;
 
   const onToggle = useCallback(
@@ -161,6 +200,62 @@ export function DayWeekView({ listId }: { listId: string }) {
     },
     [toggleAction],
   );
+
+  const onStartEdit = useCallback((action: ActionRow) => {
+    setEditingId(action.id);
+    setEditTitle(action.title);
+  }, []);
+
+  const onSaveEdit = useCallback(
+    (action: ActionRow) => {
+      const title = editTitle.trim();
+      if (!title) return;
+      updateAction.mutate(
+        {
+          actionId: action.id,
+          title,
+          recurrence: action.recurrence as "NONE" | "DAILY" | "WEEKLY",
+        },
+        {
+          onSuccess: () => {
+            setEditingId(null);
+            setEditTitle("");
+          },
+        },
+      );
+    },
+    [editTitle, updateAction],
+  );
+
+  const onCancelEdit = useCallback(() => {
+    setEditingId(null);
+    setEditTitle("");
+  }, []);
+
+  const onDelete = useCallback(
+    (actionId: string) => {
+      deleteAction.mutate({ actionId });
+      if (editingId === actionId) {
+        setEditingId(null);
+        setEditTitle("");
+      }
+    },
+    [deleteAction, editingId],
+  );
+
+  const sectionProps: Omit<TaskSectionProps, "actions" | "hideDayTag" | "compact"> = {
+    onToggle,
+    togglingId,
+    canEdit,
+    editingId,
+    editTitle,
+    onEditTitleChange: setEditTitle,
+    onStartEdit,
+    onSaveEdit,
+    onCancelEdit,
+    onDelete,
+    deletePendingId,
+  };
 
   if (isLoading) {
     return <ActivityIndicator style={{ marginVertical: 20 }} />;
@@ -187,9 +282,8 @@ export function DayWeekView({ listId }: { listId: string }) {
         >
           <TaskSection
             actions={split.today}
-            onToggle={onToggle}
             compact={compact}
-            togglingId={togglingId}
+            {...sectionProps}
           />
         </TaskColumnShell>
 
@@ -219,9 +313,8 @@ export function DayWeekView({ listId }: { listId: string }) {
               <DayGroupBlock
                 key={group.key}
                 group={group}
-                onToggle={onToggle}
+                sectionProps={sectionProps}
                 compact={compact}
-                togglingId={togglingId}
               />
             ))}
           </View>

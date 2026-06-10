@@ -1,5 +1,13 @@
-import { NOTIFICATION_TYPE_OPTIONS } from "@repo/api/notification-constants";
-import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { NOTIFICATION_TYPE_OPTIONS } from "@/lib/notification-constants";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 
 import {
   disablePushNotifications,
@@ -34,20 +42,34 @@ export function NotificationSettings() {
     update.mutate(partial);
   }
 
+  function syncPushQueries(registered: boolean) {
+    utils.notifications.getPreferences.setData(undefined, (old) =>
+      old ? { ...old, pushRegistered: registered } : old,
+    );
+    utils.notifications.isPushRegistered.setData(undefined, { registered });
+    void utils.notifications.getPreferences.invalidate();
+    void utils.notifications.isPushRegistered.invalidate();
+  }
+
   async function togglePush(enabled: boolean) {
     if (enabled) {
       const result = await enablePushNotifications((input) =>
         registerPush.mutateAsync(input),
       );
       if (!result.ok) {
+        if (result.reason?.includes("Firebase")) {
+          Alert.alert("Notifications push", result.reason);
+          return;
+        }
         const perm = await getPushPermissionStatus();
         if (perm === "denied") openSystemNotificationSettings();
+        return;
       }
-      void utils.notifications.getPreferences.invalidate();
+      syncPushQueries(true);
       return;
     }
     await disablePushNotifications((input) => unregisterPush.mutateAsync(input));
-    void utils.notifications.getPreferences.invalidate();
+    syncPushQueries(false);
   }
 
   if (isLoading || !prefs) {

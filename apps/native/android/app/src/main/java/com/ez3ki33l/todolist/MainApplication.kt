@@ -1,4 +1,4 @@
-package com.todolist
+package com.ez3ki33l.todolist
 
 import android.app.Application
 import android.content.res.Configuration

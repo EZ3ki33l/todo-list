@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { AppState } from "react-native";
 import {
   ActivityIndicator,
@@ -11,7 +11,11 @@ import {
   View,
 } from "react-native";
 
-import { NotificationSettings } from "@/components/notification-settings";
+const NotificationSettings = lazy(() =>
+  import("@/components/notification-settings").then((m) => ({
+    default: m.NotificationSettings,
+  })),
+);
 import { activityRoute, formatActivityTime } from "@/lib/format-activity-time";
 import { trpc } from "@/lib/trpc";
 
@@ -161,7 +165,9 @@ export function ActivityBell() {
               </>
             ) : (
               <ScrollView style={styles.settingsScroll} keyboardShouldPersistTaps="handled">
-                <NotificationSettings />
+                <Suspense fallback={<ActivityIndicator style={{ marginVertical: 24 }} />}>
+                  <NotificationSettings />
+                </Suspense>
               </ScrollView>
             )}
           </View>

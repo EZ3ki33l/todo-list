@@ -26,7 +26,7 @@ function ownerSubtitle(
   ownerEmail: string | null | undefined,
 ) {
   if (isOwner) {
-    return memberCount > 0 ? "Vous êtes propriétaire" : "Ajoutez des membres depuis la liste";
+    return memberCount > 0 ? "Vous êtes propriétaire" : "Ouvrez la liste → Partager";
   }
   return `Avec ${ownerName ?? ownerEmail ?? "quelqu'un"}`;
 }

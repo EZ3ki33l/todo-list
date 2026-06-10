@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,13 +11,19 @@ import {
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import DraggableFlatList, { type RenderItemParams } from "react-native-draggable-flatlist";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  LazyDraggableFlatList,
+  type RenderItemParams,
+} from "@/lib/lazy-draggable-flatlist";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 
 import { applyListOrder } from "@/lib/reorder-list";
 import { normalizeActionRows } from "@/lib/normalize-action-row";
 import { StreakBadge } from "@/components/streak-badge";
+import { PushOptInCard } from "@/components/push-opt-in-card";
+import { TodoListShareModal } from "@/components/todo-list-share-modal";
 import { useToggleAction } from "@/lib/use-toggle-action";
+import { useRefetchTasksOnFocus } from "@/lib/use-refetch-tasks-on-focus";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth-context";
 
@@ -61,9 +67,20 @@ function RecurrenceBadge({
 export default function ListDetailScreen() {
   const { listId } = useLocalSearchParams<{ listId: string }>();
   const router = useRouter();
-  const { signOut } = useAuth();
+  const navigation = useNavigation();
+  const { signOut, user } = useAuth();
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { data: personalList } = trpc.lists.getOrCreatePersonal.useQuery();
+  const { data: list } = trpc.lists.getById.useQuery(
+    { listId: listId! },
+    { enabled: !!listId },
+  );
+
+  const isOwner = !!user?.id && list?.ownerId === user.id;
+  const myMember = list?.members.find((m) => m.userId === user?.id);
+  const isShared =
+    (list?.members.length ?? 0) > 0 || (!!user?.id && !isOwner && !!myMember);
 
   useEffect(() => {
     if (personalList && listId === personalList.id) {
@@ -87,8 +104,27 @@ export default function ListDetailScreen() {
 
   const { data: actions, isLoading } = trpc.actions.getByList.useQuery(
     { listId: listId! },
-    { enabled: !!listId },
+    { enabled: !!listId, staleTime: 15_000, refetchInterval: 30_000 },
   );
+
+  useRefetchTasksOnFocus(listId);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: list?.title ?? "Liste",
+      headerRight: isOwner
+        ? () => (
+            <Pressable
+              onPress={() => setShareOpen(true)}
+              hitSlop={8}
+              style={{ marginRight: 4 }}
+            >
+              <Text style={styles.headerShare}>Partager</Text>
+            </Pressable>
+          )
+        : undefined,
+    });
+  }, [navigation, list?.title, isOwner]);
 
   type ActionRow = NonNullable<typeof actions>[number];
   const actionRows = useMemo(() => normalizeActionRows(actions ?? []), [actions]);
@@ -180,6 +216,9 @@ export default function ListDetailScreen() {
   const listHeader = useMemo(
     () => (
       <View>
+        {!!list && isShared ? (
+          <PushOptInCard visible listKind="todo" />
+        ) : null}
         {total > 0 && (
           <>
             <Text style={styles.counter}>
@@ -306,6 +345,8 @@ export default function ListDetailScreen() {
       showTimePicker,
       isLoading,
       createAction.isPending,
+      list,
+      isShared,
     ],
   );
 
@@ -400,28 +441,38 @@ export default function ListDetailScreen() {
   );
 
   return (
-    <DraggableFlatList
-      data={listData}
-      keyExtractor={(item) => item.id}
-      onDragEnd={handleDragEnd}
-      activationDistance={12}
-      enableLayoutAnimationExperimental={false}
-      renderItem={renderAction}
-      ListHeaderComponent={listHeader}
-      ListFooterComponent={
-        !isLoading && listData.length === 0 ? (
-          <Text style={styles.empty}>Aucune action dans cette liste.</Text>
-        ) : null
-      }
-      containerStyle={styles.container}
-      contentContainerStyle={styles.content}
-    />
+    <>
+      <LazyDraggableFlatList
+        data={listData}
+        keyExtractor={(item) => item.id}
+        onDragEnd={handleDragEnd}
+        activationDistance={12}
+        enableLayoutAnimationExperimental={false}
+        renderItem={renderAction}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={
+          !isLoading && listData.length === 0 ? (
+            <Text style={styles.empty}>Aucune action dans cette liste.</Text>
+          ) : null
+        }
+        containerStyle={styles.container}
+        contentContainerStyle={styles.content}
+      />
+      {listId ? (
+        <TodoListShareModal
+          listId={listId}
+          visible={shareOpen}
+          onClose={() => setShareOpen(false)}
+        />
+      ) : null}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
   content: { padding: 16, paddingBottom: 40 },
+  headerShare: { fontSize: 15, fontWeight: "600", color: "#111827" },
   counter: { fontSize: 13, color: "#9CA3AF", marginBottom: 4, textAlign: "right" },
   dragHint: { fontSize: 12, color: "#9CA3AF", marginBottom: 12, textAlign: "right" },
   card: {

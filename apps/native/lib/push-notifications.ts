@@ -85,7 +85,28 @@ export async function enablePushNotifications(
   }
 
   await ensureAndroidChannel();
-  const pushToken = await Notifications.getExpoPushTokenAsync({ projectId });
+
+  let pushToken: { data: string };
+  try {
+    pushToken = await Notifications.getExpoPushTokenAsync({ projectId });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (
+      msg.includes("FirebaseApp") ||
+      msg.includes("FCM") ||
+      msg.includes("google-services") ||
+      msg.includes("fcm-credentials")
+    ) {
+      return {
+        ok: false,
+        permission: await getPushPermissionStatus(),
+        reason:
+          "Firebase (FCM) non configuré. Ajoute google-services.json et rebuild l'app (voir DEPLOY.md).",
+      };
+    }
+    throw err;
+  }
+
   const platform =
     Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
 

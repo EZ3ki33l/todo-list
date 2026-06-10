@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.todolist'
+    namespace 'com.ez3ki33l.todolist'
     defaultConfig {
-        applicationId 'com.todolist'
+        applicationId 'com.ez3ki33l.todolist'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -179,4 +179,11 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+}
+
+// FCM (notifications push Android) — nécessite android/app/google-services.json
+if (file("google-services.json").exists()) {
+    apply plugin: "com.google.gms.google-services"
+} else {
+    logger.warn("google-services.json absent : notifications push Android indisponibles (voir apps/native/DEPLOY.md)")
 }

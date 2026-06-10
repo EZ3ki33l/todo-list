@@ -12,7 +12,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import DraggableFlatList, { type RenderItemParams } from "react-native-draggable-flatlist";
+import {
+  LazyDraggableFlatList,
+  type RenderItemParams,
+} from "@/lib/lazy-draggable-flatlist";
 import { useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -589,19 +592,25 @@ export function ShoppingListDetail({
 
   const listHeader = (
     <>
-        {embedded && isOwner ? (
-          <Pressable
-            style={styles.embeddedShareRow}
-            onPress={() => {
-              setShareError(null);
-              setShareOpen(true);
-            }}
-          >
-            <Text style={styles.headerShare}>Partager la liste</Text>
-          </Pressable>
-        ) : null}
-
-        <PushOptInCard visible={!!list && isShared} />
+        {embedded && (isOwner || (!!list && isShared)) ? (
+          <View style={styles.embeddedTopRow}>
+            {isOwner ? (
+              <Pressable
+                onPress={() => {
+                  setShareError(null);
+                  setShareOpen(true);
+                }}
+              >
+                <Text style={styles.headerShare}>Partager la liste</Text>
+              </Pressable>
+            ) : (
+              <View />
+            )}
+            <PushOptInCard visible={!!list && isShared} embedded />
+          </View>
+        ) : (
+          <PushOptInCard visible={!!list && isShared} />
+        )}
 
         {!canWrite && (
           <Text style={styles.readOnlyBanner}>Lecture seule (invité)</Text>
@@ -714,7 +723,7 @@ export function ShoppingListDetail({
 
   return (
     <>
-      <DraggableFlatList
+      <LazyDraggableFlatList
         data={uncheckedListData}
         keyExtractor={(item) => item.id}
         onDragEnd={handleUncheckedDragEnd}
@@ -830,7 +839,13 @@ export function ShoppingListDetail({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
   content: { padding: 16, paddingBottom: 40 },
-  embeddedShareRow: { alignSelf: "flex-end", marginBottom: 12 },
+  embeddedTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+    minHeight: 28,
+  },
   headerShare: { fontSize: 15, fontWeight: "600", color: "#111827", marginRight: 4 },
   frequentSection: { marginBottom: 16 },
   frequentTitle: { fontSize: 13, fontWeight: "600", color: "#6B7280", marginBottom: 8 },

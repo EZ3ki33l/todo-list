@@ -22,17 +22,18 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./android/app/google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.todolist",
+      "package": "com.ez3ki33l.todolist",
       "intentFilters": [
         {
           "action": "VIEW",
           "data": [
             {
-              "scheme": "com.googleusercontent.apps.782595741716-t1sj4n49ib5espdl1gdaosuc0dpf1b9g"
+              "scheme": "com.googleusercontent.apps.782595741716-7t6oc4qgangu1uvobg2tcae01d89bq2b"
             }
           ],
           "category": [

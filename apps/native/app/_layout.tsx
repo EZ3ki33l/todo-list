@@ -1,3 +1,6 @@
+import "react-native-gesture-handler";
+import "react-native-reanimated";
+
 import { useEffect, useMemo } from "react";
 import { AppState, ActivityIndicator, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -20,7 +23,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60_000,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
       retry: 1,
     },
   },

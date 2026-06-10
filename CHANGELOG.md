@@ -40,6 +40,7 @@ Chaque entrée cite la PR GitHub quand elle existe.
 | [0.18.0](#0180---2026-05-29) | 2026-05-29 | Refonte dashboard tâches (web + native) |
 | [0.19.0](#0190---2026-06-09) | 2026-06-09 | Sécurité API & perf dashboard |
 | [1.0.0](#100---2026-06-09) | 2026-06-09 | Notifications in-app, SSE, Web Push, perf tRPC |
+| [1.0.1](#101---2026-06-10) | 2026-06-10 | Play Store, légal web, parité native tâches & push |
 
 ---
 
@@ -253,7 +254,7 @@ Chaque entrée cite la PR GitHub quand elle existe.
 
 ### 1.0.0 — 2026-06-09
 
-**Notifications in-app, SSE, Web Push, perf tRPC** — branche `Feat/Notifications` (PR en attente)
+**Notifications in-app, SSE, Web Push, perf tRPC** — PR [#17](https://github.com/EZ3ki33l/todo-list/pull/17)
 
 #### Notifications & activité
 
@@ -298,9 +299,40 @@ pnpm --filter @repo/db db:push
 
 ---
 
+### 1.0.1 — 2026-06-10
+
+**Play Store, légal web, parité native tâches & push**
+
+#### Web
+
+- Page **politique de confidentialité** (`/politique-de-confidentialite`) + lien footer
+- Section **suppression de compte** (procédure e-mail, conformité Play Console)
+- **Favicon** et icône Apple (`app/icon.png`, `app/apple-icon.png`)
+
+#### Native — préparation Play Store
+
+- Package Android : `com.ez3ki33l.todolist` (remplace `com.todolist`)
+- Client OAuth Google + `google-services.json` (FCM) documentés dans `DEPLOY.md`
+- Guide déploiement v1.0 : [deploy/GUIDE-DEPLOIEMENT.md](deploy/GUIDE-DEPLOIEMENT.md)
+
+#### Native — tâches & partage
+
+- **Partage** des listes de tâches (`TodoListShareModal`) + bouton header « Partager »
+- **Édition / suppression** des tâches sur le dashboard (avant : listes partagées seulement)
+- Sync PC → mobile : `refetchOnWindowFocus`, polling 30 s, `useRefetchTasksOnFocus`
+
+#### Native — notifications push
+
+- Chip **« Alertes »** (cloche + libellé + pastille) sur listes courses et tâches partagées
+- Fix cache tRPC (`getPreferences` / `isPushRegistered`) à l’activation via la cloche
+- Messages d’aide distincts courses / tâches (`listKind` sur `PushOptInCard`)
+
+---
+
 ## Prochaines pistes (non versionnées)
 
-- Merge PR `Feat/Notifications` → `main` + déploiement prod
+- Build production EAS (`com.ez3ki33l.todolist`) + upload Play Store tests internes
+- Déploiement prod page politique de confidentialité
 - Tests e2e notifications
 - Benchmarks automatisés en CI
 

@@ -41,6 +41,7 @@ Chaque entrée cite la PR GitHub quand elle existe.
 | [0.19.0](#0190---2026-06-09) | 2026-06-09 | Sécurité API & perf dashboard |
 | [1.0.0](#100---2026-06-09) | 2026-06-09 | Notifications in-app, SSE, Web Push, perf tRPC |
 | [1.0.1](#101---2026-06-10) | 2026-06-10 | Play Store, légal web, parité native tâches & push |
+| [1.1.0](#110---2026-06-11) | 2026-06-11 | Chef IA courses, correctif Google Sign-In Play Store |
 
 ---
 
@@ -329,10 +330,36 @@ pnpm --filter @repo/db db:push
 
 ---
 
+### 1.1.0 — 2026-06-11
+
+**Chef IA courses & publication Play Store** — PR [#20](https://github.com/EZ3ki33l/todo-list/pull/20), [#21](https://github.com/EZ3ki33l/todo-list/pull/21)
+
+#### Nouveautés — Chef IA (Mistral)
+
+- Assistant **Chef IA** sur les listes de courses (web + native) : chat flottant + modale
+- **Recettes** à partir des articles déjà sur la liste (`from_list`)
+- **Articles à acheter** pour un plat décrit (`suggest_items`)
+- **Produits de saison** : calendrier fruits/légumes par saison — sans recettes (`seasonal_produce`)
+- Ajout d’articles en un clic (`itemsToAdd` → `shoppingItems.create`)
+- Sources cliquables (Manger Bouger, Interfel, Agence Bio)
+- API : `recipes.chat`, `recipes.chatWelcome`, `recipes.suggestFromList`
+- Politique de confidentialité : mention du traitement Mistral AI
+
+#### Native — Play Store
+
+- **Connexion Google** corrigée sur l’app installée depuis le Play Store (`google-services.json` avec empreintes Play + debug)
+- `chef-ia.png` converti en vrai PNG (évite l’échec AAPT au build Android)
+- `versionCode` 4, `autoIncrement` EAS production
+
+#### Déploiement
+
+- Variable serveur `MISTRAL_API_KEY` documentée (`deploy/todolist/README.md`, `deploy/GUIDE-DEPLOIEMENT.md`)
+
+---
+
 ## Prochaines pistes (non versionnées)
 
-- Build production EAS (`com.ez3ki33l.todolist`) + upload Play Store tests internes
-- Déploiement prod page politique de confidentialité
+- Déploiement prod Chef IA (`MISTRAL_API_KEY` sur le serveur)
 - Tests e2e notifications
 - Benchmarks automatisés en CI
 

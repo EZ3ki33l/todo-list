@@ -18,6 +18,7 @@
     "production": {
       "node": "22.13.0",
       "pnpm": "11.4.0",
+      "autoIncrement": true,
       "env": {
         "DATABASE_URL": "postgresql://build:build@127.0.0.1:5432/build?sslmode=require"
       },

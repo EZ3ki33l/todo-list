@@ -355,6 +355,22 @@ pnpm --filter @repo/db db:push
 
 - Variable serveur `MISTRAL_API_KEY` documentée (`deploy/todolist/README.md`, `deploy/GUIDE-DEPLOIEMENT.md`)
 
+#### Note de version Play Store (fr-FR)
+
+```
+<fr-FR>
+Nouveau : Chef IA sur vos listes de courses !
+• Idées de recettes avec ce que vous avez déjà
+• Suggestions d'articles pour préparer un plat
+• Fruits et légumes de saison en France
+• Ajoutez les articles manquants en un clic
+
+Correctif : connexion Google depuis le Play Store.
+
+Merci pour vos retours !
+</fr-FR>
+```
+
 ---
 
 ## Prochaines pistes (non versionnées)

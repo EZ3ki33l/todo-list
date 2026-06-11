@@ -1,0 +1,32 @@
+---
+description: Toujours committer sur une branche dédiée, jamais directement sur main
+alwaysApply: true
+---
+
+# Workflow Git — branches obligatoires
+
+## Règle
+
+- **Ne jamais** committer, pousser ou force-push directement sur `main` (ou `master`).
+- **Toujours** créer une branche dédiée avant tout commit de code.
+
+## Workflow attendu
+
+1. Partir de `main` à jour : `git checkout main && git pull`
+2. Créer une branche : `git checkout -b feat/nom-court` (ou `fix/`, `chore/`, etc.)
+3. Committer sur cette branche uniquement
+4. Pousser la branche : `git push -u origin HEAD`
+5. Ouvrir une **PR** vers `main` — ne pas merger sans demande explicite de l'utilisateur
+
+## Interdit sans demande explicite
+
+- `git commit` sur `main`
+- `git push origin main`
+- `git push --force` sur `main`
+- `git reset` + recommit sur `main` pour « corriger » un commit déjà poussé
+
+## Si l'utilisateur demande de corriger un commit déjà sur main
+
+Préférer un **nouveau commit** sur une branche + PR, plutôt qu'un amend/reset sur `main`.
+
+Si un remplacement d'historique est vraiment nécessaire, **prévenir explicitement** et obtenir confirmation avant tout force-push sur `main`.

@@ -136,6 +136,11 @@ export default function PolitiqueConfidentialitePage() {
             <strong>Expo (EAS)</strong> : infrastructure d&apos;envoi des notifications
             push mobiles.
           </li>
+          <li>
+            <strong>Mistral AI</strong> : génération optionnelle de suggestions de
+            plats à partir des articles de vos listes de courses (uniquement si vous
+            utilisez la fonctionnalité « Idées repas »).
+          </li>
         </ul>
         <p className="text-sm leading-relaxed">
           Lorsque vous partagez une liste, les autres membres invités peuvent voir le

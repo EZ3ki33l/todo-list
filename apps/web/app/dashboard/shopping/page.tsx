@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { CreateSharedListForm } from "@/components/create-shared-list-form";
 import { ListLinkCard } from "@/components/list-link-card";
 import { ShoppingListDetail } from "@/components/shopping-list-detail";
+import { ShoppingRecipeIdeas } from "@/components/shopping-recipe-ideas";
 import {
   getOrCreatePersonalShoppingList,
   getSharedShoppingLists,
@@ -61,6 +62,8 @@ export default async function ShoppingPage() {
         userId={userId}
         embedded
       />
+
+      <ShoppingRecipeIdeas listId={personalShopping.id} />
 
       <section id="listes-partagees" className="scroll-mt-8 space-y-3">
         <h2 className="text-sm font-semibold text-gray-500">Listes partagées</h2>

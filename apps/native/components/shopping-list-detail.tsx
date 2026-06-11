@@ -20,6 +20,7 @@ import { useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PushOptInCard } from "@/components/push-opt-in-card";
+import { RecipeChefChat } from "@/components/recipe-chef-chat";
 import { TitleSuggestionList } from "@/components/title-suggestion-list";
 import { UnitPicker } from "@/components/unit-picker";
 import { useAuth } from "@/lib/auth-context";
@@ -744,6 +745,8 @@ export function ShoppingListDetail({
         contentContainerStyle={styles.content}
       />
 
+      {canWrite && listId ? <RecipeChefChat listId={listId} /> : null}
+
       <Modal visible={shareOpen} animationType="slide" transparent onRequestClose={() => setShareOpen(false)}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
@@ -838,7 +841,7 @@ export function ShoppingListDetail({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
-  content: { padding: 16, paddingBottom: 40 },
+  content: { padding: 16, paddingBottom: 88 },
   embeddedTopRow: {
     flexDirection: "row",
     alignItems: "center",

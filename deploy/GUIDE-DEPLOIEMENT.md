@@ -38,6 +38,7 @@ Ajouter si absent :
 VAPID_PUBLIC_KEY=...
 VAPID_PRIVATE_KEY=...
 VAPID_SUBJECT=mailto:r.rousset31@gmail.com
+MISTRAL_API_KEY=...   # suggestions « Idées repas » (optionnel)
 ```
 
 Générer les clés (PC) :

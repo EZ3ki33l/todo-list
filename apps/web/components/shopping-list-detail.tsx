@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CategoryChips } from "@/components/category-chips";
+import { RecipeChefChat } from "@/components/recipe-chef-chat";
 import { ShareShoppingListPanel } from "@/components/share-shopping-list-panel";
 import {
   ShoppingItemRow,
@@ -567,6 +568,8 @@ export function ShoppingListDetail({
               </ul>
             )}
           </section>
+
+          {!embedded && canWrite ? <RecipeChefChat listId={listId} /> : null}
 
           {checkedItems.length > 0 && (
             <section>

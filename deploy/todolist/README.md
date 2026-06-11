@@ -57,6 +57,8 @@ Créer `/srv/docker/todolist/.env` avec au minimum :
 | `AUTH_SECRET` | Idem (`openssl rand -base64 32`) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud Console |
 | `AUTH_URL` | `https://todolist.ez3ki33l.ovh` (après HTTPS ; en test HTTP temporaire possible) |
+| `MISTRAL_API_KEY` | [console.mistral.ai](https://console.mistral.ai) — suggestions « Idées repas » (optionnel) |
+| `MISTRAL_MODEL` | Optionnel, défaut `mistral-small-latest` |
 
 **Schéma Neon** (après changement Prisma, depuis ton PC ou le serveur avec Node) :
 

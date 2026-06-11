@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "782595741716-a1l1dhjtqvr5fsjjhfthi0uqam90q39b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ez3ki33l.todolist",
+            "certificate_hash": "9a29561b3d53358f911b93460d4311a2e79a0f28"
+          }
+        },
+        {
           "client_id": "782595741716-kv474jirrh53l83irvitorjvjeedaag2.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -30,7 +38,7 @@
           }
         },
         {
-          "client_id": "782595741716-7t6oc4qgangu1uvobg2tcae01d89bq2b.apps.googleusercontent.com",
+          "client_id": "782595741716-6ebvh8k73pbeta3hpcqapq4jj7lrtk6d.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -43,7 +51,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "782595741716-7t6oc4qgangu1uvobg2tcae01d89bq2b.apps.googleusercontent.com",
+              "client_id": "782595741716-6ebvh8k73pbeta3hpcqapq4jj7lrtk6d.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

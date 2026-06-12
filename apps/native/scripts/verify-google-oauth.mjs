@@ -111,8 +111,7 @@ if (appGoogleServices && expectedWebClientId) {
 }
 
 const requiredSha1 = {
-  play: "07:23:BE:39:85:4F:1F:CE:71:96:88:89:29:FB:34:F2:CE:FF:C0:45",
-  eas: "9A:29:56:1B:3D:53:35:8F:91:1B:93:46:0D:43:11:A2:E7:9A:0F:28",
+  installed: "63:B7:1F:21:26:78:AC:54:78:AF:14:50:9F:C1:C4:CB:AF:F5:79:18",
   debug: "54:40:61:09:64:FF:CD:14:BB:6F:99:22:01:C8:4B:B7:F0:E2:18:E1",
 };
 
@@ -141,7 +140,7 @@ console.log("✅ OAuth Google cohérent");
 console.log(`   package        : ${packageName}`);
 console.log(`   webClientId    : ${expectedWebClientId}`);
 console.log(`   scheme Android : ${expectedScheme}`);
-console.log(`   clients Android: ${androidClients.length} (Play + EAS + debug)`);
+console.log(`   clients Android: ${androidClients.length}`);
 if (easWebClientId) {
   console.log(`   EAS env        : OK (${easWebClientId.slice(0, 24)}…)`);
 }

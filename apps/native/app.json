@@ -2,7 +2,7 @@
   "expo": {
     "name": "Todo List",
     "slug": "todo-list",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scheme": "todolist",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -34,7 +34,7 @@
           "action": "VIEW",
           "data": [
             {
-              "scheme": "com.googleusercontent.apps.782595741716-7t6oc4qgangu1uvobg2tcae01d89bq2b"
+              "scheme": "com.googleusercontent.apps.782595741716-6ebvh8k73pbeta3hpcqapq4jj7lrtk6d"
             }
           ],
           "category": [

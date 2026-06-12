@@ -44,28 +44,34 @@ eas build --platform android --profile preview --local
 
 ### Client Web (déjà OK si le site fonctionne)
 
-- `EXPO_PUBLIC_GOOGLE_CLIENT_ID` = ID du client **Application Web** (ex. `782595741716-7t6o….apps.googleusercontent.com`)
+- `EXPO_PUBLIC_GOOGLE_CLIENT_ID` = client **Web Firebase** (`client_type: 3` dans `google-services.json`, pas le client Android)
 - **Ne pas** mettre l’ID du client Android ici.
 
 ### Client Android (obligatoire pour l’app native)
 
 1. Google Cloud → **API et services** → **Identifiants** → **Créer** → **ID client OAuth** → **Android**
 2. **Nom du package** : `com.ez3ki33l.todolist` (pas `com.todolist`)
-3. **Empreinte SHA-1** : en ajouter **deux** sur le même client (ou créer deux clients si tu préfères) :
+3. **Empreinte SHA-1** : les **trois** doivent figurer dans `android/app/google-services.json` (Firebase les synchronise avec Google Cloud) :
 
 | Build | SHA-1 | Où le trouver |
 |-------|-------|----------------|
-| `pnpm android` (debug local) | `54:40:61:09:64:FF:CD:14:BB:6F:99:22:01:C8:4B:B7:F0:E2:18:E1` | `apps/native/.env` → `GOOGLE_SHA1_DEBUG` |
-| EAS / Play Store | `9A:29:56:1B:3D:53:35:8F:91:1B:93:46:0D:43:11:A2:E7:9A:0F:28` | `eas credentials -p android` ou `GOOGLE_SHA1_EAS` |
+| `pnpm android` (debug local) | `54:40:61:09:64:FF:CD:14:BB:6F:99:22:01:C8:4B:B7:F0:E2:18:E1` | `keytool -list -v -keystore android/app/debug.keystore -alias androiddebugkey -storepass android` |
+| EAS preview (APK direct) | `9A:29:56:1B:3D:53:35:8F:91:1B:93:46:0D:43:11:A2:E7:9A:0F:28` | `eas credentials -p android` (upload key) |
+| **Play Store** (test interne / prod) | `07:23:BE:39:85:4F:1F:CE:71:96:88:89:29:FB:34:F2:CE:FF:C0:45` | Play Console → Intégrité de l’app → **Certificat de signature de l’app** |
 
-4. Enregistrer, attendre **2–5 min** (propagation Google), puis **réinstaller** l’APK (`pnpm android`).
+4. Enregistrer, attendre **2–5 min** (propagation Google), puis **réinstaller** l’app.
 
 ### Vérification rapide
 
+```bash
+cd apps/native
+pnpm check:google-oauth
+```
+
 - [ ] Client **Android** existe, package `com.ez3ki33l.todolist`
-- [ ] SHA-1 **debug** présent (sinon `pnpm android` → `DEVELOPER_ERROR`)
-- [ ] SHA-1 **EAS** présent (sinon APK/AAB cloud → `DEVELOPER_ERROR`)
-- [ ] `EXPO_PUBLIC_GOOGLE_CLIENT_ID` = client **Web** uniquement
+- [ ] SHA-1 **debug**, **EAS** et **Play** présents dans `google-services.json`
+- [ ] `EXPO_PUBLIC_GOOGLE_CLIENT_ID` = client **Web Firebase** (`client_type: 3` dans `google-services.json`, actuellement `6ebvh8…`)
+- [ ] `app.json` + `AndroidManifest.xml` : schéma `com.googleusercontent.apps.<WEB_CLIENT_ID>` identique au client Web ci-dessus
 
 ## 4. Premier build Android (test interne)
 

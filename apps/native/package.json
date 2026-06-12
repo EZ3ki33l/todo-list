@@ -1,6 +1,6 @@
 {
   "name": "native",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "eject": "expo eject"
+    "eject": "expo eject",
+    "check:google-oauth": "node scripts/verify-google-oauth.mjs",
+    "eas-build-post-install": "node scripts/verify-google-oauth.mjs"
   },
   "dependencies": {
     "@babel/runtime": "~7.29.7",

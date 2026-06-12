@@ -10,6 +10,8 @@ function allowedGoogleAudiences(): string[] {
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_ANDROID_CLIENT_ID,
     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    // Même valeur que EXPO_PUBLIC_GOOGLE_CLIENT_ID côté build EAS (aud du idToken mobile).
+    process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
   ].filter((v): v is string => Boolean(v));
 }
 

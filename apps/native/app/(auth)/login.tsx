@@ -1,16 +1,23 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 
+import { formatGoogleSignInError } from "@/lib/google-signin-errors";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth-context";
 
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-});
+const webClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
-const DEVELOPER_ERROR_MSG =
-  "Config Google Cloud incorrecte. Crée un client OAuth Android (package com.ez3ki33l.todolist + SHA-1 debug). Voir DEPLOY.md §3.";
+GoogleSignin.configure({
+  webClientId,
+});
 
 export default function LoginScreen() {
   const { signIn: storeSession } = useAuth();
@@ -20,25 +27,42 @@ export default function LoginScreen() {
     onSuccess: async (data) => {
       await storeSession(data.token, data.user);
     },
+    onError: (error) => {
+      console.error("[Google Sign-In API]", error);
+    },
   });
 
   async function handleSignIn() {
     setGoogleError(null);
     try {
-      await GoogleSignin.hasPlayServices();
-      const response = await GoogleSignin.signIn();
-      const idToken = response.data?.idToken;
-      if (!idToken) throw new Error("Pas d'idToken");
-      signIn.mutate({ idToken });
-    } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) return;
-      if (error.code === statusCodes.IN_PROGRESS) return;
-      console.error("[Google Sign-In]", error);
-      if (error.code === statusCodes.DEVELOPER_ERROR) {
-        setGoogleError(DEVELOPER_ERROR_MSG);
+      if (!webClientId) {
+        setGoogleError(
+          "EXPO_PUBLIC_GOOGLE_CLIENT_ID manquant dans ce build.\nVérifiez les variables EAS production.",
+        );
         return;
       }
-      setGoogleError(error.message ?? "Connexion Google impossible.");
+
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const response = await GoogleSignin.signIn();
+      const idToken = response.data?.idToken;
+      if (!idToken) {
+        setGoogleError("Google n'a pas renvoyé d'idToken.\nRéessayez ou vérifiez le compte sélectionné.");
+        return;
+      }
+      signIn.mutate({ idToken });
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === statusCodes.SIGN_IN_CANCELLED) return;
+      if (err.code === statusCodes.IN_PROGRESS) return;
+
+      console.error("[Google Sign-In]", JSON.stringify(err, null, 2));
+
+      if (err.code === statusCodes.DEVELOPER_ERROR) {
+        setGoogleError(formatGoogleSignInError(err));
+        return;
+      }
+
+      setGoogleError(formatGoogleSignInError(err));
     }
   }
 
@@ -60,7 +84,11 @@ export default function LoginScreen() {
         </Pressable>
       )}
 
-      {displayError ? <Text style={styles.error}>{displayError}</Text> : null}
+      {displayError ? (
+        <ScrollView style={styles.errorBox} contentContainerStyle={styles.errorContent}>
+          <Text style={styles.error}>{displayError}</Text>
+        </ScrollView>
+      ) : null}
     </View>
   );
 }
@@ -72,5 +100,7 @@ const styles = StyleSheet.create({
   button: { backgroundColor: "#111827", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 8 },
   buttonPressed: { opacity: 0.8 },
   buttonText: { color: "#fff", fontWeight: "600", fontSize: 15 },
-  error: { marginTop: 16, color: "#DC2626", fontSize: 13, textAlign: "center" },
+  errorBox: { marginTop: 16, maxHeight: 220, width: "100%" },
+  errorContent: { paddingHorizontal: 4 },
+  error: { color: "#DC2626", fontSize: 12, lineHeight: 18, textAlign: "left", fontFamily: "monospace" },
 });

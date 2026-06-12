@@ -204,8 +204,9 @@ Variables d'environnement utiles côté app :
 
 | Variable | Rôle |
 |----------|------|
-| `GOOGLE_ANDROID_CLIENT_ID` | Validation `aud` du token Google mobile |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Idem (client Expo web si utilisé) |
+| `EXPO_PUBLIC_GOOGLE_CLIENT_ID` | **Obligatoire** — même client Web Firebase que le build EAS (`6ebvh8…`). C’est l’`aud` du idToken mobile. |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Alias accepté (même valeur que ci-dessus) |
+| `GOOGLE_ANDROID_CLIENT_ID` | Optionnel — client Android Play (`3tjk86…`), rarement l’`aud` du idToken |
 
 ---
 

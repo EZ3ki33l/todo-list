@@ -1,19 +1,10 @@
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
+import { allowedGoogleAudiences } from "../lib/google-oauth-audiences";
 import { checkRateLimit } from "../lib/rate-limit";
 import { issueJwt } from "../jwt";
 import { protectedProcedure, publicProcedure, router, signInGoogleInput } from "../trpc";
-
-function allowedGoogleAudiences(): string[] {
-  return [
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_ANDROID_CLIENT_ID,
-    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    // Même valeur que EXPO_PUBLIC_GOOGLE_CLIENT_ID côté build EAS (aud du idToken mobile).
-    process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-  ].filter((v): v is string => Boolean(v));
-}
 
 async function upsertUser(profile: { sub: string; email?: string; name?: string; picture?: string }) {
   return prisma.user.upsert({

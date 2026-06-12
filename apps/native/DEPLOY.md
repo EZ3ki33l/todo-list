@@ -51,7 +51,15 @@ eas build --platform android --profile preview --local
 
 1. Google Cloud → **API et services** → **Identifiants** → **Créer** → **ID client OAuth** → **Android**
 2. **Nom du package** : `com.ez3ki33l.todolist` (pas `com.todolist`)
-3. **Empreinte SHA-1** : les **trois** doivent figurer dans `android/app/google-services.json` (Firebase les synchronise avec Google Cloud) :
+3. **Vérification sans build** (local ou CI) :
+
+```bash
+cd apps/native
+pnpm test:oauth      # batterie Vitest (12+ cas)
+pnpm check:google-oauth   # même règles, sortie CLI (hook EAS)
+```
+
+4. **Empreinte SHA-1** : les empreintes Play / debug / upload doivent figurer dans `android/app/google-services.json` (Firebase les synchronise avec Google Cloud) :
 
 | Build | SHA-1 | Où le trouver |
 |-------|-------|----------------|

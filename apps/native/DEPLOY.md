@@ -23,7 +23,8 @@ Variables pour l’environnement **preview** (sinon le build part sans API URL) 
 ```bash
 cd apps/native
 npx eas-cli env:create --environment preview --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
-npx eas-cli env:create --environment preview --name EXPO_PUBLIC_GOOGLE_CLIENT_ID --value "TON_CLIENT_WEB.apps.googleusercontent.com"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_GOOGLE_CLIENT_ID --value "782595741716-6ebvh8k73pbeta3hpcqapq4jj7lrtk6d.apps.googleusercontent.com"
+# Client Web Firebase (6ebvh8…), pas l’ancien NextAuth (7t6oc4…)
 npx eas-cli env:create --environment preview --name EXPO_PUBLIC_EAS_PROJECT_ID --value "7880f051-0127-48d4-a656-b19916a7e1f4"
 ```
 
@@ -230,9 +231,17 @@ Répéter pour `production`. Ou committer `google-services.json` (identifiants p
 
 ### D. Vérification
 
-1. Ouvrir l’app → cloche → **Réglages** → activer **Notifications push**
-2. Le switch reste activé sans erreur Firebase
-3. Le backend enregistre le token (`notifications.registerPushToken`)
+1. Ouvrir l’app → cloche → **Réglages** → activer **Notifications push** (obligatoire — pas d’alerte système sans cet opt-in)
+2. Sur une liste partagée, activer aussi la carte **Notifications** si proposée
+3. Le switch reste activé sans erreur Firebase
+4. Le backend enregistre le token (`notifications.registerPushToken`)
+5. **Les deux téléphones** (vous + votre compagne) doivent activer les notifications chacun de leur côté
+
+**Alertes disponibles sur mobile :**
+- Partage d’une liste (courses ou tâches)
+- Articles ajoutés sur une liste courses partagée (~45 s après le dernier ajout)
+
+Sans clé **FCM V1** sur EAS (`eas credentials -p android`), les tokens s’enregistrent mais Expo ne délivre pas les push.
 
 ## 7. Test partage avec ta compagne
 

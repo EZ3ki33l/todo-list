@@ -12,18 +12,6 @@ export async function notifyShoppingListShared(params: {
   sharerUserId: string;
   sharerName: string | null;
 }): Promise<void> {
-  const pushRecipientIds = await filterRecipientsForNotificationType(
-    [params.targetUserId],
-    "SHOPPING_LIST_SHARED",
-  );
-  if (pushRecipientIds.length === 0) return;
-
-  const tokens = await prisma.pushToken.findMany({
-    where: { userId: { in: pushRecipientIds } },
-    select: { token: true },
-  });
-  if (tokens.length === 0) return;
-
   const who = params.sharerName?.trim() || "Quelqu'un";
   const body = `${who} a partagé la liste « ${params.listTitle} » avec vous.`;
   const title = "Liste de courses partagée";
@@ -38,6 +26,18 @@ export async function notifyShoppingListShared(params: {
     title,
     body,
   });
+
+  const pushRecipientIds = await filterRecipientsForNotificationType(
+    [params.targetUserId],
+    "SHOPPING_LIST_SHARED",
+  );
+  if (pushRecipientIds.length === 0) return;
+
+  const tokens = await prisma.pushToken.findMany({
+    where: { userId: { in: pushRecipientIds } },
+    select: { token: true },
+  });
+  if (tokens.length === 0) return;
 
   await sendExpoPush(
     tokens.map((t) => ({

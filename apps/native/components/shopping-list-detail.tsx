@@ -40,9 +40,14 @@ import {
   PICKABLE_CATEGORIES,
 } from "@/lib/grocery-ui";
 import { applyListOrder } from "@/lib/reorder-list";
+import {
+  memberRoleLabel,
+  SHARE_ROLES,
+  shareRoleLabel,
+  toggleShareRole,
+  type ShareRole,
+} from "@/lib/share-roles";
 import { trpc } from "@/lib/trpc";
-
-type ShareRole = "membre" | "invité";
 
 /** Aligné sur `shoppingItems.getFrequent` (évite les `any` si les types tRPC ne sont pas à jour). */
 type FrequentShoppingItem = {
@@ -614,7 +619,9 @@ export function ShoppingListDetail({
         )}
 
         {!canWrite && (
-          <Text style={styles.readOnlyBanner}>Lecture seule (invité)</Text>
+          <Text style={styles.readOnlyBanner}>
+            Lecture seule — demandez l'accès écriture au propriétaire
+          </Text>
         )}
 
         {canWrite && frequentNotInList.length > 0 && (
@@ -777,15 +784,16 @@ export function ShoppingListDetail({
               keyboardType="email-address"
             />
 
+            <Text style={styles.roleHint}>Droits accordés à la personne invitée :</Text>
             <View style={styles.roleRow}>
-              {(["membre", "invité"] as ShareRole[]).map((r) => (
+              {SHARE_ROLES.map((r) => (
                 <Pressable
                   key={r}
                   style={[styles.roleBtn, shareRole === r && styles.roleBtnActive]}
                   onPress={() => setShareRole(r)}
                 >
                   <Text style={[styles.roleBtnText, shareRole === r && styles.roleBtnTextActive]}>
-                    {r === "membre" ? "Membre (édition)" : "Invité (lecture)"}
+                    {shareRoleLabel(r)}
                   </Text>
                 </Pressable>
               ))}
@@ -816,7 +824,19 @@ export function ShoppingListDetail({
               <View key={m.userId} style={styles.memberRow}>
                 <View style={styles.memberInfo}>
                   <Text style={styles.memberName}>{m.user.name ?? m.user.email}</Text>
-                  <Text style={styles.memberRole}>{m.role}</Text>
+                  <Pressable
+                    onPress={() => {
+                      const email = m.user.email;
+                      if (!email || !listId) return;
+                      const next = toggleShareRole(m.role as ShareRole);
+                      shareList.mutate({ listId, emailOrId: email, role: next });
+                    }}
+                    disabled={shareList.isPending}
+                  >
+                    <Text style={styles.memberRoleTap}>
+                      {memberRoleLabel(m.role)} · modifier
+                    </Text>
+                  </Pressable>
                 </View>
                 <Pressable onPress={() => unshare.mutate({ listId: listId!, userId: m.userId })}>
                   <Text style={styles.unshareBtn}>Retirer</Text>
@@ -1003,6 +1023,7 @@ const styles = StyleSheet.create({
     maxHeight: "85%",
   },
   modalTitle: { fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 16 },
+  roleHint: { fontSize: 12, color: "#6B7280", marginBottom: 8 },
   roleRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   roleBtn: {
     flex: 1,
@@ -1027,7 +1048,7 @@ const styles = StyleSheet.create({
   },
   memberInfo: { flex: 1 },
   memberName: { fontSize: 14, color: "#111827" },
-  memberRole: { fontSize: 12, color: "#9CA3AF" },
+  memberRoleTap: { fontSize: 12, color: "#2563EB", marginTop: 2 },
   unshareBtn: { fontSize: 13, color: "#DC2626" },
   modalClose: {
     marginTop: 16,

@@ -79,6 +79,7 @@ export default function ListDetailScreen() {
 
   const isOwner = !!user?.id && list?.ownerId === user.id;
   const myMember = list?.members.find((m) => m.userId === user?.id);
+  const canWrite = isOwner || myMember?.role === "membre";
   const isShared =
     (list?.members.length ?? 0) > 0 || (!!user?.id && !isOwner && !!myMember);
 
@@ -187,7 +188,7 @@ export default function ListDetailScreen() {
   );
 
   function handleCreate() {
-    if (!title.trim() || !listId) return;
+    if (!canWrite || !title.trim() || !listId) return;
     createAction.mutate({
       listId,
       title,
@@ -211,13 +212,16 @@ export default function ListDetailScreen() {
 
   const done = actionRows.filter((a) => a.done).length;
   const total = actionRows.length;
-  const dragEnabled = !editingId;
+  const dragEnabled = canWrite && !editingId;
 
   const listHeader = useMemo(
     () => (
       <View>
         {!!list && isShared ? (
           <PushOptInCard visible listKind="todo" />
+        ) : null}
+        {!canWrite ? (
+          <Text style={styles.readOnlyBanner}>Lecture seule — demandez l'accès écriture au propriétaire</Text>
         ) : null}
         {total > 0 && (
           <>
@@ -230,64 +234,39 @@ export default function ListDetailScreen() {
           </>
         )}
 
-        <View style={styles.card}>
-          <TextInput
-            style={styles.input}
-            placeholder="Nouvelle action..."
-            placeholderTextColor="#9CA3AF"
-            value={title}
-            onChangeText={setTitle}
-            returnKeyType="done"
-          />
+        {canWrite ? (
+          <View style={styles.card}>
+            <TextInput
+              style={styles.input}
+              placeholder="Nouvelle action..."
+              placeholderTextColor="#9CA3AF"
+              value={title}
+              onChangeText={setTitle}
+              returnKeyType="done"
+            />
 
-          <View style={styles.radioRow}>
-            {(["NONE", "DAILY", "WEEKLY"] as Recurrence[]).map((r) => (
-              <Pressable key={r} style={styles.radioItem} onPress={() => setRecurrence(r)}>
-                <View style={[styles.radio, recurrence === r && styles.radioActive]} />
-                <Text style={styles.radioLabel}>
-                  {r === "NONE" ? "Ponctuelle" : r === "DAILY" ? "Chaque jour" : "Chaque semaine"}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+            <View style={styles.radioRow}>
+              {(["NONE", "DAILY", "WEEKLY"] as Recurrence[]).map((r) => (
+                <Pressable key={r} style={styles.radioItem} onPress={() => setRecurrence(r)}>
+                  <View style={[styles.radio, recurrence === r && styles.radioActive]} />
+                  <Text style={styles.radioLabel}>
+                    {r === "NONE" ? "Ponctuelle" : r === "DAILY" ? "Chaque jour" : "Chaque semaine"}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
 
-          {recurrence === "NONE" && (
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>À faire le</Text>
-              <Pressable style={styles.fieldInput} onPress={() => setShowDatePicker(true)}>
-                <Text style={[styles.fieldText, !dueAt && styles.fieldTextPlaceholder]}>
-                  {dueAt ? formatDateFr(dueAt) : "Choisir une date"}
-                </Text>
-              </Pressable>
-            </View>
-          )}
-          {recurrence === "DAILY" && (
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>À</Text>
-              <Pressable style={styles.fieldInput} onPress={() => setShowTimePicker(true)}>
-                <Text
-                  style={[styles.fieldText, !recurrenceTime && styles.fieldTextPlaceholder]}
-                >
-                  {recurrenceTime ? formatTime24(recurrenceTime) : "Choisir une heure"}
-                </Text>
-              </Pressable>
-            </View>
-          )}
-          {recurrence === "WEEKLY" && (
-            <View>
-              <View style={styles.dowRow}>
-                {DOW_LABELS.map((d, i) => (
-                  <Pressable
-                    key={i}
-                    style={[styles.dowBtn, recurrenceDow === i && styles.dowBtnActive]}
-                    onPress={() => setRecurrenceDow(i)}
-                  >
-                    <Text style={[styles.dowLabel, recurrenceDow === i && styles.dowLabelActive]}>
-                      {d}
-                    </Text>
-                  </Pressable>
-                ))}
+            {recurrence === "NONE" && (
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>À faire le</Text>
+                <Pressable style={styles.fieldInput} onPress={() => setShowDatePicker(true)}>
+                  <Text style={[styles.fieldText, !dueAt && styles.fieldTextPlaceholder]}>
+                    {dueAt ? formatDateFr(dueAt) : "Choisir une date"}
+                  </Text>
+                </Pressable>
               </View>
+            )}
+            {recurrence === "DAILY" && (
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>À</Text>
                 <Pressable style={styles.fieldInput} onPress={() => setShowTimePicker(true)}>
@@ -298,37 +277,64 @@ export default function ListDetailScreen() {
                   </Text>
                 </Pressable>
               </View>
-            </View>
-          )}
+            )}
+            {recurrence === "WEEKLY" && (
+              <View>
+                <View style={styles.dowRow}>
+                  {DOW_LABELS.map((d, i) => (
+                    <Pressable
+                      key={i}
+                      style={[styles.dowBtn, recurrenceDow === i && styles.dowBtnActive]}
+                      onPress={() => setRecurrenceDow(i)}
+                    >
+                      <Text style={[styles.dowLabel, recurrenceDow === i && styles.dowLabelActive]}>
+                        {d}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>À</Text>
+                  <Pressable style={styles.fieldInput} onPress={() => setShowTimePicker(true)}>
+                    <Text
+                      style={[styles.fieldText, !recurrenceTime && styles.fieldTextPlaceholder]}
+                    >
+                      {recurrenceTime ? formatTime24(recurrenceTime) : "Choisir une heure"}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
 
-          {showDatePicker && (
-            <DateTimePicker
-              value={dueAt ?? new Date()}
-              mode="date"
-              onChange={handleDateChange}
-            />
-          )}
-          {showTimePicker && (
-            <DateTimePicker
-              value={recurrenceTime ?? new Date()}
-              mode="time"
-              is24Hour
-              onChange={handleTimeChange}
-            />
-          )}
+            {showDatePicker && (
+              <DateTimePicker
+                value={dueAt ?? new Date()}
+                mode="date"
+                onChange={handleDateChange}
+              />
+            )}
+            {showTimePicker && (
+              <DateTimePicker
+                value={recurrenceTime ?? new Date()}
+                mode="time"
+                is24Hour
+                onChange={handleTimeChange}
+              />
+            )}
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.addBtn,
-              pressed && { opacity: 0.8 },
-              !title.trim() && { opacity: 0.4 },
-            ]}
-            onPress={handleCreate}
-            disabled={!title.trim() || createAction.isPending}
-          >
-            <Text style={styles.addBtnText}>Ajouter</Text>
-          </Pressable>
-        </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.addBtn,
+                pressed && { opacity: 0.8 },
+                !title.trim() && { opacity: 0.4 },
+              ]}
+              onPress={handleCreate}
+              disabled={!title.trim() || createAction.isPending}
+            >
+              <Text style={styles.addBtnText}>Ajouter</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {isLoading && <ActivityIndicator style={{ marginTop: 20 }} />}
       </View>
@@ -347,6 +353,7 @@ export default function ListDetailScreen() {
       createAction.isPending,
       list,
       isShared,
+      canWrite,
     ],
   );
 
@@ -392,7 +399,8 @@ export default function ListDetailScreen() {
                 </Pressable>
                 <Pressable
                   style={[styles.checkbox, item.done && styles.checkboxDone]}
-                  onPress={() => toggleAction.mutate({ actionId: item.id })}
+                  onPress={() => canWrite && toggleAction.mutate({ actionId: item.id })}
+                  disabled={!canWrite}
                 >
                   {item.done && <Text style={styles.checkmark}>✓</Text>}
                 </Pressable>
@@ -413,19 +421,21 @@ export default function ListDetailScreen() {
                     <StreakBadge streakCount={item.streakCount} bestStreak={item.bestStreak} />
                   </View>
                 </View>
-                <View style={styles.rowBtns}>
-                  <Pressable
-                    onPress={() => {
-                      setEditingId(item.id);
-                      setEditTitle(item.title);
-                    }}
-                  >
-                    <Text style={styles.editIcon}>✏️</Text>
-                  </Pressable>
-                  <Pressable onPress={() => deleteAction.mutate({ actionId: item.id })}>
-                    <Text style={styles.deleteIcon}>🗑</Text>
-                  </Pressable>
-                </View>
+                {canWrite ? (
+                  <View style={styles.rowBtns}>
+                    <Pressable
+                      onPress={() => {
+                        setEditingId(item.id);
+                        setEditTitle(item.title);
+                      }}
+                    >
+                      <Text style={styles.editIcon}>✏️</Text>
+                    </Pressable>
+                    <Pressable onPress={() => deleteAction.mutate({ actionId: item.id })}>
+                      <Text style={styles.deleteIcon}>🗑</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
               </View>
           )}
         </View>
@@ -434,6 +444,7 @@ export default function ListDetailScreen() {
       editingId,
       editTitle,
       dragEnabled,
+      canWrite,
       updateAction,
       toggleAction,
       deleteAction,
@@ -473,6 +484,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
   content: { padding: 16, paddingBottom: 40 },
   headerShare: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  readOnlyBanner: {
+    fontSize: 13,
+    color: "#92400E",
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 12,
+    overflow: "hidden",
+  },
   counter: { fontSize: 13, color: "#9CA3AF", marginBottom: 4, textAlign: "right" },
   dragHint: { fontSize: 12, color: "#9CA3AF", marginBottom: 12, textAlign: "right" },
   card: {

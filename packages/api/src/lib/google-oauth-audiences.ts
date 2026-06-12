@@ -7,5 +7,5 @@ export function allowedGoogleAudiences(env: NodeJS.ProcessEnv = process.env): st
     env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
   ].filter((v): v is string => Boolean(v));
 
-  return [...new Set(values)];
+  return Array.from(new Set(values));
 }

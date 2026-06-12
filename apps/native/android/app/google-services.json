@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "782595741716-3s3jq4egc83r1ilq7vleh7qgga3si982.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ez3ki33l.todolist",
+            "certificate_hash": "9a29561b3d53358f911b93460d4311a2e79a0f28"
+          }
+        },
+        {
           "client_id": "782595741716-3tjk86tsghsdd5mof896deiuadqseteg.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -22,11 +30,11 @@
           }
         },
         {
-          "client_id": "782595741716-a1l1dhjtqvr5fsjjhfthi0uqam90q39b.apps.googleusercontent.com",
+          "client_id": "782595741716-8aq7k82a28ocl82e4culejb25ecsshkl.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.ez3ki33l.todolist",
-            "certificate_hash": "9a29561b3d53358f911b93460d4311a2e79a0f28"
+            "certificate_hash": "a75d0491e1defd56e853c66978574852cecb74ed"
           }
         },
         {
@@ -43,6 +51,14 @@
           "android_info": {
             "package_name": "com.ez3ki33l.todolist",
             "certificate_hash": "5440610964ffcd14bb6f992201c84bb7f0e218e1"
+          }
+        },
+        {
+          "client_id": "782595741716-t0i4bd5hcakskah7bav5rkn8tphsmqnp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ez3ki33l.todolist",
+            "certificate_hash": "b1af3a0bf998aeede1a8716a539e5a59da1d86d6"
           }
         },
         {

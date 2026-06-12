@@ -12,6 +12,7 @@
     "check:google-oauth": "node scripts/verify-google-oauth.mjs",
     "test": "vitest run",
     "test:oauth": "vitest run lib/google-oauth-verify.test.ts",
+    "inspect:device-oauth": "node scripts/inspect-device-oauth.mjs",
     "eas-build-post-install": "node scripts/verify-google-oauth.mjs"
   },
   "dependencies": {

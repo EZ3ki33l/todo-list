@@ -213,7 +213,8 @@ export async function runClerkGoogleNativeAuth(
     return { kind: "no_credential" };
   }
   if (!isSuccessResponse(googleResponse)) {
-    return { kind: "google_non_success", responseType: googleResponse.type };
+    const responseType = (googleResponse as { type?: string }).type ?? "unknown";
+    return { kind: "google_non_success", responseType };
   }
 
   const idToken = googleResponse.data.idToken;

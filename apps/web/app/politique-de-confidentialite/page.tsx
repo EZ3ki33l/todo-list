@@ -57,7 +57,7 @@ export default function PolitiqueConfidentialitePage() {
         <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
           <li>
             <strong>Données de compte</strong> : nom, adresse e-mail et photo de profil
-            fournis par Google lors de la connexion (OAuth).
+            fournis lors de la connexion via Clerk.
           </li>
           <li>
             <strong>Contenus que vous créez</strong> : listes de tâches, tâches
@@ -103,7 +103,7 @@ export default function PolitiqueConfidentialitePage() {
           </li>
           <li>
             <strong>Authentification</strong> (exécution du contrat) : connexion via
-            Google et maintien de votre session.
+            Clerk et maintien de votre session.
           </li>
           <li>
             <strong>Notifications</strong> (consentement ou intérêt légitime selon le
@@ -126,8 +126,11 @@ export default function PolitiqueConfidentialitePage() {
         </p>
         <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
           <li>
-            <strong>Google</strong> : connexion OAuth (web et mobile), et Firebase
-            Cloud Messaging pour les notifications push Android.
+            <strong>Clerk</strong> : authentification (web et mobile).
+          </li>
+          <li>
+            <strong>Google (Firebase)</strong> : Firebase Cloud Messaging pour les
+            notifications push Android uniquement.
           </li>
           <li>
             <strong>Neon</strong> : hébergement de la base de données PostgreSQL.
@@ -164,7 +167,7 @@ export default function PolitiqueConfidentialitePage() {
           >
             r.rousset31@gmail.com
           </a>{" "}
-          depuis l&apos;adresse liée à votre compte Google, avec l&apos;objet{" "}
+          depuis l&apos;adresse liée à votre compte, avec l&apos;objet{" "}
           <strong>« Suppression de compte »</strong>. Nous traitons la demande sous
           30 jours.
         </p>

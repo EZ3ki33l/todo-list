@@ -1,57 +1,41 @@
+"use client";
+
 import Link from "next/link";
+import { UserButton, useAuth } from "@clerk/nextjs";
 
-import { auth, signIn, signOut } from "@/auth";
+export function SessionNav() {
+  const { isSignedIn, isLoaded } = useAuth();
 
-export async function SessionNav() {
-  const session = await auth();
+  if (!isLoaded) return null;
 
-  if (!session?.user) {
+  if (!isSignedIn) {
     return (
       <>
-        <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900">
-          Connexion
-        </Link>
-        <form
-          action={async () => {
-            "use server";
-            await signIn("google", { redirectTo: "/dashboard" });
-          }}
+        <Link
+          href="/login"
+          className="text-sm px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700"
         >
-          <button
-            type="submit"
-            className="text-sm px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700"
-          >
-            Se connecter avec Google
-          </button>
-        </form>
+          Se connecter
+        </Link>
+        <Link
+          href="/sign-up"
+          className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-100"
+        >
+          Créer un compte
+        </Link>
       </>
     );
   }
 
   return (
     <>
-      <span className="text-sm text-gray-600">
-        {session.user.email ?? session.user.name}
-      </span>
       <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
         Tâches
       </Link>
       <Link href="/dashboard/shopping" className="text-sm text-gray-600 hover:text-gray-900">
         Courses
       </Link>
-      <form
-        action={async () => {
-          "use server";
-          await signOut({ redirectTo: "/login" });
-        }}
-      >
-        <button
-          type="submit"
-          className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-100"
-        >
-          Déconnexion
-        </button>
-      </form>
+      <UserButton />
     </>
   );
 }

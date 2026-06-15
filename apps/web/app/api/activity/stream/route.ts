@@ -1,6 +1,7 @@
 import { getActivityUnreadSnapshot } from "@repo/api/server";
+import { auth } from "@clerk/nextjs/server";
 
-import { auth } from "@/auth";
+import { getAppUser } from "@/lib/app-session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -8,12 +9,17 @@ export const runtime = "nodejs";
 const POLL_MS = 45_000;
 
 export async function GET(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const userId = session.user.id;
+  const user = await getAppUser();
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const userId = user.id;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({

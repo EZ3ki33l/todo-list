@@ -6,14 +6,15 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@clerk/expo/google-one-tap": [
+        "./node_modules/@clerk/expo/dist/google-one-tap/index.d.ts"
       ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules"

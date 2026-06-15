@@ -54,9 +54,8 @@ Créer `/srv/docker/todolist/.env` avec au minimum :
 |----------|----------------|
 | `DATABASE_URL` | Dashboard Neon → Connection string |
 | `JWT_SECRET` | Même valeur qu’en dev (ou `openssl rand -base64 32`) |
-| `AUTH_SECRET` | Idem (`openssl rand -base64 32`) |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud Console |
-| `AUTH_URL` | `https://todolist.ez3ki33l.ovh` (après HTTPS ; en test HTTP temporaire possible) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk Dashboard → API Keys |
+| `CLERK_SECRET_KEY` | Clerk Dashboard → API Keys (secret) |
 | `MISTRAL_API_KEY` | [console.mistral.ai](https://console.mistral.ai) — suggestions « Idées repas » (optionnel) |
 | `MISTRAL_MODEL` | Optionnel, défaut `mistral-small-latest` |
 
@@ -126,13 +125,7 @@ sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d todolist.ez3ki33l.ovh
 ```
 
-Mettre à jour `.env` si besoin :
-
-```env
-AUTH_URL=https://todolist.ez3ki33l.ovh
-```
-
-Puis redémarrer le conteneur :
+Mettre à jour `.env` si besoin (clés Clerk prod), puis redémarrer le conteneur :
 
 ```bash
 cd /srv/docker/todolist
@@ -200,13 +193,12 @@ location / {
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 ```
 
-Variables d'environnement utiles côté app :
+Variables d'environnement utiles côté app native :
 
 | Variable | Rôle |
 |----------|------|
-| `EXPO_PUBLIC_GOOGLE_CLIENT_ID` | **Obligatoire** — même client Web Firebase que le build EAS (`6ebvh8…`). C’est l’`aud` du idToken mobile. |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Alias accepté (même valeur que ci-dessus) |
-| `GOOGLE_ANDROID_CLIENT_ID` | Optionnel — client Android Play (`3tjk86…`), rarement l’`aud` du idToken |
+| `EXPO_PUBLIC_API_URL` | URL du backend (ex. `https://todolist.ez3ki33l.ovh`) |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clé publique Clerk (même app que le web) |
 
 ---
 

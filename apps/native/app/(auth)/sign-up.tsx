@@ -1,5 +1,5 @@
-import { useSignIn } from "@clerk/expo";
-import { SignIn } from "@clerk/expo/web";
+import { useSignUp } from "@clerk/expo";
+import { SignUp } from "@clerk/expo/web";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
@@ -17,85 +17,62 @@ import { clerkAuthStyles as styles } from "@/lib/clerk-auth-styles";
 import { ClerkAuthDivider, ClerkGoogleSignInButton } from "@/components/clerk-google-sign-in-button";
 import { useCompleteClerkAppSignIn } from "@/hooks/use-complete-clerk-app-sign-in";
 
-async function finalizeClerkSignIn(signIn: ReturnType<typeof useSignIn>["signIn"]) {
-  if (signIn.status !== "complete") return;
-  await signIn.finalize();
+async function finalizeClerkSignUp(signUp: ReturnType<typeof useSignUp>["signUp"]) {
+  if (signUp.status !== "complete") return;
+  await signUp.finalize();
 }
 
-function NativeLoginScreen() {
-  const { signIn, errors, fetchStatus } = useSignIn();
+function NativeSignUpScreen() {
+  const { signUp, errors, fetchStatus } = useSignUp();
   const completeAppSignIn = useCompleteClerkAppSignIn();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [awaitingCode, setAwaitingCode] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  const busy = fetchStatus === "fetching" || submitting;
+  const busy = fetchStatus === "fetching";
+
+  const needsEmailVerification =
+    signUp.status === "missing_requirements" &&
+    signUp.unverifiedFields.includes("email_address") &&
+    signUp.missingFields.length === 0;
 
   async function handleSubmit() {
     setFormError(null);
-    setSubmitting(true);
-    try {
-      const { error } = await signIn.password({ emailAddress, password });
-      if (error) {
-        setFormError(error.message ?? "Connexion impossible");
-        return;
-      }
-
-      if (signIn.status === "complete") {
-        await finalizeClerkSignIn(signIn);
-        await completeAppSignIn();
-        return;
-      }
-
-      if (signIn.status === "needs_client_trust" || signIn.status === "needs_second_factor") {
-        const emailCodeFactor = signIn.supportedSecondFactors?.find(
-          (factor) => factor.strategy === "email_code",
-        );
-        if (emailCodeFactor) {
-          await signIn.mfa.sendEmailCode();
-          setAwaitingCode(true);
-          return;
-        }
-      }
-
-      setFormError("Étape de connexion supplémentaire requise (MFA). Utilisez le site web.");
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Connexion impossible.");
-    } finally {
-      setSubmitting(false);
+    const { error } = await signUp.password({ emailAddress, password });
+    if (error) {
+      setFormError(error.message ?? "Inscription impossible");
+      return;
+    }
+    if (!error) {
+      await signUp.verifications.sendEmailCode();
     }
   }
 
-  async function handleVerifyCode() {
+  async function handleVerify() {
     setFormError(null);
-    setSubmitting(true);
     try {
-      await signIn.mfa.verifyEmailCode({ code });
-      if (signIn.status === "complete") {
-        await finalizeClerkSignIn(signIn);
+      await signUp.verifications.verifyEmailCode({ code });
+      if (signUp.status === "complete") {
+        await finalizeClerkSignUp(signUp);
         await completeAppSignIn();
         return;
       }
       setFormError("Code invalide ou expiré.");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Connexion impossible.");
-    } finally {
-      setSubmitting(false);
+      setFormError(err instanceof Error ? err.message : "Inscription impossible.");
     }
   }
 
-  if (awaitingCode) {
+  if (needsEmailVerification) {
     return (
       <KeyboardAvoidingView
         style={styles.screen}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
-          <Text style={styles.title}>Vérification</Text>
-          <Text style={styles.subtitle}>Entrez le code reçu par e-mail.</Text>
+          <Text style={styles.title}>Vérifiez votre e-mail</Text>
+          <Text style={styles.subtitle}>Un code a été envoyé à {emailAddress}.</Text>
           <Text style={styles.label}>Code</Text>
           <TextInput
             style={styles.input}
@@ -112,7 +89,7 @@ function NativeLoginScreen() {
           {formError ? <Text style={styles.error}>{formError}</Text> : null}
           <Pressable
             style={[styles.button, (!code || busy) && styles.buttonDisabled]}
-            onPress={handleVerifyCode}
+            onPress={handleVerify}
             disabled={!code || busy}
           >
             {busy ? (
@@ -123,7 +100,7 @@ function NativeLoginScreen() {
           </Pressable>
           <Pressable
             style={styles.secondaryButton}
-            onPress={() => void signIn.mfa.sendEmailCode()}
+            onPress={() => void signUp.verifications.sendEmailCode()}
             disabled={busy}
           >
             <Text style={styles.secondaryButtonText}>Renvoyer le code</Text>
@@ -139,10 +116,10 @@ function NativeLoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
-        <Text style={styles.title}>Todo List</Text>
-        <Text style={styles.subtitle}>Connectez-vous pour accéder à vos listes.</Text>
+        <Text style={styles.title}>Créer un compte</Text>
+        <Text style={styles.subtitle}>Inscrivez-vous pour partager vos listes.</Text>
 
-        <ClerkGoogleSignInButton disabled={busy} />
+        <ClerkGoogleSignInButton disabled={busy} label="S'inscrire avec Google" />
         <ClerkAuthDivider />
 
         <Text style={styles.label}>E-mail</Text>
@@ -156,8 +133,8 @@ function NativeLoginScreen() {
           placeholder="vous@exemple.fr"
           placeholderTextColor="#9CA3AF"
         />
-        {errors.fields.identifier ? (
-          <Text style={styles.error}>{errors.fields.identifier.message}</Text>
+        {errors.fields.emailAddress ? (
+          <Text style={styles.error}>{errors.fields.emailAddress.message}</Text>
         ) : null}
 
         <Text style={styles.label}>Mot de passe</Text>
@@ -166,7 +143,7 @@ function NativeLoginScreen() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
-          autoComplete="password"
+          autoComplete="new-password"
           placeholder="••••••••"
           placeholderTextColor="#9CA3AF"
         />
@@ -183,14 +160,16 @@ function NativeLoginScreen() {
           {busy ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Se connecter</Text>
+            <Text style={styles.buttonText}>S'inscrire</Text>
           )}
         </Pressable>
 
+        <View nativeID="clerk-captcha" />
+
         <View style={styles.linkRow}>
-          <Text style={styles.linkText}>Pas encore de compte ?</Text>
-          <Link href="/(auth)/sign-up">
-            <Text style={styles.linkAction}>Créer un compte</Text>
+          <Text style={styles.linkText}>Déjà un compte ?</Text>
+          <Link href="/(auth)/login">
+            <Text style={styles.linkAction}>Se connecter</Text>
           </Link>
         </View>
       </ScrollView>
@@ -198,18 +177,18 @@ function NativeLoginScreen() {
   );
 }
 
-export default function LoginScreen() {
+export default function SignUpScreen() {
   if (Platform.OS === "web") {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#fff" }}>
-        <Text style={{ fontSize: 28, fontWeight: "700", color: "#111827", marginBottom: 24 }}>Todo List</Text>
-        <SignIn routing="hash" signUpUrl="/sign-up" />
-        <Link href="/(auth)/sign-up" asChild>
-          <Text style={{ marginTop: 20, fontSize: 14, fontWeight: "600", color: "#111827" }}>Créer un compte</Text>
+        <Text style={{ fontSize: 28, fontWeight: "700", color: "#111827", marginBottom: 24 }}>Créer un compte</Text>
+        <SignUp routing="hash" signInUrl="/login" />
+        <Link href="/(auth)/login" asChild>
+          <Text style={{ marginTop: 20, fontSize: 14, fontWeight: "600", color: "#111827" }}>Se connecter</Text>
         </Link>
       </View>
     );
   }
 
-  return <NativeLoginScreen />;
+  return <NativeSignUpScreen />;
 }

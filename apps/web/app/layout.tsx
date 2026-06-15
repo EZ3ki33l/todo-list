@@ -1,5 +1,6 @@
 import "../styles/global.css";
 
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -69,11 +70,13 @@ export default async function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body suppressHydrationWarning className="min-h-screen flex flex-col font-sans">
-        {session?.user ? (
-          <TrpcProvider initialToken={initialToken}>{shell}</TrpcProvider>
-        ) : (
-          shell
-        )}
+        <ClerkProvider>
+          {session?.user ? (
+            <TrpcProvider initialToken={initialToken}>{shell}</TrpcProvider>
+          ) : (
+            shell
+          )}
+        </ClerkProvider>
       </body>
     </html>
   );

@@ -2,14 +2,22 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  '@clerk/shared': true
   "@prisma/client": true
   "@prisma/engines": true
+  browser-tabs-lock: true
+  bufferutil: true
+  core-js: true
   esbuild: true
   prisma: true
   sharp: true
   unrs-resolver: true
+  utf-8-validate: true
 overrides:
   "@prisma/client": "^7.8.0"
+  expo-auth-session: "~55.0.16"
+  expo-crypto: "~55.0.15"
+  expo-web-browser: "~55.0.16"
 catalog:
   "@trpc/client": ^11.17.0
   "@trpc/react-query": ^11.17.0

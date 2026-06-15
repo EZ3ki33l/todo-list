@@ -7,7 +7,7 @@ Monorepo **todo-lists + courses** : app mobile Expo, dashboard Next.js, API tRPC
 | Couche | Techno |
 |--------|--------|
 | Mobile | Expo SDK 55, React Native, tRPC |
-| Web | Next.js 16, Auth.js, tRPC |
+| Web | Next.js 16, Clerk, tRPC |
 | API | tRPC v11, `@repo/api` |
 | DB | Prisma 7, Neon (`db push`) |
 | Monorepo | pnpm workspaces, Turborepo |
@@ -16,7 +16,7 @@ Monorepo **todo-lists + courses** : app mobile Expo, dashboard Next.js, API tRPC
 
 - **Node.js 22** (voir `.nvmrc`) — Prisma 7 ne supporte pas Node 26 en prod
 - **pnpm 11.4** (`corepack enable` puis `corepack prepare pnpm@11.4.0 --activate`)
-- Compte **Neon** + variables OAuth Google (web + mobile)
+- Compte **Neon** + application **Clerk** (web + mobile)
 
 ## Structure
 
@@ -47,7 +47,7 @@ pnpm --filter @repo/db db:push
 
 ### Web
 
-Créer `apps/web/.env` (`DATABASE_URL`, `AUTH_SECRET`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_URL=http://localhost:3000`).
+Créer `apps/web/.env` (`DATABASE_URL`, `JWT_SECRET`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`). Voir `apps/web/env.example`.
 
 ```bash
 pnpm --filter web dev
@@ -57,7 +57,7 @@ pnpm --filter web dev
 
 ### Native
 
-Configurer `apps/native/.env` (`EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_GOOGLE_CLIENT_ID`, …). Voir [apps/native/DEPLOY.md](apps/native/DEPLOY.md) pour EAS et Google Android.
+Configurer `apps/native/.env` (`EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, …). Voir [apps/native/DEPLOY.md](apps/native/DEPLOY.md).
 
 ```bash
 pnpm --filter native dev

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
+import { getAppUser } from "@/lib/app-session";
 import { CreateSharedListForm } from "@/components/create-shared-list-form";
 import { ListLinkCard } from "@/components/list-link-card";
 import { ShoppingListDetail } from "@/components/shopping-list-detail";
@@ -33,10 +33,10 @@ function itemsSubtitle(total: number, unchecked: number) {
 }
 
 export default async function ShoppingPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await getAppUser();
+  if (!user) redirect("/login");
 
-  const userId = session.user.id;
+  const userId = user.id;
   const personalShopping = await getOrCreatePersonalShoppingList(userId);
   const sharedShopping = await getSharedShoppingLists(userId, personalShopping.id);
 

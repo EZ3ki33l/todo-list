@@ -105,7 +105,7 @@ export const reorderInput = z.object({
   orderedIds: orderedIdsSchema,
 });
 
-export const signInGoogleInput = z.object({ idToken: idTokenSchema });
+export const signInClerkInput = z.object({ sessionToken: idTokenSchema });
 
 export const registerPushInput = z.object({
   token: pushTokenSchema,

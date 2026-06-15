@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
+import { getAppUser } from "@/lib/app-session";
 
 export async function HomeGate() {
-  const session = await auth();
+  const user = await getAppUser();
 
-  if (session?.user) {
+  if (user) {
     redirect("/dashboard");
   }
 

@@ -1,6 +1,8 @@
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 
+import { ClerkProvider } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
 import { useEffect, useMemo } from "react";
 import { AppState, ActivityIndicator, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -8,9 +10,16 @@ import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { ClerkSessionBridge } from "@/components/clerk-session-bridge";
 import { PushTokenSync } from "@/components/push-registration";
 import { trpc, createTrpcClient } from "@/lib/trpc";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+if (!publishableKey) {
+  throw new Error("EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY manquant");
+}
+const clerkPublishableKey: string = publishableKey;
 
 focusManager.setEventListener((handleFocus) => {
   const sub = AppState.addEventListener("change", (state) => {
@@ -30,20 +39,22 @@ const queryClient = new QueryClient({
 });
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { ready, token, signOut } = useAuth();
+  const { ready, token, skipMeValidation, signOut } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+  const segment = segments[0];
 
-  // Valide le token au démarrage (et à chaque changement). Si le serveur
-  // renvoie UNAUTHORIZED, on déconnecte. Les erreurs réseau ne déclenchent
-  // pas de signOut pour préserver la session en mode offline.
+  const shouldValidateStoredToken = !!token && ready && !skipMeValidation;
+
   const meQuery = trpc.auth.me.useQuery(undefined, {
-    enabled: !!token && ready,
+    enabled: shouldValidateStoredToken,
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
 
   const meUnauthorized =
+    shouldValidateStoredToken &&
+    meQuery.isFetched &&
     (meQuery.error as { data?: { code?: string } } | null)?.data?.code === "UNAUTHORIZED";
 
   useEffect(() => {
@@ -52,19 +63,25 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [meUnauthorized, signOut]);
 
-  const sessionResolved = ready && (!token || meQuery.isFetched);
+  const bootstrapping =
+    !ready || (shouldValidateStoredToken && meQuery.isLoading && !meQuery.isFetched);
 
   useEffect(() => {
-    if (!sessionResolved) return;
-    if (token && meUnauthorized) return;
+    if (bootstrapping || meUnauthorized) return;
 
-    const inAuth = segments[0] === "(auth)";
-    const inApp = segments[0] === "(app)";
-    if (!token && !inAuth) router.replace("/(auth)/login");
-    else if (token && !inApp) router.replace("/(app)");
-  }, [sessionResolved, token, meUnauthorized, segments, router]);
+    if (!token) {
+      if (segment !== "(auth)") {
+        router.replace("/(auth)/login");
+      }
+      return;
+    }
 
-  if (!sessionResolved || (token && meUnauthorized)) {
+    if (segment !== "(app)") {
+      router.replace("/(app)");
+    }
+  }, [bootstrapping, meUnauthorized, token, segment, router]);
+
+  if (bootstrapping || meUnauthorized) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
@@ -83,6 +100,7 @@ function RootNavigator() {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <AuthGuard>
+          <ClerkSessionBridge />
           <PushTokenSync />
           <Stack screenOptions={{ headerShown: false }} />
         </AuthGuard>
@@ -95,9 +113,11 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <RootNavigator />
-        </AuthProvider>
+        <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
+          <AuthProvider>
+            <RootNavigator />
+          </AuthProvider>
+        </ClerkProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

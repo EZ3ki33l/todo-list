@@ -1,3 +1,4 @@
+import { useAuth as useClerkAuth } from "@clerk/expo";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 import {
@@ -13,6 +14,7 @@ type AuthContextValue = {
   ready: boolean;
   token: string | null;
   user: StoredUser | null;
+  skipMeValidation: boolean;
   signIn: (token: string, user: StoredUser) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -20,9 +22,11 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { signOut: clerkSignOut } = useClerkAuth();
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<StoredUser | null>(null);
   const [ready, setReady] = useState(false);
+  const [skipMeValidation, setSkipMeValidation] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -37,17 +41,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await saveSession(nextToken, nextUser);
     setToken(nextToken);
     setUser(nextUser);
+    setSkipMeValidation(true);
   }
 
   async function signOut() {
     await setPushOptIn(false);
     await clearSession();
+    setSkipMeValidation(false);
     setToken(null);
     setUser(null);
+    try {
+      await clerkSignOut();
+    } catch {
+      // Clerk peut déjà être déconnecté
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ ready, token, user, signIn, signOut }}>
+    <AuthContext.Provider value={{ ready, token, user, skipMeValidation, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

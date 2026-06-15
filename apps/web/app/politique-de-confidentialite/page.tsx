@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "Politique de confidentialité de TodoList by EZ3 : données collectées, finalités, sous-traitants et droits des utilisateurs.",
 };
 
-const LAST_UPDATED = "10 juin 2026";
+const LAST_UPDATED = "15 juin 2026";
 
 export default function PolitiqueConfidentialitePage() {
   return (
@@ -27,8 +27,13 @@ export default function PolitiqueConfidentialitePage() {
             className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
           >
             todolist.ez3ki33l.ovh
-          </a>
-          .
+          </a>{" "}
+          et dans l&apos;application mobile associée.
+        </p>
+        <p className="text-sm leading-relaxed">
+          En créant un compte, vous confirmez avoir lu la présente politique. Lors de
+          l&apos;inscription, une case à cocher vous demande votre consentement exprès
+          avant la création du compte.
         </p>
       </header>
 
@@ -57,7 +62,14 @@ export default function PolitiqueConfidentialitePage() {
         <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
           <li>
             <strong>Données de compte</strong> : nom, adresse e-mail et photo de profil
-            fournis lors de la connexion via Clerk.
+            fournis lors de l&apos;inscription ou de la connexion (e-mail et mot de
+            passe, ou connexion avec Google via notre prestataire Clerk).
+          </li>
+          <li>
+            <strong>Identifiants d&apos;authentification</strong> : identifiant
+            utilisateur Clerk, jetons de session (site web et application mobile) et
+            jeton d&apos;accès à l&apos;API, nécessaires pour maintenir votre connexion
+            de façon sécurisée.
           </li>
           <li>
             <strong>Contenus que vous créez</strong> : listes de tâches, tâches
@@ -83,10 +95,26 @@ export default function PolitiqueConfidentialitePage() {
             (articles fréquents, catégories mémorisées) pour proposer des suggestions.
           </li>
           <li>
-            <strong>Données techniques</strong> : identifiants de session, journaux
-            techniques limités (sécurité, diagnostic d&apos;erreurs).
+            <strong>Données techniques</strong> : adresse IP approximative lors des
+            appels à l&apos;API (sécurité et limitation de débit), journaux techniques
+            limités (diagnostic d&apos;erreurs).
           </li>
         </ul>
+        <p className="text-sm leading-relaxed">
+          Si vous choisissez <strong>« Continuer avec Google »</strong>, Google peut
+          nous transmettre (via Clerk) votre adresse e-mail, votre nom et votre photo
+          de profil associés à votre compte Google, conformément aux paramètres de
+          votre compte Google et à la{" "}
+          <a
+            href="https://policies.google.com/privacy"
+            className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            politique de confidentialité de Google
+          </a>
+          .
+        </p>
         <p className="text-sm leading-relaxed">
           Nous ne vendons pas vos données et ne les utilisons pas à des fins
           publicitaires.
@@ -102,8 +130,14 @@ export default function PolitiqueConfidentialitePage() {
             afficher votre tableau de bord.
           </li>
           <li>
-            <strong>Authentification</strong> (exécution du contrat) : connexion via
-            Clerk et maintien de votre session.
+            <strong>Authentification</strong> (exécution du contrat) : création de
+            compte, connexion (e-mail, mot de passe ou Google), maintien de votre
+            session sur le web et le mobile.
+          </li>
+          <li>
+            <strong>Consentement exprès</strong> (article 6.1.a RGPD) : acceptation de
+            la présente politique lors de l&apos;inscription, matérialisée par la case
+            à cocher affichée avant la création du compte.
           </li>
           <li>
             <strong>Notifications</strong> (consentement ou intérêt légitime selon le
@@ -114,6 +148,12 @@ export default function PolitiqueConfidentialitePage() {
             <strong>Amélioration de l&apos;expérience</strong> (intérêt légitime) :
             suggestions d&apos;articles, mémorisation des catégories, sécurisation de
             l&apos;API (limitation de débit).
+          </li>
+          <li>
+            <strong>Suggestions « Idées repas »</strong> (exécution du contrat /
+            intérêt légitime) : envoi des intitulés d&apos;articles de votre liste de
+            courses au prestataire d&apos;IA uniquement lorsque vous utilisez cette
+            fonctionnalité.
           </li>
         </ul>
       </section>
@@ -126,14 +166,25 @@ export default function PolitiqueConfidentialitePage() {
         </p>
         <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
           <li>
-            <strong>Clerk</strong> : authentification (web et mobile).
+            <strong>Clerk</strong> (Clerk, Inc.) : authentification et gestion de
+            session sur le site web et l&apos;application mobile.{" "}
+            <a
+              href="https://clerk.com/privacy"
+              className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Politique Clerk
+            </a>
           </li>
           <li>
-            <strong>Google (Firebase)</strong> : Firebase Cloud Messaging pour les
-            notifications push Android uniquement.
+            <strong>Google</strong> : connexion optionnelle avec un compte Google
+            (OAuth) et, le cas échéant, Firebase Cloud Messaging pour les notifications
+            push Android.
           </li>
           <li>
-            <strong>Neon</strong> : hébergement de la base de données PostgreSQL.
+            <strong>Neon</strong> : hébergement de la base de données PostgreSQL
+            (données de compte et contenus créés).
           </li>
           <li>
             <strong>Expo (EAS)</strong> : infrastructure d&apos;envoi des notifications
@@ -145,6 +196,12 @@ export default function PolitiqueConfidentialitePage() {
             utilisez la fonctionnalité « Idées repas »).
           </li>
         </ul>
+        <p className="text-sm leading-relaxed">
+          Certains de ces prestataires peuvent être situés hors de l&apos;Union
+          européenne (notamment aux États-Unis). Lorsque c&apos;est le cas, les
+          transferts reposent sur les garanties appropriées prévues par le RGPD (clauses
+          contractuelles types ou décisions d&apos;adéquation, selon les prestataires).
+        </p>
         <p className="text-sm leading-relaxed">
           Lorsque vous partagez une liste, les autres membres invités peuvent voir le
           contenu de cette liste et votre nom ou adresse e-mail affiché dans
@@ -169,7 +226,8 @@ export default function PolitiqueConfidentialitePage() {
           </a>{" "}
           depuis l&apos;adresse liée à votre compte, avec l&apos;objet{" "}
           <strong>« Suppression de compte »</strong>. Nous traitons la demande sous
-          30 jours.
+          30 jours et supprimons également le compte côté Clerk lorsque cela est
+          applicable.
         </p>
         <p className="text-sm leading-relaxed">
           <strong>Données supprimées :</strong> profil, contenus créés, partages,
@@ -194,7 +252,10 @@ export default function PolitiqueConfidentialitePage() {
             des notifications ou de la suppression du compte.
           </li>
           <li>
-            Sessions : durée limitée conformément aux mécanismes d&apos;authentification.
+            Sessions et jetons d&apos;accès : durée limitée ; sur mobile, le jeton
+            d&apos;accès est stocké de façon chiffrée dans l&apos;espace sécurisé de
+            l&apos;appareil (Secure Store) jusqu&apos;à déconnexion ou suppression du
+            compte.
           </li>
         </ul>
       </section>
@@ -203,9 +264,10 @@ export default function PolitiqueConfidentialitePage() {
         <h2 className="text-lg font-semibold text-gray-900">7. Sécurité</h2>
         <p className="text-sm leading-relaxed">
           Nous mettons en œuvre des mesures techniques raisonnables : connexion
-          chiffrée (HTTPS), authentification sécurisée, accès aux listes contrôlé par
-          identifiant utilisateur, limitation du débit sur l&apos;API. Aucun système
-          n&apos;étant infaillible, nous ne pouvons garantir une sécurité absolue.
+          chiffrée (HTTPS), authentification déléguée à Clerk, jetons d&apos;accès à
+          durée limitée, accès aux listes contrôlé par identifiant utilisateur,
+          limitation du débit sur l&apos;API. Aucun système n&apos;étant infaillible,
+          nous ne pouvons garantir une sécurité absolue.
         </p>
       </section>
 
@@ -239,12 +301,24 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">9. Cookies et stockage local</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          9. Cookies, stockage local et traceurs
+        </h2>
         <p className="text-sm leading-relaxed">
-          Le site utilise des cookies de session strictement nécessaires à
-          l&apos;authentification. Les notifications Web Push reposent sur un service
-          worker et un abonnement stocké côté navigateur, uniquement après votre
-          accord explicite dans les réglages.
+          Le site utilise des cookies et technologies similaires strictement
+          nécessaires à l&apos;authentification, gérés par Clerk (session, sécurité).
+          Nous n&apos;utilisons pas de cookies publicitaires ou de mesure d&apos;audience
+          tiers sur le site.
+        </p>
+        <p className="text-sm leading-relaxed">
+          Les notifications Web Push reposent sur un service worker et un abonnement
+          stocké côté navigateur, uniquement après votre accord explicite dans les
+          réglages.
+        </p>
+        <p className="text-sm leading-relaxed">
+          Sur l&apos;application mobile Android, les jetons de session sont stockés dans
+          le stockage sécurisé de l&apos;appareil ; aucun cookie navigateur n&apos;est
+          utilisé dans l&apos;app native.
         </p>
       </section>
 

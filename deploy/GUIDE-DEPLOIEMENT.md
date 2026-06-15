@@ -81,9 +81,9 @@ npx eas-cli login
 ### 3.2 Variables EAS (preview = APK test)
 
 ```bash
-npx eas-cli env:create --environment preview --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_API_URL --value "https://your-api.example.com"
 npx eas-cli env:create --environment preview --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value "pk_test_..."
-npx eas-cli env:create --environment preview --name EXPO_PUBLIC_EAS_PROJECT_ID --value "7880f051-0127-48d4-a656-b19916a7e1f4"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_EAS_PROJECT_ID --value "your-eas-project-id"
 ```
 
 (Clé Clerk : dashboard Clerk → API Keys.)
@@ -109,9 +109,9 @@ Télécharger l’APK sur [expo.dev](https://expo.dev) → installer sur le tél
 
 ```bash
 cd apps/native
-npx eas-cli env:create --environment production --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
+npx eas-cli env:create --environment production --name EXPO_PUBLIC_API_URL --value "https://your-api.example.com"
 npx eas-cli env:create --environment production --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value "pk_live_..."
-npx eas-cli env:create --environment production --name EXPO_PUBLIC_EAS_PROJECT_ID --value "7880f051-0127-48d4-a656-b19916a7e1f4"
+npx eas-cli env:create --environment production --name EXPO_PUBLIC_EAS_PROJECT_ID --value "your-eas-project-id"
 ```
 
 ### 4.3 Build AAB (Play Store)

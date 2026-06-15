@@ -46,11 +46,7 @@
       "@clerk/expo"
     ],
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "7880f051-0127-48d4-a656-b19916a7e1f4"
-      }
-    },
-    "owner": "ez3ki33l"
+      "router": {}
+    }
   }
 }

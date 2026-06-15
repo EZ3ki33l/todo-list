@@ -32,7 +32,7 @@ function formatGoogleAuthError(err: unknown): string {
   if (/DEVELOPER_ERROR|12500|code.*10/i.test(message)) {
     return (
       "Google DEVELOPER_ERROR : créez un client OAuth Android dans Google Cloud " +
-      "(com.ez3ki33l.todolist + SHA-256 du keystore debug)."
+      "(package Android de l'app + SHA-256 du keystore debug)."
     );
   }
   if (/credentials not found/i.test(message)) {

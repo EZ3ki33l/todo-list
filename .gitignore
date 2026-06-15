@@ -34,6 +34,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Firebase (télécharger depuis la console Firebase — voir apps/native/DEPLOY.md)
+apps/native/android/app/google-services.json
+
 # turbo
 .turbo
 

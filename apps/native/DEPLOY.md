@@ -1,6 +1,6 @@
 # App native — beta (EAS + Clerk + API prod)
 
-Prérequis : backend en prod (`https://todolist.ez3ki33l.ovh`), Clerk configuré (web + mobile).
+Prérequis : backend en prod (URL HTTPS de votre API), Clerk configuré (web + mobile).
 
 ## 1. Compte et projet EAS
 
@@ -10,23 +10,21 @@ npx eas-cli login
 npx eas init
 ```
 
-`eas init` ajoute `extra.eas.projectId` dans `app.json` — commit ce changement.
+`eas init` ajoute `extra.eas.projectId` — préférer `EXPO_PUBLIC_EAS_PROJECT_ID` dans `.env` / EAS env (voir `env.example`).
 
 ## 2. Clerk
-
-Application Clerk : `app_3FAwyTNQFE1SCPrhIapjbSoal5o`
 
 1. [Clerk Dashboard](https://dashboard.clerk.com/) → ton application → **User & authentication**
 2. Récupérer la **Publishable key** (`pk_test_…` ou `pk_live_…`)
 3. **SSO connections** → **Google** activé avec **Use custom credentials** (obligatoire pour le natif mobile)
 4. **Native applications** → Android :
    - Package : `com.ez3ki33l.todolist`
-   - SHA-256 debug : `97:F9:A0:84:82:8A:28:09:E4:EF:D3:B6:D5:6E:B1:C2:9F:16:F5:1B:89:CE:8F:15:E1:30:1D:CB:3E:43:96:B3`
+   - SHA-256 debug : empreinte du keystore debug (`keytool -list -v -keystore ~/.android/debug.keystore`)
    - (Release : `npx eas credentials -p android` pour l’empreinte du keystore EAS)
 5. **Google Cloud** → clients OAuth :
    - **Web** : même Client ID + Secret que Clerk SSO custom credentials
-   - **Android** : package `com.ez3ki33l.todolist` + SHA-1 debug `54:40:61:09:64:FF:CD:14:BB:6F:99:22:01:C8:4B:B7:F0:E2:18:E1`
-   - `.env` : `EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID` = Client ID Android (ex. `782595741716-kv474jirrh53l83irvitorjvjeedaag2...`)
+   - **Android** : package de l’app + SHA-1 du keystore debug
+   - `.env` : `EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID` = Client ID Android (Google Cloud)
 
 Côté serveur (web + API), la même app Clerk doit exposer `CLERK_SECRET_KEY` et `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (voir `apps/web/env.example`). En dev local, `CLERK_SECRET_KEY` dans `apps/web/.env` doit correspondre à la même instance que `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` du mobile.
 
@@ -38,9 +36,9 @@ Les `EXPO_PUBLIC_*` sont **figées au build**. Modèle : `env.example`.
 
 ```bash
 cd apps/native
-npx eas-cli env:create --environment preview --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_API_URL --value "https://your-api.example.com"
 npx eas-cli env:create --environment preview --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value "pk_test_..."
-npx eas-cli env:create --environment preview --name EXPO_PUBLIC_EAS_PROJECT_ID --value "7880f051-0127-48d4-a656-b19916a7e1f4"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_EAS_PROJECT_ID --value "your-eas-project-id"
 ```
 
 (Répéter pour `production` avant un build Play Store.)
@@ -51,7 +49,7 @@ npx eas-cli env:create --environment preview --name EXPO_PUBLIC_EAS_PROJECT_ID -
 cp env.example .env
 ```
 
-- **API prod** : laisser `EXPO_PUBLIC_API_URL=https://todolist.ez3ki33l.ovh`
+- **API prod** : `EXPO_PUBLIC_API_URL=https://your-api.example.com`
 - **API locale** : `EXPO_PUBLIC_API_URL=http://VOTRE_IP_LAN:3000` + `pnpm --filter web dev`
 - Après toute modification de `.env` : `npx expo start -c` ou relancer `pnpm android`
 
@@ -72,9 +70,9 @@ Lien de téléchargement sur [expo.dev](https://expo.dev) → installer sur les 
 
 ```bash
 cd apps/native
-npx eas-cli env:create --environment production --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
+npx eas-cli env:create --environment production --name EXPO_PUBLIC_API_URL --value "https://your-api.example.com"
 npx eas-cli env:create --environment production --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value "pk_live_..."
-npx eas-cli env:create --environment production --name EXPO_PUBLIC_EAS_PROJECT_ID --value "7880f051-0127-48d4-a656-b19916a7e1f4"
+npx eas-cli env:create --environment production --name EXPO_PUBLIC_EAS_PROJECT_ID --value "your-eas-project-id"
 ```
 
 ### Build AAB
@@ -91,7 +89,7 @@ Sans Firebase, `getExpoPushTokenAsync` échoue avec `FirebaseApp is not initiali
 
 1. [Firebase Console](https://console.firebase.google.com/) → créer ou ouvrir un projet
 2. **Ajouter une app Android** — package : `com.ez3ki33l.todolist`
-3. Télécharger **`google-services.json`** → `apps/native/android/app/google-services.json`
+3. Télécharger **`google-services.json`** → `apps/native/android/app/google-services.json` (modèle : `google-services.json.example` — **ne pas committer** le fichier réel)
 4. **Rebuild obligatoire** : `pnpm android` ou build EAS
 
 ### B. Clé FCM V1 sur EAS

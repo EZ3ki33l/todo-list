@@ -43,9 +43,10 @@ enum GroceryCategory {
   AUTRE
 }
 
-/// Utilisateur applicatif + profil Auth.js (OAuth).
+/// Utilisateur applicatif (profil Clerk + données métier).
 model User {
   id            String    @id @default(cuid())
+  clerkId       String?   @unique
   name          String?
   email         String?   @unique
   emailVerified DateTime?

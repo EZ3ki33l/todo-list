@@ -1,6 +1,8 @@
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 
+import { ClerkProvider } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
 import { useEffect, useMemo } from "react";
 import { AppState, ActivityIndicator, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -8,9 +10,16 @@ import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { ClerkSessionBridge } from "@/components/clerk-session-bridge";
 import { PushTokenSync } from "@/components/push-registration";
 import { trpc, createTrpcClient } from "@/lib/trpc";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+if (!publishableKey) {
+  throw new Error("EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY manquant");
+}
+const clerkPublishableKey: string = publishableKey;
 
 focusManager.setEventListener((handleFocus) => {
   const sub = AppState.addEventListener("change", (state) => {
@@ -59,9 +68,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     if (token && meUnauthorized) return;
 
     const inAuth = segments[0] === "(auth)";
-    const inApp = segments[0] === "(app)";
     if (!token && !inAuth) router.replace("/(auth)/login");
-    else if (token && !inApp) router.replace("/(app)");
+    else if (token && inAuth) router.replace("/(app)");
   }, [sessionResolved, token, meUnauthorized, segments, router]);
 
   if (!sessionResolved || (token && meUnauthorized)) {
@@ -83,6 +91,7 @@ function RootNavigator() {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <AuthGuard>
+          <ClerkSessionBridge />
           <PushTokenSync />
           <Stack screenOptions={{ headerShown: false }} />
         </AuthGuard>
@@ -95,9 +104,11 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <RootNavigator />
-        </AuthProvider>
+        <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
+          <AuthProvider>
+            <RootNavigator />
+          </AuthProvider>
+        </ClerkProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

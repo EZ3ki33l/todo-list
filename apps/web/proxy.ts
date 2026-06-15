@@ -1,10 +1,14 @@
-import NextAuth from "next-auth";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@repo/api";
 
-import authConfig from "./auth.config";
-
-const { auth } = NextAuth(authConfig);
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/login",
+  "/sign-up",
+  "/politique-de-confidentialite",
+  "/api/trpc(.*)",
+]);
 
 function rateLimitApi(req: Request): Response | undefined {
   const { pathname } = new URL(req.url);
@@ -21,18 +25,25 @@ function rateLimitApi(req: Request): Response | undefined {
   }
 }
 
-export const proxy = auth((req) => {
+export const proxy = clerkMiddleware(async (auth, req) => {
   const blocked = rateLimitApi(req);
   if (blocked) return blocked;
 
-  const isLoggedIn = !!req.auth;
-  const { pathname } = req.nextUrl;
+  if (!isPublicRoute(req)) {
+    await auth.protect({ unauthenticatedUrl: new URL("/login", req.url).toString() });
+  }
 
-  if (isLoggedIn && (pathname === "/" || pathname === "/login")) {
-    return Response.redirect(new URL("/dashboard", req.nextUrl));
+  const { userId } = await auth();
+  const { pathname } = req.nextUrl;
+  if (userId && (pathname === "/" || pathname === "/login" || pathname === "/sign-up")) {
+    return Response.redirect(new URL("/dashboard", req.url));
   }
 });
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard/:path*", "/api/:path*"],
+  matcher: [
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+    "/__clerk/:path*",
+  ],
 };

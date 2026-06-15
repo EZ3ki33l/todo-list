@@ -63,13 +63,9 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000
 curl -sI "https://todolist.ez3ki33l.ovh/api/trpc" | head -3
 ```
 
-### 2.4 Google Console (web)
+### 2.4 Clerk (web)
 
-Origines + redirections **prod** (déjà fait normalement) :
-
-- `https://todolist.ez3ki33l.ovh`
-- `https://todolist.ez3ki33l.ovh/api/auth/callback/google`
-- `https://todolist.ez3ki33l.ovh/api/auth/mobile/callback`
+Dans `apps/web/.env` sur le serveur : `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` et `CLERK_SECRET_KEY` (dashboard Clerk → API Keys).
 
 ---
 
@@ -86,21 +82,13 @@ npx eas-cli login
 
 ```bash
 npx eas-cli env:create --environment preview --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
-npx eas-cli env:create --environment preview --name EXPO_PUBLIC_GOOGLE_CLIENT_ID --value "TON_CLIENT_WEB.apps.googleusercontent.com"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value "pk_test_..."
 npx eas-cli env:create --environment preview --name EXPO_PUBLIC_EAS_PROJECT_ID --value "7880f051-0127-48d4-a656-b19916a7e1f4"
 ```
 
-(Remplacer par ton vrai client Web Google — celui de `GOOGLE_CLIENT_ID` dans `apps/web/.env`.)
+(Clé Clerk : dashboard Clerk → API Keys.)
 
-### 3.3 SHA-1 Android → Google Cloud
-
-```bash
-npx eas-cli credentials -p android
-```
-
-Copier le SHA-1 → Google Cloud → **ID client OAuth Android** → package `com.ez3ki33l.todolist`.
-
-### 3.4 Build APK (testeurs)
+### 3.3 Build APK (testeurs)
 
 ```bash
 cd apps/native
@@ -122,7 +110,7 @@ Télécharger l’APK sur [expo.dev](https://expo.dev) → installer sur le tél
 ```bash
 cd apps/native
 npx eas-cli env:create --environment production --name EXPO_PUBLIC_API_URL --value "https://todolist.ez3ki33l.ovh"
-npx eas-cli env:create --environment production --name EXPO_PUBLIC_GOOGLE_CLIENT_ID --value "TON_CLIENT_WEB.apps.googleusercontent.com"
+npx eas-cli env:create --environment production --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value "pk_live_..."
 npx eas-cli env:create --environment production --name EXPO_PUBLIC_EAS_PROJECT_ID --value "7880f051-0127-48d4-a656-b19916a7e1f4"
 ```
 
@@ -179,9 +167,8 @@ npx eas-cli build --platform android --profile production
 
 | Problème | Solution |
 |----------|----------|
-| Login Google web `redirect_uri_mismatch` | Ajouter `http://localhost:3000/...` **ou** `AUTH_URL` = URL réelle |
+| Connexion Clerk échoue | Vérifier clés Clerk (web + native) |
 | Réglages notifs « chargement » | `db:push` + redémarrer Docker |
-| Google Sign-In mobile échoue | SHA-1 EAS dans client OAuth **Android** |
 | Build EAS échoue install | `git pull main`, Node 22, voir [apps/native/DEPLOY.md](../apps/native/DEPLOY.md) |
 
 Docs détaillées : [deploy/todolist/README.md](todolist/README.md) · [apps/native/DEPLOY.md](../apps/native/DEPLOY.md)

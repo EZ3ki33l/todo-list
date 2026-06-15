@@ -1,3 +1,4 @@
+import { useAuth as useClerkAuth } from "@clerk/expo";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 import {
@@ -20,6 +21,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { signOut: clerkSignOut } = useClerkAuth();
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<StoredUser | null>(null);
   const [ready, setReady] = useState(false);
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await clearSession();
     setToken(null);
     setUser(null);
+    await clerkSignOut();
   }
 
   return (

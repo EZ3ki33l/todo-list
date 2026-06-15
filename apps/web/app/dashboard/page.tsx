@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { withEffectiveDone } from "@repo/api";
-import { auth } from "@/auth";
+import { getAppUser } from "@/lib/app-session";
 import { AddActionForm } from "@/components/add-action-form";
 import { CreateSharedListForm } from "@/components/create-shared-list-form";
 import DayWeekView from "@/components/day-week-view";
@@ -33,10 +33,10 @@ function ownerSubtitle(
 }
 
 export default async function DashboardPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await getAppUser();
+  if (!user) redirect("/login");
 
-  const userId = session.user.id;
+  const userId = user.id;
   const personalTodo = await getOrCreatePersonalTodoList(userId);
   const sharedTodos = await getSharedTodoLists(userId, personalTodo.id);
 

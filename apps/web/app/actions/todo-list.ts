@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { auth } from "@/auth";
+import { getAppUser } from "@/lib/app-session";
 import {
   formatZodFormError,
   parseCreateListForm,
@@ -13,9 +13,9 @@ import {
 import { prisma } from "@repo/db";
 
 async function requireSession() {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Non authentifié");
-  return session.user.id;
+  const user = await getAppUser();
+  if (!user) throw new Error("Non authentifié");
+  return user.id;
 }
 
 async function assertListOwner(listId: string, userId: string) {

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { checkRateLimit, getClientIp } from "@repo/api";
-import { issueJwt } from "@repo/api/server";
-
-import { auth } from "@/auth";
+import { ensureUserFromClerk, issueJwt } from "@repo/api/server";
+import { auth } from "@clerk/nextjs/server";
 
 export async function GET(req: Request) {
   const ip = getClientIp(req);
@@ -11,11 +10,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Trop de requêtes" }, { status: 429 });
   }
 
-  const session = await auth();
-  if (!session?.user?.id) {
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const token = await issueJwt(session.user.id);
+  const user = await ensureUserFromClerk(clerkUserId);
+  const token = await issueJwt(user.id);
   return NextResponse.json({ token });
 }

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { withEffectiveDone } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@repo/api/server";
-import { auth } from "@/auth";
+import { getAppUser } from "@/lib/app-session";
 import { prisma } from "@repo/db";
 import { AddActionForm } from "@/components/add-action-form";
 import { ActionListPanel } from "@/components/action-list-panel";
@@ -20,10 +20,10 @@ export default async function ListPage({
   params: Promise<{ listId: string }>;
 }) {
   const { listId } = await params;
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await getAppUser();
+  if (!user) redirect("/login");
 
-  const userId = session.user.id;
+  const userId = user.id;
   const personalTodo = await getOrCreatePersonalTodoList(userId);
   if (listId === personalTodo.id) redirect("/dashboard");
 

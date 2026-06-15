@@ -15,61 +15,76 @@ import {
 
 import { clerkAuthStyles as styles } from "@/lib/clerk-auth-styles";
 import { ClerkAuthDivider, ClerkGoogleSignInButton } from "@/components/clerk-google-sign-in-button";
+import { useCompleteClerkAppSignIn } from "@/hooks/use-complete-clerk-app-sign-in";
 
 async function finalizeClerkSignIn(signIn: ReturnType<typeof useSignIn>["signIn"]) {
   if (signIn.status !== "complete") return;
-  await signIn.finalize({
-    navigate: ({ session }) => {
-      if (session?.currentTask) return;
-    },
-  });
+  await signIn.finalize();
 }
 
 function NativeLoginScreen() {
   const { signIn, errors, fetchStatus } = useSignIn();
+  const completeAppSignIn = useCompleteClerkAppSignIn();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const busy = fetchStatus === "fetching";
+  const busy = fetchStatus === "fetching" || submitting;
 
   async function handleSubmit() {
     setFormError(null);
-    const { error } = await signIn.password({ emailAddress, password });
-    if (error) {
-      setFormError(error.message ?? "Connexion impossible");
-      return;
-    }
-
-    if (signIn.status === "complete") {
-      await finalizeClerkSignIn(signIn);
-      return;
-    }
-
-    if (signIn.status === "needs_client_trust" || signIn.status === "needs_second_factor") {
-      const emailCodeFactor = signIn.supportedSecondFactors?.find(
-        (factor) => factor.strategy === "email_code",
-      );
-      if (emailCodeFactor) {
-        await signIn.mfa.sendEmailCode();
-        setAwaitingCode(true);
+    setSubmitting(true);
+    try {
+      const { error } = await signIn.password({ emailAddress, password });
+      if (error) {
+        setFormError(error.message ?? "Connexion impossible");
         return;
       }
-    }
 
-    setFormError("Étape de connexion supplémentaire requise (MFA). Utilisez le site web.");
+      if (signIn.status === "complete") {
+        await finalizeClerkSignIn(signIn);
+        await completeAppSignIn();
+        return;
+      }
+
+      if (signIn.status === "needs_client_trust" || signIn.status === "needs_second_factor") {
+        const emailCodeFactor = signIn.supportedSecondFactors?.find(
+          (factor) => factor.strategy === "email_code",
+        );
+        if (emailCodeFactor) {
+          await signIn.mfa.sendEmailCode();
+          setAwaitingCode(true);
+          return;
+        }
+      }
+
+      setFormError("Étape de connexion supplémentaire requise (MFA). Utilisez le site web.");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Connexion impossible.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleVerifyCode() {
     setFormError(null);
-    await signIn.mfa.verifyEmailCode({ code });
-    if (signIn.status === "complete") {
-      await finalizeClerkSignIn(signIn);
-      return;
+    setSubmitting(true);
+    try {
+      await signIn.mfa.verifyEmailCode({ code });
+      if (signIn.status === "complete") {
+        await finalizeClerkSignIn(signIn);
+        await completeAppSignIn();
+        return;
+      }
+      setFormError("Code invalide ou expiré.");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Connexion impossible.");
+    } finally {
+      setSubmitting(false);
     }
-    setFormError("Code invalide ou expiré.");
   }
 
   if (awaitingCode) {

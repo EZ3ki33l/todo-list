@@ -15,18 +15,16 @@ import {
 
 import { clerkAuthStyles as styles } from "@/lib/clerk-auth-styles";
 import { ClerkAuthDivider, ClerkGoogleSignInButton } from "@/components/clerk-google-sign-in-button";
+import { useCompleteClerkAppSignIn } from "@/hooks/use-complete-clerk-app-sign-in";
 
 async function finalizeClerkSignUp(signUp: ReturnType<typeof useSignUp>["signUp"]) {
   if (signUp.status !== "complete") return;
-  await signUp.finalize({
-    navigate: ({ session }) => {
-      if (session?.currentTask) return;
-    },
-  });
+  await signUp.finalize();
 }
 
 function NativeSignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
+  const completeAppSignIn = useCompleteClerkAppSignIn();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -53,12 +51,17 @@ function NativeSignUpScreen() {
 
   async function handleVerify() {
     setFormError(null);
-    await signUp.verifications.verifyEmailCode({ code });
-    if (signUp.status === "complete") {
-      await finalizeClerkSignUp(signUp);
-      return;
+    try {
+      await signUp.verifications.verifyEmailCode({ code });
+      if (signUp.status === "complete") {
+        await finalizeClerkSignUp(signUp);
+        await completeAppSignIn();
+        return;
+      }
+      setFormError("Code invalide ou expiré.");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Inscription impossible.");
     }
-    setFormError("Code invalide ou expiré.");
   }
 
   if (needsEmailVerification) {

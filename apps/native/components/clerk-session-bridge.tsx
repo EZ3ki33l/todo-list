@@ -1,48 +1,41 @@
-import { useEffect } from "react";
-
 import { useAuth as useClerkAuth } from "@clerk/expo";
+import { useEffect, useRef } from "react";
 
 import { useAuth as useAppAuth } from "@/lib/auth-context";
-import { trpc } from "@/lib/trpc";
+import { exchangeClerkSessionForApiToken } from "@/lib/exchange-clerk-session";
 
-/** Échange la session Clerk contre le JWT API (tRPC). */
+/** Échange la session Clerk contre le JWT API quand Clerk est connecté sans token API local. */
 export function ClerkSessionBridge() {
   const { isSignedIn, isLoaded, getToken, signOut: clerkSignOut } = useClerkAuth({
     treatPendingAsSignedOut: false,
   });
-  const { token, signIn, signOut } = useAppAuth();
-  const exchange = trpc.auth.signInWithClerkToken.useMutation();
+  const { token, signIn, signOut, skipMeValidation } = useAppAuth();
+  const exchangingRef = useRef(false);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || token || exchange.isPending) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const sessionToken = await getToken();
-        if (!sessionToken || cancelled) return;
-        const data = await exchange.mutateAsync({ sessionToken });
-        if (cancelled) return;
-        await signIn(data.token, data.user);
-      } catch {
-        if (!cancelled) {
-          await signOut();
-          await clerkSignOut();
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isLoaded, isSignedIn, token, exchange, getToken, signIn, signOut, clerkSignOut]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn && token) {
-      void signOut();
+    if (!isLoaded || !isSignedIn || token || skipMeValidation || exchangingRef.current) {
+      return;
     }
-  }, [isLoaded, isSignedIn, token, signOut]);
+
+    exchangingRef.current = true;
+
+    void exchangeClerkSessionForApiToken(getToken)
+      .then((data) => signIn(data.token, data.user))
+      .catch((err) => {
+        const code = (err as { data?: { code?: string } })?.data?.code;
+        if (code === "UNAUTHORIZED") {
+          void clerkSignOut();
+        }
+      })
+      .finally(() => {
+        exchangingRef.current = false;
+      });
+  }, [isLoaded, isSignedIn, token, skipMeValidation, getToken, signIn, clerkSignOut]);
+
+  useEffect(() => {
+    if (!isLoaded || isSignedIn || !token || skipMeValidation) return;
+    void signOut();
+  }, [isLoaded, isSignedIn, token, skipMeValidation, signOut]);
 
   return null;
 }

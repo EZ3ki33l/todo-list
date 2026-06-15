@@ -39,20 +39,22 @@ const queryClient = new QueryClient({
 });
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { ready, token, signOut } = useAuth();
+  const { ready, token, skipMeValidation, signOut } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+  const segment = segments[0];
 
-  // Valide le token au démarrage (et à chaque changement). Si le serveur
-  // renvoie UNAUTHORIZED, on déconnecte. Les erreurs réseau ne déclenchent
-  // pas de signOut pour préserver la session en mode offline.
+  const shouldValidateStoredToken = !!token && ready && !skipMeValidation;
+
   const meQuery = trpc.auth.me.useQuery(undefined, {
-    enabled: !!token && ready,
+    enabled: shouldValidateStoredToken,
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
 
   const meUnauthorized =
+    shouldValidateStoredToken &&
+    meQuery.isFetched &&
     (meQuery.error as { data?: { code?: string } } | null)?.data?.code === "UNAUTHORIZED";
 
   useEffect(() => {
@@ -61,18 +63,25 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [meUnauthorized, signOut]);
 
-  const sessionResolved = ready && (!token || meQuery.isFetched);
+  const bootstrapping =
+    !ready || (shouldValidateStoredToken && meQuery.isLoading && !meQuery.isFetched);
 
   useEffect(() => {
-    if (!sessionResolved) return;
-    if (token && meUnauthorized) return;
+    if (bootstrapping || meUnauthorized) return;
 
-    const inAuth = segments[0] === "(auth)";
-    if (!token && !inAuth) router.replace("/(auth)/login");
-    else if (token && inAuth) router.replace("/(app)");
-  }, [sessionResolved, token, meUnauthorized, segments, router]);
+    if (!token) {
+      if (segment !== "(auth)") {
+        router.replace("/(auth)/login");
+      }
+      return;
+    }
 
-  if (!sessionResolved || (token && meUnauthorized)) {
+    if (segment !== "(app)") {
+      router.replace("/(app)");
+    }
+  }, [bootstrapping, meUnauthorized, token, segment, router]);
+
+  if (bootstrapping || meUnauthorized) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />

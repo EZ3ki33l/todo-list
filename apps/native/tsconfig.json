@@ -6,6 +6,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@clerk/expo/google-one-tap": [
+        "./node_modules/@clerk/expo/dist/google-one-tap/index.d.ts"
       ]
     }
   },

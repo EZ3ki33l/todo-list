@@ -16,6 +16,11 @@ config.resolver.nodeModulesPaths = [
 ];
 config.resolver.unstable_enableSymlinks = true;
 
+const clerkExpoRoot = path.dirname(
+  require.resolve("@clerk/expo/package.json", { paths: [projectRoot] }),
+);
+const clerkGoogleOneTapEntry = path.join(clerkExpoRoot, "dist/google-one-tap/index.js");
+
 // Monorepo pnpm : Metro ne résout pas toujours les variantes .android.js / .ios.js
 // quand le require() cible explicitement un fichier .js (@clerk/expo en est victime).
 function resolveWithPlatformVariant(context, moduleName, platform, resolveRequest) {
@@ -35,6 +40,10 @@ const defaultResolveRequest = config.resolver.resolveRequest;
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   const resolveRequest = defaultResolveRequest ?? context.resolveRequest;
+
+  if (moduleName === "@clerk/expo/google-one-tap") {
+    return resolveRequest(context, clerkGoogleOneTapEntry, platform);
+  }
 
   const platformResolved = resolveWithPlatformVariant(
     context,

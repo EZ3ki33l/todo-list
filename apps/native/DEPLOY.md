@@ -23,7 +23,10 @@ Application Clerk : `app_3FAwyTNQFE1SCPrhIapjbSoal5o`
    - Package : `com.ez3ki33l.todolist`
    - SHA-256 debug : `97:F9:A0:84:82:8A:28:09:E4:EF:D3:B6:D5:6E:B1:C2:9F:16:F5:1B:89:CE:8F:15:E1:30:1D:CB:3E:43:96:B3`
    - (Release : `npx eas credentials -p android` pour l’empreinte du keystore EAS)
-5. **Google Cloud** → client OAuth **Android** avec le même package + SHA-256 (sinon `DEVELOPER_ERROR` au sign-in natif). Le client **Web** reste celui configuré dans Clerk SSO.
+5. **Google Cloud** → clients OAuth :
+   - **Web** : même Client ID + Secret que Clerk SSO custom credentials
+   - **Android** : package `com.ez3ki33l.todolist` + SHA-1 debug `54:40:61:09:64:FF:CD:14:BB:6F:99:22:01:C8:4B:B7:F0:E2:18:E1`
+   - `.env` : `EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID` = Client ID Android (ex. `782595741716-kv474jirrh53l83irvitorjvjeedaag2...`)
 
 Côté serveur (web + API), la même app Clerk doit exposer `CLERK_SECRET_KEY` et `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (voir `apps/web/env.example`). En dev local, `CLERK_SECRET_KEY` dans `apps/web/.env` doit correspondre à la même instance que `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` du mobile.
 

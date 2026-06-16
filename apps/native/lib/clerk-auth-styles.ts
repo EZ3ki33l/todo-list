@@ -11,12 +11,21 @@ export const clerkAuthStyles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     color: "#111827",
+    textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
     color: "#6B7280",
     marginBottom: 24,
+    textAlign: "center",
+  },
+  logo: {
+    width: 96,
+    height: 96,
+    alignSelf: "center",
+    marginBottom: 16,
+    borderRadius: 20,
   },
   label: {
     fontSize: 14,

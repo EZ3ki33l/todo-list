@@ -1,6 +1,5 @@
 import { NOTIFICATION_TYPE_OPTIONS } from "@/lib/notification-constants";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   StyleSheet,
@@ -8,6 +7,8 @@ import {
   Text,
   View,
 } from "react-native";
+
+import { LoadingIndicator } from "@/components/loading-logo";
 
 import {
   disablePushNotifications,
@@ -73,7 +74,7 @@ export function NotificationSettings() {
   }
 
   if (isLoading || !prefs) {
-    return <ActivityIndicator style={{ marginVertical: 24 }} />;
+    return <LoadingIndicator />;
   }
 
   const typesDisabled = !prefs.alertsEnabled || update.isPending;

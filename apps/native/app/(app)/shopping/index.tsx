@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +11,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ShoppingListDetail } from "@/components/shopping-list-detail";
+import { ShoppingHubSkeleton } from "@/components/shopping-hub-skeleton";
 import { TabListHeader } from "@/components/tab-list-header";
 import { useAuth } from "@/lib/auth-context";
 import { listHubStyles as hub } from "@/lib/list-hub-styles";
@@ -142,6 +142,7 @@ function SharedShoppingSection({
 export default function ShoppingScreen() {
   const { signOut } = useAuth();
   const [newSharedTitle, setNewSharedTitle] = useState("");
+  const [pullRefreshing, setPullRefreshing] = useState(false);
   const utils = trpc.useUtils();
 
   const {
@@ -150,6 +151,19 @@ export default function ShoppingScreen() {
     error: personalError,
     refetch: refetchPersonal,
   } = usePersonalShoppingList();
+
+  const itemsQuery = trpc.shoppingItems.getByList.useQuery(
+    { listId: personalList?.id ?? "" },
+    { enabled: !!personalList?.id, staleTime: 60_000 },
+  );
+
+  const showSkeleton =
+    (loadingPersonal && !personalList) ||
+    (!!personalList?.id && itemsQuery.isLoading && itemsQuery.data === undefined);
+
+  useEffect(() => {
+    void import("react-native-draggable-flatlist");
+  }, []);
 
   const sharedFooter =
     personalList != null ? (
@@ -160,33 +174,49 @@ export default function ShoppingScreen() {
       />
     ) : null;
 
+  async function handleRefresh() {
+    setPullRefreshing(true);
+    try {
+      await refetchPersonal();
+    } finally {
+      setPullRefreshing(false);
+    }
+  }
+
   return (
     <SafeAreaView style={hub.safe} edges={["top"]}>
-      <TabListHeader title="Courses" onSignOut={signOut} />
-
-      {loadingPersonal && !personalList ? (
-        <ActivityIndicator style={{ marginVertical: 24 }} />
-      ) : personalError ? (
-        <ScrollView
-          style={hub.container}
-          contentContainerStyle={hub.content}
-          refreshControl={
-            <RefreshControl refreshing={loadingPersonal} onRefresh={() => void refetchPersonal()} />
-          }
-        >
-          <Text style={hub.empty}>
-            Impossible de charger vos courses. Tirez pour réessayer.
-          </Text>
-        </ScrollView>
-      ) : personalList ? (
-        <View style={{ flex: 1 }}>
-          <ShoppingListDetail
-            listId={personalList.id}
-            embedded
-            footer={sharedFooter}
-          />
+      <View style={{ flex: 1 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+          <TabListHeader title="Courses" onSignOut={signOut} />
         </View>
-      ) : null}
+
+        {showSkeleton ? (
+          <View style={{ flex: 1, paddingHorizontal: 16 }}>
+            <ShoppingHubSkeleton withSharedLists />
+          </View>
+        ) : personalError ? (
+          <ScrollView
+            style={hub.container}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={pullRefreshing} onRefresh={() => void handleRefresh()} />
+            }
+          >
+            <Text style={hub.empty}>
+              Impossible de charger vos courses. Tirez pour réessayer.
+            </Text>
+          </ScrollView>
+        ) : personalList ? (
+          <View style={{ flex: 1 }}>
+            <ShoppingListDetail
+              listId={personalList.id}
+              embedded
+              footer={sharedFooter}
+            />
+          </View>
+        ) : null}
+      </View>
     </SafeAreaView>
   );
 }

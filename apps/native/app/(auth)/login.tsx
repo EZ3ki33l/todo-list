@@ -3,7 +3,7 @@ import { SignIn } from "@clerk/expo/web";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,7 +15,9 @@ import {
 
 import { clerkAuthStyles as styles } from "@/lib/clerk-auth-styles";
 import { ClerkAuthDivider, ClerkGoogleSignInButton } from "@/components/clerk-google-sign-in-button";
+import { LoadingLogo } from "@/components/loading-logo";
 import { useCompleteClerkAppSignIn } from "@/hooks/use-complete-clerk-app-sign-in";
+import { useAuth } from "@/lib/auth-context";
 
 async function finalizeClerkSignIn(signIn: ReturnType<typeof useSignIn>["signIn"]) {
   if (signIn.status !== "complete") return;
@@ -25,6 +27,7 @@ async function finalizeClerkSignIn(signIn: ReturnType<typeof useSignIn>["signIn"
 function NativeLoginScreen() {
   const { signIn, errors, fetchStatus } = useSignIn();
   const completeAppSignIn = useCompleteClerkAppSignIn();
+  const { setAuthFlowBusy } = useAuth();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -37,6 +40,8 @@ function NativeLoginScreen() {
   async function handleSubmit() {
     setFormError(null);
     setSubmitting(true);
+    setAuthFlowBusy(true);
+    let signedIn = false;
     try {
       const { error } = await signIn.password({ emailAddress, password });
       if (error) {
@@ -47,6 +52,7 @@ function NativeLoginScreen() {
       if (signIn.status === "complete") {
         await finalizeClerkSignIn(signIn);
         await completeAppSignIn();
+        signedIn = true;
         return;
       }
 
@@ -66,17 +72,21 @@ function NativeLoginScreen() {
       setFormError(err instanceof Error ? err.message : "Connexion impossible.");
     } finally {
       setSubmitting(false);
+      if (!signedIn) setAuthFlowBusy(false);
     }
   }
 
   async function handleVerifyCode() {
     setFormError(null);
     setSubmitting(true);
+    setAuthFlowBusy(true);
+    let signedIn = false;
     try {
       await signIn.mfa.verifyEmailCode({ code });
       if (signIn.status === "complete") {
         await finalizeClerkSignIn(signIn);
         await completeAppSignIn();
+        signedIn = true;
         return;
       }
       setFormError("Code invalide ou expiré.");
@@ -84,6 +94,7 @@ function NativeLoginScreen() {
       setFormError(err instanceof Error ? err.message : "Connexion impossible.");
     } finally {
       setSubmitting(false);
+      if (!signedIn) setAuthFlowBusy(false);
     }
   }
 
@@ -116,7 +127,7 @@ function NativeLoginScreen() {
             disabled={!code || busy}
           >
             {busy ? (
-              <ActivityIndicator color="#fff" />
+              <LoadingLogo size={22} tintColor="#fff" />
             ) : (
               <Text style={styles.buttonText}>Valider</Text>
             )}
@@ -139,7 +150,12 @@ function NativeLoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
-        <Text style={styles.title}>Todo List</Text>
+        <Image
+          source={require("../../assets/logo.png")}
+          style={styles.logo}
+          accessibilityLabel="Logo EZ3"
+        />
+        <Text style={styles.title}>Todolist by EZ3</Text>
         <Text style={styles.subtitle}>Connectez-vous pour accéder à vos listes.</Text>
 
         <ClerkGoogleSignInButton disabled={busy} />
@@ -181,7 +197,7 @@ function NativeLoginScreen() {
           disabled={!emailAddress || !password || busy}
         >
           {busy ? (
-            <ActivityIndicator color="#fff" />
+            <LoadingLogo size={22} tintColor="#fff" />
           ) : (
             <Text style={styles.buttonText}>Se connecter</Text>
           )}

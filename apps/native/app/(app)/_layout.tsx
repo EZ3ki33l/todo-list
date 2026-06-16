@@ -1,11 +1,6 @@
-import { Text } from "react-native";
 import { Tabs } from "expo-router";
 
-function tabIcon(symbol: string) {
-  return ({ color }: { color: string }) => (
-    <Text style={{ fontSize: 22, color }}>{symbol}</Text>
-  );
-}
+import { TabBarIcon } from "@/components/tab-bar-icon";
 
 export default function AppLayout() {
   return (
@@ -18,6 +13,7 @@ export default function AppLayout() {
         tabBarActiveTintColor: "#111827",
         tabBarInactiveTintColor: "#9CA3AF",
         tabBarStyle: { backgroundColor: "#fff", borderTopColor: "#E5E7EB" },
+        sceneStyle: { backgroundColor: "#F9FAFB" },
       }}
     >
       <Tabs.Screen
@@ -26,7 +22,7 @@ export default function AppLayout() {
           title: "Tâches",
           headerShown: false,
           tabBarLabel: "Tâches",
-          tabBarIcon: tabIcon("📋"),
+          tabBarIcon: ({ focused }) => <TabBarIcon name="todolist" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -35,7 +31,7 @@ export default function AppLayout() {
           title: "Mes courses",
           headerShown: false,
           tabBarLabel: "Courses",
-          tabBarIcon: tabIcon("🛒"),
+          tabBarIcon: ({ focused }) => <TabBarIcon name="caddie" focused={focused} />,
         }}
       />
       <Tabs.Screen

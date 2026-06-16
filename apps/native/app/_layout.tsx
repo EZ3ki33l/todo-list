@@ -1,15 +1,16 @@
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 
-import { ClerkProvider } from "@clerk/expo";
+import { ClerkProvider, useAuth as useClerkAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
-import { useEffect, useMemo } from "react";
-import { AppState, ActivityIndicator, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { AppState, StyleSheet, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { AuthLoadingOverlay } from "@/components/auth-loading-overlay";
 import { ClerkSessionBridge } from "@/components/clerk-session-bridge";
 import { PushTokenSync } from "@/components/push-registration";
 import { trpc, createTrpcClient } from "@/lib/trpc";
@@ -39,10 +40,12 @@ const queryClient = new QueryClient({
 });
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { ready, token, skipMeValidation, signOut } = useAuth();
+  const { ready, token, skipMeValidation, signOut, authFlowBusy, setAuthFlowBusy } = useAuth();
+  const { isSignedIn, isLoaded } = useClerkAuth({ treatPendingAsSignedOut: false });
   const router = useRouter();
   const segments = useSegments();
   const segment = segments[0];
+  const [meValidationTimedOut, setMeValidationTimedOut] = useState(false);
 
   const shouldValidateStoredToken = !!token && ready && !skipMeValidation;
 
@@ -63,8 +66,42 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [meUnauthorized, signOut]);
 
+  useEffect(() => {
+    if (!shouldValidateStoredToken || meQuery.isFetched || meQuery.isError) {
+      setMeValidationTimedOut(false);
+      return;
+    }
+    if (!meQuery.isLoading) return;
+
+    const timer = setTimeout(() => {
+      setMeValidationTimedOut(true);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [shouldValidateStoredToken, meQuery.isLoading, meQuery.isFetched, meQuery.isError]);
+
   const bootstrapping =
-    !ready || (shouldValidateStoredToken && meQuery.isLoading && !meQuery.isFetched);
+    !ready ||
+    (shouldValidateStoredToken &&
+      !meValidationTimedOut &&
+      meQuery.isLoading &&
+      !meQuery.isFetched);
+
+  const pendingApiExchange = ready && isLoaded && isSignedIn && !token;
+  const leavingAuthRoute = !!token && segment === "(auth)";
+  const showLoadingOverlay =
+    bootstrapping ||
+    meUnauthorized ||
+    pendingApiExchange ||
+    leavingAuthRoute ||
+    authFlowBusy;
+  const renderChildren = !meUnauthorized;
+  const showShell = renderChildren && !leavingAuthRoute && !bootstrapping;
+
+  useEffect(() => {
+    if (token && segment === "(app)") {
+      setAuthFlowBusy(false);
+    }
+  }, [token, segment, setAuthFlowBusy]);
 
   useEffect(() => {
     if (bootstrapping || meUnauthorized) return;
@@ -81,16 +118,19 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [bootstrapping, meUnauthorized, token, segment, router]);
 
-  if (bootstrapping || meUnauthorized) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  return <>{children}</>;
+  return (
+    <View style={styles.root}>
+      {showShell ? children : null}
+      {showLoadingOverlay ? <AuthLoadingOverlay /> : null}
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});
 
 function RootNavigator() {
   const { token } = useAuth();

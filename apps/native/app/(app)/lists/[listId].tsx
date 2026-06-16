@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   StyleSheet,
@@ -20,6 +19,7 @@ import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { applyListOrder } from "@/lib/reorder-list";
 import { normalizeActionRows } from "@/lib/normalize-action-row";
 import { StreakBadge } from "@/components/streak-badge";
+import { LoadingIndicator } from "@/components/loading-logo";
 import { PushOptInCard } from "@/components/push-opt-in-card";
 import { TodoListShareModal } from "@/components/todo-list-share-modal";
 import { useToggleAction } from "@/lib/use-toggle-action";
@@ -336,7 +336,7 @@ export default function ListDetailScreen() {
           </View>
         ) : null}
 
-        {isLoading && <ActivityIndicator style={{ marginTop: 20 }} />}
+        {isLoading && <LoadingIndicator style={{ marginTop: 20, marginVertical: 20 }} />}
       </View>
     ),
     [
@@ -455,7 +455,7 @@ export default function ListDetailScreen() {
     <>
       <LazyDraggableFlatList
         data={listData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: ActionRow) => item.id}
         onDragEnd={handleDragEnd}
         activationDistance={12}
         enableLayoutAnimationExperimental={false}

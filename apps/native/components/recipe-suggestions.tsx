@@ -1,11 +1,12 @@
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+
+import { LoadingLogo } from "@/components/loading-logo";
 
 import { trpc } from "@/lib/trpc";
 
@@ -52,7 +53,7 @@ export function RecipeSuggestions({
           disabled={suggest.isPending || !canSuggest}
         >
           {suggest.isPending ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <LoadingLogo size={18} tintColor="#fff" />
           ) : (
             <Text style={styles.buttonText}>
               {recipes.length > 0 ? "Actualiser" : "Proposer"}

@@ -3,7 +3,6 @@ import { SignUp } from "@clerk/expo/web";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,7 +14,9 @@ import {
 
 import { clerkAuthStyles as styles } from "@/lib/clerk-auth-styles";
 import { ClerkAuthDivider, ClerkGoogleSignInButton } from "@/components/clerk-google-sign-in-button";
+import { LoadingLogo } from "@/components/loading-logo";
 import { useCompleteClerkAppSignIn } from "@/hooks/use-complete-clerk-app-sign-in";
+import { useAuth } from "@/lib/auth-context";
 
 async function finalizeClerkSignUp(signUp: ReturnType<typeof useSignUp>["signUp"]) {
   if (signUp.status !== "complete") return;
@@ -25,6 +26,7 @@ async function finalizeClerkSignUp(signUp: ReturnType<typeof useSignUp>["signUp"
 function NativeSignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
   const completeAppSignIn = useCompleteClerkAppSignIn();
+  const { setAuthFlowBusy } = useAuth();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -93,7 +95,7 @@ function NativeSignUpScreen() {
             disabled={!code || busy}
           >
             {busy ? (
-              <ActivityIndicator color="#fff" />
+              <LoadingLogo size={22} tintColor="#fff" />
             ) : (
               <Text style={styles.buttonText}>Valider</Text>
             )}
@@ -158,7 +160,7 @@ function NativeSignUpScreen() {
           disabled={!emailAddress || !password || busy}
         >
           {busy ? (
-            <ActivityIndicator color="#fff" />
+            <LoadingLogo size={22} tintColor="#fff" />
           ) : (
             <Text style={styles.buttonText}>S'inscrire</Text>
           )}

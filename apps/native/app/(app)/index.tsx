@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AddActionForm } from "@/components/add-action-form";
 import { DayWeekView } from "@/components/day-week-view";
+import { TodoHubSkeleton } from "@/components/todo-hub-skeleton";
 import { TabListHeader } from "@/components/tab-list-header";
 import { listHubStyles as hub } from "@/lib/list-hub-styles";
 import { trpc } from "@/lib/trpc";
@@ -35,6 +35,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { signOut, user } = useAuth();
   const [newSharedTitle, setNewSharedTitle] = useState("");
+  const [pullRefreshing, setPullRefreshing] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -45,14 +46,23 @@ export default function DashboardScreen() {
     refetch: refetchPersonal,
   } = usePersonalTodoList();
 
+  const actionsQuery = trpc.actions.getByList.useQuery(
+    { listId: personalList?.id ?? "" },
+    { enabled: !!personalList?.id, staleTime: 15_000 },
+  );
+
+  const showSkeleton =
+    (loadingPersonal && !personalList) ||
+    (!!personalList?.id && actionsQuery.isLoading && actionsQuery.data === undefined);
+
   const { data: sharedListsPrimary, isError: sharedError, refetch: refetchShared } =
     trpc.lists.getSharedTodos.useQuery(undefined, {
-      enabled: !!personalList,
+      enabled: !!personalList && !showSkeleton,
       retry: 1,
     });
 
   const { data: allLists } = trpc.lists.getAll.useQuery(undefined, {
-    enabled: !!personalList && sharedError,
+    enabled: !!personalList && sharedError && !showSkeleton,
   });
 
   const sharedLists =
@@ -70,7 +80,14 @@ export default function DashboardScreen() {
     },
   });
 
-  const refreshing = loadingPersonal;
+  async function handleRefresh() {
+    setPullRefreshing(true);
+    try {
+      await Promise.all([refetchPersonal(), refetchShared()]);
+    } finally {
+      setPullRefreshing(false);
+    }
+  }
 
   return (
     <SafeAreaView style={hub.safe} edges={["top"]}>
@@ -81,18 +98,15 @@ export default function DashboardScreen() {
         nestedScrollEnabled={false}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              void refetchPersonal();
-              void refetchShared();
-            }}
+            refreshing={pullRefreshing}
+            onRefresh={() => void handleRefresh()}
           />
         }
       >
         <TabListHeader title="Tâches" onSignOut={signOut} />
 
-        {loadingPersonal && !personalList ? (
-          <ActivityIndicator style={{ marginVertical: 24 }} />
+        {showSkeleton ? (
+          <TodoHubSkeleton />
         ) : personalError ? (
           <Text style={hub.empty}>
             Impossible de charger vos tâches. Tirez pour réessayer.
@@ -104,6 +118,7 @@ export default function DashboardScreen() {
           </>
         ) : null}
 
+        {!showSkeleton ? (
         <View style={hub.section}>
           <Text style={hub.sectionTitle}>Listes partagées</Text>
           {(sharedLists?.length ?? 0) === 0 ? (
@@ -168,6 +183,7 @@ export default function DashboardScreen() {
             </Pressable>
           </View>
         </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

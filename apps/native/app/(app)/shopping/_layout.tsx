@@ -9,6 +9,7 @@ export default function ShoppingLayout() {
         headerTitleStyle: { fontWeight: "700" },
         headerShadowVisible: false,
         headerBackTitle: "Retour",
+        contentStyle: { backgroundColor: "#F9FAFB" },
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />

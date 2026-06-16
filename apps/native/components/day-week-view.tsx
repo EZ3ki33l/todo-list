@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
 } from "react-native";
 
 import { ActionItemRow, type ActionRow } from "@/components/action-item-row";
+import { TodoHubSkeleton } from "@/components/todo-hub-skeleton";
 import {
   defaultPeriodStart,
   formatPeriodRangeLabel,
@@ -257,8 +257,8 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
     deletePendingId,
   };
 
-  if (isLoading) {
-    return <ActivityIndicator style={{ marginVertical: 20 }} />;
+  if (isLoading && actions === undefined) {
+    return <TodoHubSkeleton withSharedLists={false} columnsOnly />;
   }
 
   const todaySubtitle = now.toLocaleDateString("fr-FR", {

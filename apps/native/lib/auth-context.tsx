@@ -15,6 +15,8 @@ type AuthContextValue = {
   token: string | null;
   user: StoredUser | null;
   skipMeValidation: boolean;
+  authFlowBusy: boolean;
+  setAuthFlowBusy: (busy: boolean) => void;
   signIn: (token: string, user: StoredUser) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -27,13 +29,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<StoredUser | null>(null);
   const [ready, setReady] = useState(false);
   const [skipMeValidation, setSkipMeValidation] = useState(false);
+  const [authFlowBusy, setAuthFlowBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [t, u] = await Promise.all([getToken(), getUser()]);
-      setToken(t);
-      setUser(u);
-      setReady(true);
+      try {
+        const [t, u] = await Promise.all([getToken(), getUser()]);
+        setToken(t);
+        setUser(u);
+      } catch {
+        // Ne jamais bloquer le boot sur une erreur de stockage local.
+        setToken(null);
+        setUser(null);
+      } finally {
+        setReady(true);
+      }
     })();
   }, []);
 
@@ -48,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await setPushOptIn(false);
     await clearSession();
     setSkipMeValidation(false);
+    setAuthFlowBusy(false);
     setToken(null);
     setUser(null);
     try {
@@ -58,7 +69,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ready, token, user, skipMeValidation, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        ready,
+        token,
+        user,
+        skipMeValidation,
+        authFlowBusy,
+        setAuthFlowBusy,
+        signIn,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,8 +1,9 @@
 import { isClerkAPIResponseError, useAuth as useClerkAuth, useClerk } from "@clerk/expo";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { clerkAuthStyles as styles } from "@/lib/clerk-auth-styles";
+import { LoadingLogo } from "@/components/loading-logo";
 import { useCompleteClerkAppSignIn } from "@/hooks/use-complete-clerk-app-sign-in";
 import { useAuth as useAppAuth } from "@/lib/auth-context";
 import { runClerkGoogleNativeAuth } from "@/lib/clerk-google-native-auth";
@@ -89,7 +90,7 @@ export function ClerkGoogleSignInButton({
 }) {
   const clerk = useClerk();
   const { isSignedIn } = useClerkAuth({ treatPendingAsSignedOut: false });
-  const { token } = useAppAuth();
+  const { token, setAuthFlowBusy } = useAppAuth();
   const completeAppSignIn = useCompleteClerkAppSignIn();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,9 +98,12 @@ export function ClerkGoogleSignInButton({
   async function handlePress() {
     setError(null);
     setBusy(true);
+    setAuthFlowBusy(true);
+    let signedIn = false;
     try {
       if (isSignedIn && !token) {
         await completeAppSignIn();
+        signedIn = true;
         return;
       }
 
@@ -107,6 +111,7 @@ export function ClerkGoogleSignInButton({
 
       if (outcome.kind === "success") {
         await completeAppSignIn();
+        signedIn = true;
         return;
       }
 
@@ -128,6 +133,7 @@ export function ClerkGoogleSignInButton({
       ) {
         try {
           await completeAppSignIn();
+          signedIn = true;
           return;
         } catch (exchangeErr) {
           setError(exchangeErr instanceof Error ? exchangeErr.message : "Connexion impossible.");
@@ -144,6 +150,7 @@ export function ClerkGoogleSignInButton({
       if (message) setError(message);
     } finally {
       setBusy(false);
+      if (!signedIn) setAuthFlowBusy(false);
     }
   }
 
@@ -156,7 +163,7 @@ export function ClerkGoogleSignInButton({
         disabled={disabled || busy}
       >
         {busy ? (
-          <ActivityIndicator color="#111827" />
+          <LoadingLogo size={22} tintColor="#111827" />
         ) : (
           <Text style={styles.googleButtonText}>{label}</Text>
         )}

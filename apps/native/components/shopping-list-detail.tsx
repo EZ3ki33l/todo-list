@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
@@ -123,6 +122,8 @@ export function ShoppingListDetail({
   const [shareEmail, setShareEmail] = useState("");
   const [shareRole, setShareRole] = useState<ShareRole>("membre");
   const [shareError, setShareError] = useState<string | null>(null);
+  const [listViewportHeight, setListViewportHeight] = useState(0);
+  const [listContentHeight, setListContentHeight] = useState(0);
 
   const utils = trpc.useUtils();
 
@@ -596,6 +597,9 @@ export function ShoppingListDetail({
     [renderShoppingItem, dragEnabled],
   );
 
+  const fabClearance = canWrite && listId ? 72 : 16;
+  const listScrollEnabled = listContentHeight > listViewportHeight + 2;
+
   const listHeader = (
     <>
         {embedded && (isOwner || (!!list && isShared)) ? (
@@ -724,8 +728,6 @@ export function ShoppingListDetail({
         {uncheckedItems.length > 1 && canWrite && (
           <Text style={styles.dragHint}>Maintenir un article pour réordonner</Text>
         )}
-
-        {isLoading ? <ActivityIndicator style={{ marginTop: 20 }} /> : null}
     </>
   );
 
@@ -749,7 +751,16 @@ export function ShoppingListDetail({
           </>
         }
         containerStyle={styles.container}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          embedded ? styles.contentEmbedded : styles.content,
+          { paddingBottom: fabClearance },
+        ]}
+        onLayout={(event) => setListViewportHeight(event.nativeEvent.layout.height)}
+        onContentSizeChange={(_, height) => setListContentHeight(height)}
+        scrollEnabled={listScrollEnabled}
+        showsVerticalScrollIndicator={false}
+        overScrollMode="never"
+        bounces={listScrollEnabled}
       />
 
       {canWrite && listId ? <RecipeChefChat listId={listId} /> : null}
@@ -861,7 +872,8 @@ export function ShoppingListDetail({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
-  content: { padding: 16, paddingBottom: 88 },
+  content: { padding: 16 },
+  contentEmbedded: { paddingHorizontal: 16, paddingTop: 0 },
   embeddedTopRow: {
     flexDirection: "row",
     alignItems: "center",

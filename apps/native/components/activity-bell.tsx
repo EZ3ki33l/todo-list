@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { AppState } from "react-native";
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -10,6 +9,8 @@ import {
   Text,
   View,
 } from "react-native";
+
+import { LoadingIndicator } from "@/components/loading-logo";
 
 const NotificationSettings = lazy(() =>
   import("@/components/notification-settings").then((m) => ({
@@ -135,7 +136,7 @@ export function ActivityBell() {
                 ) : null}
 
                 {isLoading ? (
-                  <ActivityIndicator style={{ marginVertical: 24 }} />
+                  <LoadingIndicator />
                 ) : !feed?.items.length ? (
                   <Text style={styles.empty}>
                     {alertsActive
@@ -165,7 +166,7 @@ export function ActivityBell() {
               </>
             ) : (
               <ScrollView style={styles.settingsScroll} keyboardShouldPersistTaps="handled">
-                <Suspense fallback={<ActivityIndicator style={{ marginVertical: 24 }} />}>
+                <Suspense fallback={<LoadingIndicator />}>
                   <NotificationSettings />
                 </Suspense>
               </ScrollView>

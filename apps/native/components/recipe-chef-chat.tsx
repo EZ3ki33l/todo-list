@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Linking,
@@ -13,6 +12,8 @@ import {
   TextInput,
   View,
 } from "react-native";
+
+import { LoadingLogo } from "@/components/loading-logo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ChefChatMessageContent } from "@/components/chef-chat-message-content";
@@ -398,7 +399,7 @@ export function RecipeChefChat({ listId }: Props) {
                       disabled={!draft.trim() || chat.isPending}
                     >
                       {chat.isPending ? (
-                        <ActivityIndicator size="small" color="#fff" />
+                        <LoadingLogo size={18} tintColor="#fff" />
                       ) : (
                         <Text style={styles.sendBtnText}>Envoyer</Text>
                       )}

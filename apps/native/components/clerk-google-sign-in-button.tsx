@@ -2,11 +2,13 @@ import { isClerkAPIResponseError, useAuth as useClerkAuth, useClerk } from "@cle
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
-import { clerkAuthStyles as styles } from "@/lib/clerk-auth-styles";
+import { getClerkAuthStyles } from "@/lib/clerk-auth-styles";
 import { LoadingLogo } from "@/components/loading-logo";
 import { useCompleteClerkAppSignIn } from "@/hooks/use-complete-clerk-app-sign-in";
 import { useAuth as useAppAuth } from "@/lib/auth-context";
 import { runClerkGoogleNativeAuth } from "@/lib/clerk-google-native-auth";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 function isUserCancelled(err: unknown): boolean {
   const message = err instanceof Error ? err.message : String(err);
@@ -88,6 +90,9 @@ export function ClerkGoogleSignInButton({
   disabled?: boolean;
   label?: string;
 }) {
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const styles = getClerkAuthStyles(themeName);
   const clerk = useClerk();
   const { isSignedIn } = useClerkAuth({ treatPendingAsSignedOut: false });
   const { token, setAuthFlowBusy } = useAppAuth();
@@ -163,7 +168,7 @@ export function ClerkGoogleSignInButton({
         disabled={disabled || busy}
       >
         {busy ? (
-          <LoadingLogo size={22} tintColor="#111827" />
+          <LoadingLogo size={22} tintColor={palette.text} />
         ) : (
           <Text style={styles.googleButtonText}>{label}</Text>
         )}
@@ -173,6 +178,9 @@ export function ClerkGoogleSignInButton({
 }
 
 export function ClerkAuthDivider() {
+  const { themeName } = useThemeMode();
+  const styles = getClerkAuthStyles(themeName);
+
   return (
     <View style={styles.dividerRow}>
       <View style={styles.dividerLine} />

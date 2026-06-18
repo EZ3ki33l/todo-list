@@ -1,6 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { SHOPPING_UNITS } from "@/lib/grocery-ui";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 type Props = {
   value: string | null;
@@ -9,6 +11,10 @@ type Props = {
 };
 
 export function UnitPicker({ value, onChange, label = "Conditionnement (facultatif)" }: Props) {
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const styles = getStyles(palette);
+
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
@@ -34,19 +40,21 @@ export function UnitPicker({ value, onChange, label = "Conditionnement (facultat
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(palette: ReturnType<typeof getPalette>) {
+  return StyleSheet.create({
   wrap: { marginBottom: 10 },
-  label: { fontSize: 12, color: "#6B7280", marginBottom: 6 },
+  label: { fontSize: 12, color: palette.textMuted, marginBottom: 6 },
   row: { flexDirection: "row", gap: 6, paddingRight: 8 },
   chip: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#fff",
+    borderColor: palette.border,
+    backgroundColor: palette.bgElevated,
   },
-  chipActive: { backgroundColor: "#111827", borderColor: "#111827" },
-  chipText: { fontSize: 12, color: "#374151" },
-  chipTextActive: { color: "#fff" },
+  chipActive: { backgroundColor: palette.primary, borderColor: palette.primary },
+  chipText: { fontSize: 12, color: palette.textMuted },
+  chipTextActive: { color: palette.onPrimary },
 });
+}

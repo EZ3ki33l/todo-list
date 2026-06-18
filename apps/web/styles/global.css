@@ -1,1 +1,58 @@
 @import "tailwindcss";
+
+:root,
+[data-theme="latte"] {
+  --app-bg: #eff1f5;
+  --app-bg-elevated: #ffffff;
+  --app-bg-soft: #e6e9ef;
+  --app-text: #4c4f69;
+  --app-text-muted: #6c6f85;
+  --app-text-subtle: #8c8fa1;
+  --app-border: #bcc0cc;
+  --app-border-soft: #dce0e8;
+  --app-primary: #1e66f5;
+  --app-on-primary: #ffffff;
+  --app-badge-bg: #dce0e8;
+  --app-badge-text: #1e66f5;
+  --app-danger: #d20f39;
+  --app-skeleton: #ccd0da;
+}
+
+[data-theme="mocha"] {
+  --app-bg: #1e1e2e;
+  --app-bg-elevated: #313244;
+  --app-bg-soft: #181825;
+  --app-text: #cdd6f4;
+  --app-text-muted: #a6adc8;
+  --app-text-subtle: #9399b2;
+  --app-border: #585b70;
+  --app-border-soft: #45475a;
+  --app-primary: #89b4fa;
+  --app-on-primary: #1e1e2e;
+  --app-badge-bg: #45475a;
+  --app-badge-text: #89b4fa;
+  --app-danger: #f38ba8;
+  --app-skeleton: #45475a;
+}
+
+@theme inline {
+  --color-app-bg: var(--app-bg);
+  --color-app-bg-elevated: var(--app-bg-elevated);
+  --color-app-bg-soft: var(--app-bg-soft);
+  --color-app-text: var(--app-text);
+  --color-app-text-muted: var(--app-text-muted);
+  --color-app-text-subtle: var(--app-text-subtle);
+  --color-app-border: var(--app-border);
+  --color-app-border-soft: var(--app-border-soft);
+  --color-app-primary: var(--app-primary);
+  --color-app-on-primary: var(--app-on-primary);
+  --color-app-badge-bg: var(--app-badge-bg);
+  --color-app-badge-text: var(--app-badge-text);
+  --color-app-danger: var(--app-danger);
+  --color-app-skeleton: var(--app-skeleton);
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}

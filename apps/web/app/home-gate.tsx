@@ -12,13 +12,13 @@ export async function HomeGate() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold">Todo list</h1>
-      <p className="mt-2 text-gray-600">
+      <h1 className="text-3xl font-bold text-app-text">Todo list</h1>
+      <p className="mt-2 text-app-text-muted">
         Connectez-vous pour accéder à vos tâches et listes de courses.
       </p>
       <Link
         href="/login"
-        className="mt-4 inline-block rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700"
+        className="mt-4 inline-block rounded-md bg-app-primary px-4 py-2 text-sm text-app-on-primary hover:opacity-90"
       >
         Se connecter
       </Link>

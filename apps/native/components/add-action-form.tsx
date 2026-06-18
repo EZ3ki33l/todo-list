@@ -9,6 +9,8 @@ import {
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 
 import { trpc } from "@/lib/trpc";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 type Recurrence = "NONE" | "DAILY" | "WEEKLY";
@@ -18,6 +20,9 @@ function formatTime24(d: Date) {
 }
 
 export function AddActionForm({ listId }: { listId: string }) {
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const styles = getStyles(palette);
   const [title, setTitle] = useState("");
   const [recurrence, setRecurrence] = useState<Recurrence>("NONE");
   const [dueAt, setDueAt] = useState<Date | null>(null);
@@ -67,7 +72,7 @@ export function AddActionForm({ listId }: { listId: string }) {
         <TextInput
           style={styles.input}
           placeholder="Nouvelle action..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={palette.textSubtle}
           value={title}
           onChangeText={setTitle}
           returnKeyType="done"
@@ -152,12 +157,13 @@ export function AddActionForm({ listId }: { listId: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(palette: ReturnType<typeof getPalette>) {
+  return StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: palette.borderSoft,
     padding: 14,
     marginBottom: 20,
     gap: 12,
@@ -166,38 +172,40 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: palette.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    color: "#111827",
+    color: palette.text,
+    backgroundColor: palette.bgElevated,
   },
   addBtn: {
-    backgroundColor: "#111827",
+    backgroundColor: palette.primary,
     borderRadius: 8,
     paddingHorizontal: 14,
     justifyContent: "center",
   },
   addBtnDisabled: { opacity: 0.4 },
-  addBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  addBtnText: { color: palette.onPrimary, fontWeight: "600", fontSize: 14 },
   radioRow: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   radioItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  radio: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: "#D1D5DB" },
-  radioActive: { borderColor: "#111827", backgroundColor: "#111827" },
-  radioLabel: { fontSize: 13, color: "#374151" },
+  radio: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: palette.border },
+  radioActive: { borderColor: palette.primary, backgroundColor: palette.primary },
+  radioLabel: { fontSize: 13, color: palette.textMuted },
   fieldBtn: { flexDirection: "row", alignItems: "center", gap: 8 },
-  fieldLabel: { fontSize: 13, color: "#6B7280" },
-  fieldValue: { fontSize: 13, color: "#111827" },
+  fieldLabel: { fontSize: 13, color: palette.textMuted },
+  fieldValue: { fontSize: 13, color: palette.text },
   dowRow: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginBottom: 8 },
   dowBtn: {
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: palette.border,
   },
-  dowBtnActive: { backgroundColor: "#111827", borderColor: "#111827" },
-  dowLabel: { fontSize: 12, color: "#374151" },
-  dowLabelActive: { color: "#fff" },
+  dowBtnActive: { backgroundColor: palette.primary, borderColor: palette.primary },
+  dowLabel: { fontSize: 12, color: palette.textMuted },
+  dowLabelActive: { color: palette.onPrimary },
 });
+}

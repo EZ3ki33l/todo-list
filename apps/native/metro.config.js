@@ -1,5 +1,6 @@
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config");
+const { withTamagui } = require("@tamagui/metro-plugin");
 const path = require("path");
 
 const workspaceRoot = path.resolve(__dirname, "../..");
@@ -15,6 +16,33 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, "node_modules"),
 ];
 config.resolver.unstable_enableSymlinks = true;
+
+const singletonPackages = [
+  "react",
+  "react-native",
+  "tamagui",
+  "@tamagui/config",
+  "@tamagui/core",
+  "@tamagui/constants",
+  "@tamagui/helpers",
+  "@tamagui/web",
+  "@tamagui/react-native-media-driver",
+  "@tamagui/shorthands",
+  "@tamagui/themes",
+];
+
+config.resolver.extraNodeModules = {
+  ...(config.resolver.extraNodeModules ?? {}),
+  ...Object.fromEntries(
+    singletonPackages.flatMap((name) => {
+      try {
+        return [[name, path.dirname(require.resolve(`${name}/package.json`, { paths: [projectRoot] }))]];
+      } catch {
+        return [];
+      }
+    }),
+  ),
+};
 
 const clerkExpoRoot = path.dirname(
   require.resolve("@clerk/expo/package.json", { paths: [projectRoot] }),
@@ -59,4 +87,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
-module.exports = config;
+module.exports = withTamagui(config, {
+  components: ["tamagui"],
+  config: "./tamagui.config.ts",
+});

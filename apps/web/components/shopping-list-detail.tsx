@@ -362,7 +362,7 @@ export function ShoppingListDetail({
   );
 
   if (!list) {
-    return <p className="text-sm text-gray-400">Chargement…</p>;
+    return <p className="text-sm text-app-text-subtle">Chargement…</p>;
   }
 
   const inner = (
@@ -371,20 +371,20 @@ export function ShoppingListDetail({
         <div>
           <Link
             href="/dashboard/shopping"
-            className="text-sm text-gray-500 hover:text-gray-900"
+            className="text-sm text-app-text-subtle hover:text-app-text"
           >
             ← Courses
           </Link>
           <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{list.title}</h1>
+              <h1 className="text-2xl font-bold text-app-text">{list.title}</h1>
               {isShared && (
-                <span className="mt-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                <span className="mt-1 inline-block rounded-full bg-app-badge-bg px-2 py-0.5 text-xs font-medium text-app-badge-text">
                   Partagée
                 </span>
               )}
               {!canWrite && (
-                <p className="mt-1 text-sm text-amber-700">Lecture seule (rôle invité)</p>
+                <p className="mt-1 text-sm text-app-badge-text">Lecture seule (rôle invité)</p>
               )}
             </div>
             {isOwner && <ShareShoppingListPanel listId={listId} list={list} />}
@@ -396,16 +396,16 @@ export function ShoppingListDetail({
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-lg font-semibold text-gray-900">{list.title}</h3>
-              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">
+              <h3 className="text-lg font-semibold text-app-text">{list.title}</h3>
+              <span className="rounded-full bg-app-badge-bg px-2 py-0.5 text-xs font-medium text-app-badge-text">
                 Partagée
               </span>
             </div>
             {ownerLabel && (
-              <p className="mt-0.5 text-sm text-indigo-700/80">{ownerLabel}</p>
+              <p className="mt-0.5 text-sm text-app-badge-text/80">{ownerLabel}</p>
             )}
             {!canWrite && (
-              <p className="mt-1 text-sm text-amber-700">Lecture seule (rôle invité)</p>
+              <p className="mt-1 text-sm text-app-badge-text">Lecture seule (rôle invité)</p>
             )}
           </div>
           {isOwner && <ShareShoppingListPanel listId={listId} list={list} />}
@@ -414,7 +414,7 @@ export function ShoppingListDetail({
 
       {canWrite && frequentNotInList.length > 0 && (
         <section>
-          <h2 className="mb-2 text-xs font-semibold text-gray-500">Ajout rapide</h2>
+          <h2 className="mb-2 text-xs font-semibold text-app-text-subtle">Ajout rapide</h2>
           <div className="flex flex-wrap gap-2">
             {frequentNotInList.map((f) => (
               <button
@@ -429,7 +429,7 @@ export function ShoppingListDetail({
                   })
                 }
                 disabled={createItem.isPending}
-                className="inline-flex max-w-48 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-40"
+                className="inline-flex max-w-48 items-center gap-1.5 rounded-full border border-app-border-soft bg-app-bg-elevated px-3 py-1.5 text-sm hover:bg-app-bg-soft disabled:opacity-40"
               >
                 <span aria-hidden>{itemIcon(f.category)}</span>
                 <span className="truncate">{f.title}</span>
@@ -442,7 +442,7 @@ export function ShoppingListDetail({
       {canWrite && (
         <form
           onSubmit={handleAdd}
-          className="space-y-3 rounded-lg border border-gray-200 bg-white p-4"
+          className="space-y-3 rounded-lg border border-app-border-soft bg-app-bg-elevated p-4"
         >
           <input
             type="text"
@@ -450,7 +450,7 @@ export function ShoppingListDetail({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Article (ex. tomates, lait…)"
             autoComplete="off"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="w-full rounded-md border border-app-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
           />
           <TitleSuggestionList
             suggestions={titleSuggestions}
@@ -462,24 +462,24 @@ export function ShoppingListDetail({
             value={quantityText}
             onChange={(e) => setQuantityText(e.target.value)}
             placeholder="Qté (ex. 2, 0.5…)"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="w-full rounded-md border border-app-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
           />
           <UnitPicker value={unit} onChange={setUnit} />
           {detectedCategory && title.trim() ? (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-app-text-subtle">
               Catégorie : {CATEGORY_LABELS[detectedCategory]}
             </p>
           ) : null}
           {(showCategoryPicker || needsCategoryPicker) && title.trim() ? (
             <div>
-              <p className="mb-1.5 text-xs text-gray-500">Choisir une catégorie</p>
+              <p className="mb-1.5 text-xs text-app-text-subtle">Choisir une catégorie</p>
               <CategoryChips value={manualCategory} onChange={setManualCategory} />
             </div>
           ) : null}
           <button
             type="submit"
             disabled={!title.trim() || createItem.isPending}
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-40"
+            className="rounded-md bg-app-primary px-4 py-2 text-sm text-app-on-primary hover:opacity-90 disabled:opacity-40"
           >
             Ajouter
           </button>
@@ -491,27 +491,27 @@ export function ShoppingListDetail({
           type="button"
           onClick={() => clearChecked.mutate({ listId })}
           disabled={clearChecked.isPending}
-          className="text-sm text-red-600 hover:text-red-800 disabled:opacity-40"
+          className="text-sm text-app-danger hover:text-red-800 disabled:opacity-40"
         >
           Vider les articles cochés ({checkedItems.length})
         </button>
       )}
 
       {isLoading ? (
-        <p className="text-sm text-gray-400">Chargement…</p>
+        <p className="text-sm text-app-text-subtle">Chargement…</p>
       ) : (
         <div className="space-y-6">
           <section>
             <div className="mb-2 flex items-baseline justify-between gap-2">
-              <h2 className="text-sm font-semibold text-gray-700">
+              <h2 className="text-sm font-semibold text-app-text">
                 À acheter ({uncheckedListData.length})
               </h2>
               {uncheckedListData.length > 1 && dragEnabled && (
-                <p className="text-xs text-gray-400">Glisser ⠿ pour réordonner</p>
+                <p className="text-xs text-app-text-subtle">Glisser ⠿ pour réordonner</p>
               )}
             </div>
             {uncheckedListData.length === 0 ? (
-              <p className="text-sm text-gray-400">Rien à acheter.</p>
+              <p className="text-sm text-app-text-subtle">Rien à acheter.</p>
             ) : (
               <ul className="space-y-1">
                 {uncheckedListData.map((item) => (
@@ -573,7 +573,7 @@ export function ShoppingListDetail({
 
           {checkedItems.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-semibold text-gray-400">
+              <h2 className="mb-2 text-sm font-semibold text-app-text-subtle">
                 Dans le panier ({checkedItems.length})
               </h2>
               <ul className="space-y-1">
@@ -611,7 +611,7 @@ export function ShoppingListDetail({
           )}
 
           {uncheckedListData.length === 0 && checkedItems.length === 0 && (
-            <p className="text-sm text-gray-400">Liste vide.</p>
+            <p className="text-sm text-app-text-subtle">Liste vide.</p>
           )}
         </div>
       )}
@@ -622,7 +622,7 @@ export function ShoppingListDetail({
     return (
       <section
         id={sectionId}
-        className="scroll-mt-8 rounded-xl border-2 border-indigo-200 bg-indigo-50/40 p-5"
+        className="scroll-mt-8 rounded-xl border-2 border-app-border-soft bg-app-badge-bg/40 p-5"
       >
         {inner}
       </section>

@@ -23,7 +23,7 @@ export function TitleSuggestionList({
 
   return (
     <ul
-      className="mt-1 overflow-hidden rounded-md border border-gray-200 bg-gray-50"
+      className="mt-1 overflow-hidden rounded-md border border-app-border-soft bg-app-bg-soft"
       role="listbox"
     >
       {suggestions.map((s, index) => (
@@ -31,13 +31,13 @@ export function TitleSuggestionList({
           <button
             type="button"
             onClick={() => onSelect(s)}
-            className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-100 ${
-              index < suggestions.length - 1 ? "border-b border-gray-200" : ""
+            className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-app-bg-soft ${
+              index < suggestions.length - 1 ? "border-b border-app-border-soft" : ""
             }`}
           >
             <span aria-hidden>{itemIcon(s.category)}</span>
-            <span className="flex-1 font-medium text-gray-900">{s.title}</span>
-            <span className="text-xs text-gray-500">{suggestionMeta(s)}</span>
+            <span className="flex-1 font-medium text-app-text">{s.title}</span>
+            <span className="text-xs text-app-text-subtle">{suggestionMeta(s)}</span>
           </button>
         </li>
       ))}

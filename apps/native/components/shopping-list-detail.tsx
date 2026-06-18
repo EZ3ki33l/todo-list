@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   Alert,
   KeyboardAvoidingView,
+  LayoutChangeEvent,
   Modal,
   Platform,
   Pressable,
@@ -47,6 +48,8 @@ import {
   type ShareRole,
 } from "@/lib/share-roles";
 import { trpc } from "@/lib/trpc";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 /** Aligné sur `shoppingItems.getFrequent` (évite les `any` si les types tRPC ne sont pas à jour). */
 type FrequentShoppingItem = {
@@ -69,9 +72,11 @@ type ListCatalogItem = {
 function CategoryChips({
   value,
   onChange,
+  styles,
 }: {
   value: GroceryCategory;
   onChange: (c: GroceryCategory) => void;
+  styles: ReturnType<typeof getStyles>;
 }) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
@@ -104,6 +109,9 @@ export function ShoppingListDetail({
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const styles = useMemo(() => getStyles(palette), [palette]);
 
   const [title, setTitle] = useState("");
   const [quantityText, setQuantityText] = useState("");
@@ -489,7 +497,7 @@ export function ShoppingListDetail({
             <TextInput
               style={styles.input}
               placeholder="Qté (ex. 2, 0.5…)"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={palette.textSubtle}
               value={editQuantityText}
               onChangeText={setEditQuantityText}
               keyboardType="decimal-pad"
@@ -509,7 +517,7 @@ export function ShoppingListDetail({
               </Pressable>
             )}
             {editShowCategory && !editDetected && (
-              <CategoryChips value={editCategory} onChange={setEditCategory} />
+              <CategoryChips value={editCategory} onChange={setEditCategory} styles={styles} />
             )}
             <View style={styles.editBtns}>
               <Pressable
@@ -665,7 +673,7 @@ export function ShoppingListDetail({
             <TextInput
               style={styles.input}
               placeholder="Article (ex. tomates, lait...)"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={palette.textSubtle}
               value={title}
               onChangeText={setTitle}
               returnKeyType="done"
@@ -679,7 +687,7 @@ export function ShoppingListDetail({
             <TextInput
               style={styles.input}
               placeholder="Qté (ex. 2, 0.5…)"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={palette.textSubtle}
               value={quantityText}
               onChangeText={setQuantityText}
               keyboardType="decimal-pad"
@@ -695,7 +703,7 @@ export function ShoppingListDetail({
             {(showCategoryPicker || needsCategoryPicker) && title.trim() ? (
               <View style={styles.pickerBlock}>
                 <Text style={styles.pickerLabel}>Choisir une catégorie</Text>
-                <CategoryChips value={manualCategory} onChange={setManualCategory} />
+                <CategoryChips value={manualCategory} onChange={setManualCategory} styles={styles} />
               </View>
             ) : null}
 
@@ -735,7 +743,7 @@ export function ShoppingListDetail({
     <>
       <LazyDraggableFlatList
         data={uncheckedListData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: ShoppingItemRow) => item.id}
         onDragEnd={handleUncheckedDragEnd}
         activationDistance={12}
         enableLayoutAnimationExperimental={false}
@@ -743,7 +751,7 @@ export function ShoppingListDetail({
         ListHeaderComponent={listHeader}
         ListFooterComponent={
           <>
-            {checkedItems.map((item) => renderShoppingItem(item))}
+            {checkedItems.map((item: ShoppingItemRow) => renderShoppingItem(item))}
             {!isLoading && (items?.length ?? 0) === 0 && (
               <Text style={styles.empty}>Aucun article dans cette liste.</Text>
             )}
@@ -755,8 +763,8 @@ export function ShoppingListDetail({
           embedded ? styles.contentEmbedded : styles.content,
           { paddingBottom: fabClearance },
         ]}
-        onLayout={(event) => setListViewportHeight(event.nativeEvent.layout.height)}
-        onContentSizeChange={(_, height) => setListContentHeight(height)}
+        onLayout={(event: LayoutChangeEvent) => setListViewportHeight(event.nativeEvent.layout.height)}
+        onContentSizeChange={(_w: number, height: number) => setListContentHeight(height)}
         scrollEnabled={listScrollEnabled}
         showsVerticalScrollIndicator={false}
         overScrollMode="never"
@@ -788,7 +796,7 @@ export function ShoppingListDetail({
             <TextInput
               style={styles.input}
               placeholder="Email de l'utilisateur"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={palette.textSubtle}
               value={shareEmail}
               onChangeText={setShareEmail}
               autoCapitalize="none"
@@ -870,8 +878,9 @@ export function ShoppingListDetail({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
+function getStyles(palette: ReturnType<typeof getPalette>) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: palette.bg },
   content: { padding: 16 },
   contentEmbedded: { paddingHorizontal: 16, paddingTop: 0 },
   embeddedTopRow: {
@@ -881,55 +890,55 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     minHeight: 28,
   },
-  headerShare: { fontSize: 15, fontWeight: "600", color: "#111827", marginRight: 4 },
+  headerShare: { fontSize: 15, fontWeight: "600", color: palette.primary, marginRight: 4 },
   frequentSection: { marginBottom: 16 },
-  frequentTitle: { fontSize: 13, fontWeight: "600", color: "#6B7280", marginBottom: 8 },
+  frequentTitle: { fontSize: 13, fontWeight: "600", color: palette.textMuted, marginBottom: 8 },
   frequentRow: { flexDirection: "row", gap: 8, paddingRight: 8 },
   frequentChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: palette.borderSoft,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
     maxWidth: 160,
   },
   frequentIcon: { fontSize: 16 },
-  frequentLabel: { fontSize: 13, color: "#111827", fontWeight: "500" },
+  frequentLabel: { fontSize: 13, color: palette.text, fontWeight: "500" },
   readOnlyBanner: {
     fontSize: 13,
-    color: "#6B7280",
-    backgroundColor: "#F3F4F6",
+    color: palette.textMuted,
+    backgroundColor: palette.bgSoft,
     padding: 10,
     borderRadius: 8,
     marginBottom: 12,
     textAlign: "center",
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: palette.borderSoft,
     padding: 14,
     marginBottom: 16,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: palette.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    color: "#111827",
+    color: palette.text,
     marginBottom: 10,
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
   },
-  detectedHint: { fontSize: 12, color: "#16A34A", marginBottom: 8 },
+  detectedHint: { fontSize: 12, color: palette.primary, marginBottom: 8 },
   pickerBlock: { marginBottom: 10 },
-  pickerLabel: { fontSize: 12, color: "#6B7280", marginBottom: 6 },
+  pickerLabel: { fontSize: 12, color: palette.textMuted, marginBottom: 6 },
   chipsScroll: { marginBottom: 4 },
   chipsRow: { flexDirection: "row", gap: 6, paddingRight: 8 },
   chip: {
@@ -937,32 +946,32 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#fff",
+    borderColor: palette.border,
+    backgroundColor: palette.bgElevated,
   },
-  chipActive: { backgroundColor: "#111827", borderColor: "#111827" },
-  chipText: { fontSize: 12, color: "#374151" },
-  chipTextActive: { color: "#fff" },
+  chipActive: { backgroundColor: palette.primary, borderColor: palette.primary },
+  chipText: { fontSize: 12, color: palette.textMuted },
+  chipTextActive: { color: palette.onPrimary },
   addBtn: {
-    backgroundColor: "#111827",
+    backgroundColor: palette.primary,
     borderRadius: 8,
     paddingVertical: 10,
     alignItems: "center",
   },
-  addBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  addBtnText: { color: palette.onPrimary, fontWeight: "600", fontSize: 14 },
   clearBtn: { alignSelf: "flex-end", marginBottom: 12 },
-  clearBtnText: { fontSize: 13, color: "#DC2626", fontWeight: "500" },
+  clearBtnText: { fontSize: 13, color: palette.danger, fontWeight: "500" },
   itemCard: {
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: palette.borderSoft,
     padding: 12,
     marginBottom: 8,
   },
   itemChecked: { opacity: 0.75 },
   itemCardDragging: {
-    borderColor: "#111827",
+    borderColor: palette.primary,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
@@ -971,52 +980,52 @@ const styles = StyleSheet.create({
   },
   dragHint: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: palette.textSubtle,
     marginBottom: 8,
     textAlign: "right",
   },
   dragHandleBtn: { paddingVertical: 2, paddingRight: 4 },
-  dragHandle: { fontSize: 16, color: "#D1D5DB", width: 14, textAlign: "center" },
+  dragHandle: { fontSize: 16, color: palette.border, width: 14, textAlign: "center" },
   itemRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   checkbox: {
     width: 18,
     height: 18,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: "#D1D5DB",
+    borderColor: palette.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  checkboxDone: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
-  checkmark: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  checkboxDone: { backgroundColor: palette.primary, borderColor: palette.primary },
+  checkmark: { color: palette.onPrimary, fontSize: 11, fontWeight: "700" },
   itemIcon: { fontSize: 20 },
   itemContent: { flex: 1 },
-  itemTitle: { fontSize: 14, color: "#111827" },
-  itemTitleDone: { textDecorationLine: "line-through", color: "#9CA3AF" },
-  itemMeta: { fontSize: 12, color: "#9CA3AF", marginTop: 2 },
+  itemTitle: { fontSize: 14, color: palette.text },
+  itemTitleDone: { textDecorationLine: "line-through", color: palette.textSubtle },
+  itemMeta: { fontSize: 12, color: palette.textSubtle, marginTop: 2 },
   rowBtns: { flexDirection: "row", gap: 8 },
   editIcon: { fontSize: 16 },
   deleteIcon: { fontSize: 16 },
-  editCatLink: { fontSize: 12, color: "#2563EB", marginBottom: 8 },
+  editCatLink: { fontSize: 12, color: palette.primary, marginBottom: 8 },
   editBtns: { flexDirection: "row", gap: 8, marginTop: 4 },
   saveBtnSmall: {
     flex: 1,
-    backgroundColor: "#111827",
+    backgroundColor: palette.primary,
     borderRadius: 6,
     paddingVertical: 8,
     alignItems: "center",
   },
-  saveBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+  saveBtnText: { color: palette.onPrimary, fontSize: 13, fontWeight: "600" },
   cancelBtnSmall: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: palette.border,
     borderRadius: 6,
     paddingVertical: 8,
     alignItems: "center",
   },
-  cancelBtnText: { color: "#6B7280", fontSize: 13 },
-  empty: { fontSize: 13, color: "#9CA3AF", fontStyle: "italic", textAlign: "center", marginTop: 20 },
+  cancelBtnText: { color: palette.textMuted, fontSize: 13 },
+  empty: { fontSize: 13, color: palette.textSubtle, fontStyle: "italic", textAlign: "center", marginTop: 20 },
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
@@ -1027,41 +1036,41 @@ const styles = StyleSheet.create({
   },
   modalScrollContent: { paddingBottom: 8 },
   modalCard: {
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: 20,
     paddingTop: 20,
     maxHeight: "85%",
   },
-  modalTitle: { fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 16 },
-  roleHint: { fontSize: 12, color: "#6B7280", marginBottom: 8 },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: palette.text, marginBottom: 16 },
+  roleHint: { fontSize: 12, color: palette.textMuted, marginBottom: 8 },
   roleRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   roleBtn: {
     flex: 1,
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: palette.border,
     alignItems: "center",
   },
-  roleBtnActive: { backgroundColor: "#111827", borderColor: "#111827" },
-  roleBtnText: { fontSize: 12, color: "#374151", textAlign: "center" },
-  roleBtnTextActive: { color: "#fff" },
-  shareError: { fontSize: 13, color: "#DC2626", marginBottom: 8 },
-  membersTitle: { fontSize: 14, fontWeight: "600", color: "#111827", marginTop: 16, marginBottom: 8 },
+  roleBtnActive: { backgroundColor: palette.primary, borderColor: palette.primary },
+  roleBtnText: { fontSize: 12, color: palette.textMuted, textAlign: "center" },
+  roleBtnTextActive: { color: palette.onPrimary },
+  shareError: { fontSize: 13, color: palette.danger, marginBottom: 8 },
+  membersTitle: { fontSize: 14, fontWeight: "600", color: palette.text, marginTop: 16, marginBottom: 8 },
   memberRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: palette.borderSoft,
   },
   memberInfo: { flex: 1 },
-  memberName: { fontSize: 14, color: "#111827" },
-  memberRoleTap: { fontSize: 12, color: "#2563EB", marginTop: 2 },
-  unshareBtn: { fontSize: 13, color: "#DC2626" },
+  memberName: { fontSize: 14, color: palette.text },
+  memberRoleTap: { fontSize: 12, color: palette.primary, marginTop: 2 },
+  unshareBtn: { fontSize: 13, color: palette.danger },
   modalClose: {
     marginTop: 16,
     alignItems: "center",
@@ -1069,5 +1078,6 @@ const styles = StyleSheet.create({
     minHeight: 48,
     justifyContent: "center",
   },
-  modalCloseText: { fontSize: 15, fontWeight: "600", color: "#374151" },
+  modalCloseText: { fontSize: 15, fontWeight: "600", color: palette.textMuted },
 });
+}

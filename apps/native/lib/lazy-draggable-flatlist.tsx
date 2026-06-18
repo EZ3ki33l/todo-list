@@ -1,13 +1,41 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Skeleton, SkeletonLine } from "@/components/skeleton";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 export type { RenderItemParams } from "react-native-draggable-flatlist";
 
 type Props = Record<string, unknown>;
 
 function ListMountSkeleton() {
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        loader: {
+          flex: 1,
+          backgroundColor: palette.bg,
+          paddingVertical: 8,
+          gap: 8,
+        },
+        row: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          backgroundColor: palette.bgElevated,
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: palette.borderSoft,
+          paddingHorizontal: 12,
+          paddingVertical: 12,
+        },
+      }),
+    [palette],
+  );
+
   return (
     <View style={styles.loader}>
       {[0, 1, 2].map((key) => (
@@ -36,23 +64,3 @@ export function LazyDraggableFlatList(props: Props) {
 
   return <Component {...props} />;
 }
-
-const styles = StyleSheet.create({
-  loader: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-    paddingVertical: 8,
-    gap: 8,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-});

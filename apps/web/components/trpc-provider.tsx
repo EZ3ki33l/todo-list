@@ -55,7 +55,7 @@ export function TrpcProvider({
 
   if (failed) {
     return (
-      <p className="text-sm text-red-600">
+      <p className="text-sm text-app-danger">
         Impossible de charger les données. Reconnectez-vous.
       </p>
     );

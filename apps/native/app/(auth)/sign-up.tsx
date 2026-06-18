@@ -1,7 +1,7 @@
 import { useSignUp } from "@clerk/expo";
 import { SignUp } from "@clerk/expo/web";
 import { Link } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -12,11 +12,13 @@ import {
   View,
 } from "react-native";
 
-import { clerkAuthStyles as styles } from "@/lib/clerk-auth-styles";
+import { getClerkAuthStyles } from "@/lib/clerk-auth-styles";
 import { ClerkAuthDivider, ClerkGoogleSignInButton } from "@/components/clerk-google-sign-in-button";
 import { LoadingLogo } from "@/components/loading-logo";
 import { useCompleteClerkAppSignIn } from "@/hooks/use-complete-clerk-app-sign-in";
 import { useAuth } from "@/lib/auth-context";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 async function finalizeClerkSignUp(signUp: ReturnType<typeof useSignUp>["signUp"]) {
   if (signUp.status !== "complete") return;
@@ -27,6 +29,9 @@ function NativeSignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
   const completeAppSignIn = useCompleteClerkAppSignIn();
   const { setAuthFlowBusy } = useAuth();
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const styles = useMemo(() => getClerkAuthStyles(themeName), [themeName]);
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -83,7 +88,7 @@ function NativeSignUpScreen() {
             keyboardType="number-pad"
             autoComplete="one-time-code"
             placeholder="123456"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={palette.textSubtle}
           />
           {errors.fields.code ? (
             <Text style={styles.error}>{errors.fields.code.message}</Text>
@@ -133,7 +138,7 @@ function NativeSignUpScreen() {
           value={emailAddress}
           onChangeText={setEmailAddress}
           placeholder="vous@exemple.fr"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={palette.textSubtle}
         />
         {errors.fields.emailAddress ? (
           <Text style={styles.error}>{errors.fields.emailAddress.message}</Text>
@@ -147,7 +152,7 @@ function NativeSignUpScreen() {
           secureTextEntry
           autoComplete="new-password"
           placeholder="••••••••"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={palette.textSubtle}
         />
         {errors.fields.password ? (
           <Text style={styles.error}>{errors.fields.password.message}</Text>

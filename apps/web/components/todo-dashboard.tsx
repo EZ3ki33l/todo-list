@@ -73,7 +73,7 @@ function ListCard({
   const progress = listProgress(list);
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 rounded-lg border border-app-border-soft bg-app-bg-elevated px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <EditableTitle
@@ -83,12 +83,12 @@ function ListCard({
             readOnly={!isOwner}
           />
           {isShared && (
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+            <span className="rounded-full bg-app-bg-soft px-2 py-0.5 text-xs text-app-text-muted">
               Partagée
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-sm text-gray-500">
+        <p className="mt-0.5 text-sm text-app-text-subtle">
           {progress ? (
             <>
               {progress.done} / {progress.total} fait{progress.done > 1 ? "s" : ""}
@@ -106,7 +106,7 @@ function ListCard({
               <form action={completeTodoList.bind(null, list.id)}>
                 <button
                   type="submit"
-                  className="rounded border border-green-200 px-2 py-1 text-xs text-green-700 hover:bg-green-50"
+                  className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-primary hover:bg-green-50"
                 >
                   Terminer
                 </button>
@@ -114,7 +114,7 @@ function ListCard({
               <form action={archiveTodoList.bind(null, list.id)}>
                 <button
                   type="submit"
-                  className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+                  className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-text-muted hover:bg-app-bg-soft"
                 >
                   Archiver
                 </button>
@@ -135,7 +135,7 @@ function ListCard({
           <form action={deleteTodoList.bind(null, list.id)}>
             <button
               type="submit"
-              className="rounded border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+              className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-danger hover:bg-red-50"
             >
               Supprimer
             </button>
@@ -176,11 +176,11 @@ export default async function TodoDashboard({ userId }: Props) {
             name="title"
             required
             placeholder="Nouvelle liste..."
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="flex-1 rounded-md border border-app-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
           />
           <button
             type="submit"
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700"
+            className="rounded-md bg-app-primary px-4 py-2 text-sm text-app-on-primary hover:opacity-90"
           >
             Créer
           </button>
@@ -188,12 +188,12 @@ export default async function TodoDashboard({ userId }: Props) {
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-gray-900">
+        <h2 className="mb-3 text-lg font-semibold text-app-text">
           Vos listes en cours{" "}
-          <span className="text-sm font-normal text-gray-400">({activeLists.length})</span>
+          <span className="text-sm font-normal text-app-text-subtle">({activeLists.length})</span>
         </h2>
         {activeLists.length === 0 ? (
-          <p className="text-sm text-gray-400">Aucune liste en cours.</p>
+          <p className="text-sm text-app-text-subtle">Aucune liste en cours.</p>
         ) : (
           <ul className="space-y-2">
             {activeLists.map((list) => (
@@ -206,7 +206,7 @@ export default async function TodoDashboard({ userId }: Props) {
       </section>
 
       <details className="group">
-        <summary className="mb-3 cursor-pointer list-none text-lg font-semibold text-gray-900 select-none">
+        <summary className="mb-3 cursor-pointer list-none text-lg font-semibold text-app-text select-none">
           <span className="flex items-center gap-2">
             <svg
               className="size-4 transition-transform group-open:rotate-90"
@@ -217,12 +217,12 @@ export default async function TodoDashboard({ userId }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
             Listes archivées
-            <span className="text-sm font-normal text-gray-400">({archivedLists.length})</span>
+            <span className="text-sm font-normal text-app-text-subtle">({archivedLists.length})</span>
           </span>
         </summary>
         <div className="mt-3">
           {archivedLists.length === 0 ? (
-            <p className="text-sm text-gray-400">Aucune liste archivée.</p>
+            <p className="text-sm text-app-text-subtle">Aucune liste archivée.</p>
           ) : (
             <ul className="space-y-2">
               {archivedLists.map((list) => (
@@ -236,7 +236,7 @@ export default async function TodoDashboard({ userId }: Props) {
       </details>
 
       <details className="group">
-        <summary className="mb-3 cursor-pointer list-none text-lg font-semibold text-gray-900 select-none">
+        <summary className="mb-3 cursor-pointer list-none text-lg font-semibold text-app-text select-none">
           <span className="flex items-center gap-2">
             <svg
               className="size-4 transition-transform group-open:rotate-90"
@@ -247,12 +247,12 @@ export default async function TodoDashboard({ userId }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
             Listes terminées
-            <span className="text-sm font-normal text-gray-400">({doneLists.length})</span>
+            <span className="text-sm font-normal text-app-text-subtle">({doneLists.length})</span>
           </span>
         </summary>
         <div className="mt-3">
           {doneLists.length === 0 ? (
-            <p className="text-sm text-gray-400">Aucune liste terminée.</p>
+            <p className="text-sm text-app-text-subtle">Aucune liste terminée.</p>
           ) : (
             <ul className="space-y-2">
               {doneLists.map((list) => (

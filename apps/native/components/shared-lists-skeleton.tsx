@@ -1,9 +1,16 @@
+import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Skeleton, SkeletonLine } from "@/components/skeleton";
-import { listHubStyles as hub } from "@/lib/list-hub-styles";
+import { getListHubStyles } from "@/lib/list-hub-styles";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 export function SharedListsSkeleton() {
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const hub = useMemo(() => getListHubStyles(palette), [palette]);
+
   return (
     <View style={hub.section}>
       <SkeletonLine width="42%" style={styles.sectionTitle} />

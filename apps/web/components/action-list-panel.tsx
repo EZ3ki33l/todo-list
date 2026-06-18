@@ -97,21 +97,21 @@ export function ActionListPanel({
   const dragEnabled = canEdit && listData.length > 1;
 
   if (isLoading) {
-    return <p className="text-sm text-gray-400">Chargement des actions…</p>;
+    return <p className="text-sm text-app-text-subtle">Chargement des actions…</p>;
   }
 
   if (listData.length === 0) {
-    return <p className="text-sm text-gray-400">Aucune action dans cette liste.</p>;
+    return <p className="text-sm text-app-text-subtle">Aucune action dans cette liste.</p>;
   }
 
   return (
     <section className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold text-gray-900">
+        <h2 className="text-base font-semibold text-app-text">
           Toutes les actions ({listData.length})
         </h2>
         {dragEnabled && (
-          <p className="text-xs text-gray-400">Glisser ⠿ pour réordonner</p>
+          <p className="text-xs text-app-text-subtle">Glisser ⠿ pour réordonner</p>
         )}
       </div>
       <ul className="space-y-2">
@@ -145,13 +145,13 @@ export function ActionListPanel({
             }}
             className={`relative ${
               dragOverId === action.id && draggingId !== action.id
-                ? "rounded-lg ring-2 ring-indigo-200"
+                ? "rounded-lg ring-2 ring-app-border-soft"
                 : ""
             } ${draggingId === action.id ? "opacity-50" : ""}`}
           >
             {dragEnabled && (
               <span
-                className="absolute left-1 top-3 z-10 cursor-grab text-gray-300 select-none active:cursor-grabbing"
+                className="absolute left-1 top-3 z-10 cursor-grab text-app-border select-none active:cursor-grabbing"
                 aria-hidden
                 title="Glisser pour réordonner"
               >

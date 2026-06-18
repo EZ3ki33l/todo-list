@@ -92,13 +92,13 @@ function ShoppingItemRowInner({
 
   if (isEditing) {
     return (
-      <li className="rounded-md border border-gray-200 bg-white p-3 space-y-2">
+      <li className="rounded-md border border-app-border-soft bg-app-bg-elevated p-3 space-y-2">
         <input
           type="text"
           value={edit.title}
           onChange={(e) => onEditTitleChange(e.target.value)}
           autoFocus
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="w-full rounded-md border border-app-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
         />
         <TitleSuggestionList
           suggestions={editSuggestions}
@@ -110,16 +110,16 @@ function ShoppingItemRowInner({
           value={edit.quantityText}
           onChange={(e) => onEditQuantityChange(e.target.value)}
           placeholder="Qté (ex. 2, 0.5…)"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="w-full rounded-md border border-app-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
         />
         <UnitPicker value={edit.unit} onChange={onEditUnitChange} />
         {editDetected ? (
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-app-text-subtle">
             Catégorie : {CATEGORY_LABELS[editDetected]}
           </p>
         ) : edit.showCategory || edit.title.trim() ? (
           <div>
-            <p className="mb-1.5 text-xs text-gray-500">Choisir une catégorie</p>
+            <p className="mb-1.5 text-xs text-app-text-subtle">Choisir une catégorie</p>
             <CategoryChips value={edit.category} onChange={onEditCategoryChange} />
           </div>
         ) : null}
@@ -128,14 +128,14 @@ function ShoppingItemRowInner({
             type="button"
             onClick={onSaveEdit}
             disabled={!edit.title.trim()}
-            className="rounded-md bg-gray-900 px-3 py-1.5 text-xs text-white hover:bg-gray-700 disabled:opacity-40"
+            className="rounded-md bg-app-primary px-3 py-1.5 text-xs text-app-on-primary hover:opacity-90 disabled:opacity-40"
           >
             Enregistrer
           </button>
           <button
             type="button"
             onClick={onCancelEdit}
-            className="rounded-md border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+            className="rounded-md border border-app-border-soft px-3 py-1.5 text-xs text-app-text-muted hover:bg-app-bg-soft"
           >
             Annuler
           </button>
@@ -157,12 +157,12 @@ function ShoppingItemRowInner({
       onDrop={onDrop}
       onDragEnd={onDragEnd}
       className={`flex items-center gap-2 rounded-md border px-3 py-2 transition-colors ${
-        muted ? "border-gray-100 bg-gray-50 opacity-75" : "border-gray-100 bg-white"
-      } ${isDragOver ? "border-indigo-300 bg-indigo-50" : ""} ${isDragging ? "opacity-50" : ""}`}
+        muted ? "border-app-border-soft bg-app-bg-soft opacity-75" : "border-app-border-soft bg-app-bg-elevated"
+      } ${isDragOver ? "border-app-border bg-app-badge-bg" : ""} ${isDragging ? "opacity-50" : ""}`}
     >
       {draggable && (
         <span
-          className="cursor-grab text-gray-300 select-none active:cursor-grabbing"
+          className="cursor-grab text-app-border select-none active:cursor-grabbing"
           aria-hidden
           title="Glisser pour réordonner"
         >
@@ -174,19 +174,19 @@ function ShoppingItemRowInner({
         checked={item.checked}
         disabled={!canWrite}
         onChange={onToggle}
-        className="size-4 shrink-0 rounded border-gray-300"
+        className="size-4 shrink-0 rounded border-app-border"
       />
       <span className="text-lg leading-none" aria-hidden>
         {icon}
       </span>
       <div className="min-w-0 flex-1">
         <span
-          className={`block text-sm ${item.checked ? "text-gray-400 line-through" : "text-gray-900"}`}
+          className={`block text-sm ${item.checked ? "text-app-text-subtle line-through" : "text-app-text"}`}
         >
           {item.title}
         </span>
         {(item.quantity != null || item.unit) && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-app-text-subtle">
             {item.quantity != null ? item.quantity : ""}
             {item.unit ? ` ${item.unit}` : ""}
           </span>
@@ -197,7 +197,7 @@ function ShoppingItemRowInner({
           <button
             type="button"
             onClick={onStartEdit}
-            className="rounded p-1 text-sm hover:bg-gray-100"
+            className="rounded p-1 text-sm hover:bg-app-bg-soft"
             aria-label="Modifier"
           >
             ✏️
@@ -205,7 +205,7 @@ function ShoppingItemRowInner({
           <button
             type="button"
             onClick={onDelete}
-            className="rounded p-1 text-xs text-red-500 hover:bg-red-50 hover:text-red-700"
+            className="rounded p-1 text-xs text-app-danger hover:bg-red-50 hover:text-app-danger"
             aria-label="Supprimer"
           >
             ✕

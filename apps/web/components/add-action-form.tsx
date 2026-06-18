@@ -62,12 +62,12 @@ export function AddActionForm({ listId }: Props) {
           name="title"
           required
           placeholder="Nouvelle action..."
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="flex-1 rounded-md border border-app-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
         />
         <button
           type="submit"
           disabled={createAction.isPending}
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+          className="rounded-md bg-app-primary px-4 py-2 text-sm text-app-on-primary hover:opacity-90 disabled:opacity-50"
         >
           Ajouter
         </button>
@@ -82,7 +82,7 @@ export function AddActionForm({ listId }: Props) {
               value={r}
               checked={recurrence === r}
               onChange={() => setRecurrence(r)}
-              className="accent-gray-800"
+              className="accent-app-text"
             />
             {r === "NONE" && "Ponctuelle"}
             {r === "DAILY" && "Chaque jour"}
@@ -93,29 +93,29 @@ export function AddActionForm({ listId }: Props) {
 
       {recurrence === "NONE" && (
         <div className="flex items-center gap-2 text-sm">
-          <label className="text-gray-500 whitespace-nowrap">À faire le</label>
+          <label className="text-app-text-subtle whitespace-nowrap">À faire le</label>
           <input
             type="date"
             name="dueAt"
-            className="rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="rounded border border-app-border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
           />
         </div>
       )}
 
       {recurrence === "DAILY" && (
         <div className="flex items-center gap-2 text-sm">
-          <label className="text-gray-500 whitespace-nowrap">À</label>
+          <label className="text-app-text-subtle whitespace-nowrap">À</label>
           <input
             type="time"
             name="recurrenceTime"
-            className="rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="rounded border border-app-border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
           />
         </div>
       )}
 
       {recurrence === "WEEKLY" && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <label className="text-gray-500 whitespace-nowrap">Chaque</label>
+          <label className="text-app-text-subtle whitespace-nowrap">Chaque</label>
           <div className="flex gap-1">
             {DAYS.map((day, i) => (
               <label key={i} className="flex cursor-pointer flex-col items-center">
@@ -126,17 +126,17 @@ export function AddActionForm({ listId }: Props) {
                   defaultChecked={i === 1}
                   className="sr-only peer"
                 />
-                <span className="rounded px-2 py-1 text-xs border border-gray-200 peer-checked:bg-gray-900 peer-checked:text-white peer-checked:border-gray-900 hover:bg-gray-100 transition-colors">
+                <span className="rounded px-2 py-1 text-xs border border-app-border-soft peer-checked:bg-app-primary peer-checked:text-app-on-primary peer-checked:border-app-primary hover:bg-app-bg-soft transition-colors">
                   {day}
                 </span>
               </label>
             ))}
           </div>
-          <label className="text-gray-500 whitespace-nowrap">à</label>
+          <label className="text-app-text-subtle whitespace-nowrap">à</label>
           <input
             type="time"
             name="recurrenceTime"
-            className="rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="rounded border border-app-border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
           />
         </div>
       )}

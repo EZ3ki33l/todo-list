@@ -55,7 +55,7 @@ export default async function ListPage({
         <div className="min-w-0 flex-1">
           <Link
             href="/dashboard"
-            className="text-sm text-gray-500 hover:text-gray-900"
+            className="text-sm text-app-text-subtle hover:text-app-text"
           >
             ← Tâches
           </Link>
@@ -64,19 +64,19 @@ export default async function ListPage({
               <EditableTitle
                 listId={list.id}
                 initialTitle={list.title}
-                className="text-2xl font-bold text-gray-900"
+                className="text-2xl font-bold text-app-text"
               />
             ) : (
-              <h1 className="text-2xl font-bold text-gray-900">{list.title}</h1>
+              <h1 className="text-2xl font-bold text-app-text">{list.title}</h1>
             )}
             {total > 0 && (
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-app-text-subtle">
                 {done} / {total} fait{done > 1 ? "s" : ""}
               </span>
             )}
           </div>
           {!canWrite && (
-            <p className="mt-1 text-sm text-amber-700">Lecture seule (rôle invité)</p>
+            <p className="mt-1 text-sm text-app-badge-text">Lecture seule (rôle invité)</p>
           )}
         </div>
         {isOwner && (

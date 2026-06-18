@@ -4,13 +4,17 @@ import { StyleSheet, View } from "react-native";
 import { LoadingLogo } from "@/components/loading-logo";
 import { TodoHubSkeleton } from "@/components/todo-hub-skeleton";
 import { useAuth } from "@/lib/auth-context";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 export default function Index() {
   const { ready, token } = useAuth();
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
 
   if (!ready) {
     return (
-      <View style={styles.boot}>
+      <View style={[styles.boot, { backgroundColor: palette.bg }]}>
         <View style={styles.bootLogo}>
           <LoadingLogo size={64} />
         </View>
@@ -27,7 +31,6 @@ export default function Index() {
 const styles = StyleSheet.create({
   boot: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
     paddingHorizontal: 16,
     paddingTop: 48,
   },

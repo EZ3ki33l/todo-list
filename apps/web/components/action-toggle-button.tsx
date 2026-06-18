@@ -19,7 +19,7 @@ export function ActionToggleButton({ listId, actionId, done }: Props) {
       disabled={toggle.isPending && toggle.variables?.actionId === actionId}
       onClick={() => toggle.mutate({ actionId })}
       className={`mt-0.5 size-4 shrink-0 rounded border-2 transition-colors ${
-        done ? "border-green-500 bg-green-500" : "border-gray-300 hover:border-gray-400"
+        done ? "border-app-primary bg-app-primary" : "border-app-border hover:border-app-border"
       } ${toggle.isPending && toggle.variables?.actionId === actionId ? "opacity-60" : ""}`}
     >
       {done && (

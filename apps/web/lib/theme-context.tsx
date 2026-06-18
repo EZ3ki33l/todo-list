@@ -20,8 +20,7 @@ function readStoredTheme(): ThemeName | null {
   }
 }
 
-function readInitialTheme(): ThemeName {
-  if (typeof document === "undefined") return "latte";
+function readThemeFromDocument(): ThemeName {
   const fromDom = document.documentElement.dataset.theme;
   if (fromDom === "latte" || fromDom === "mocha") return fromDom;
   return readStoredTheme() ?? "latte";
@@ -32,12 +31,13 @@ function applyThemeToDocument(themeName: ThemeName) {
 }
 
 export function ThemeModeProvider({ children }: { children: ReactNode }) {
-  const [themeName, setThemeName] = useState<ThemeName>(readInitialTheme);
+  // Toujours « latte » au premier rendu (SSR + hydratation) pour éviter un mismatch
+  // avec ThemeScript qui lit localStorage avant React.
+  const [themeName, setThemeName] = useState<ThemeName>("latte");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const stored = readStoredTheme();
-    if (stored) setThemeName(stored);
+    setThemeName(readThemeFromDocument());
     setReady(true);
   }, []);
 

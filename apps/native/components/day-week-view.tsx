@@ -8,6 +8,7 @@ import {
 } from "react-native";
 
 import { ActionItemRow, type ActionRow } from "@/components/action-item-row";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { TodoHubSkeleton } from "@/components/todo-hub-skeleton";
 import {
   defaultPeriodStart,
@@ -314,7 +315,10 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
                   </Pressable>
                 )}
                 <Pressable style={styles.periodBtn} onPress={() => setCalendarOpen(true)}>
-                  <Text style={styles.periodBtnText}>📅 Période</Text>
+                  <View style={styles.periodBtnContent}>
+                    <FluentEmoji emoji="📅" size={14} />
+                    <Text style={styles.periodBtnText}>Période</Text>
+                  </View>
                 </Pressable>
               </View>
             </View>
@@ -388,6 +392,7 @@ function getStyles(palette: ReturnType<typeof getPalette>) {
     paddingVertical: 4,
     backgroundColor: palette.bgElevated,
   },
+  periodBtnContent: { flexDirection: "row", alignItems: "center", gap: 4 },
   periodBtnText: { fontSize: 11, color: palette.textMuted, fontWeight: "500" },
   dayGroup: {
     backgroundColor: palette.bg,

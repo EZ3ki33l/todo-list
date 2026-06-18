@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
+import { FluentEmoji } from "@/components/fluent-emoji";
+
 type ParsedSection = {
   kind: "ingredients" | "steps";
   label: string;
@@ -137,16 +139,26 @@ function RecipeCard({ recipe }: { recipe: ParsedRecipe }) {
     <View style={styles.recipeCard}>
       <View style={styles.recipeHeader}>
         <Text style={styles.recipeTitle}>{recipe.title}</Text>
-        {recipe.time ? <Text style={styles.recipeTime}>⏱ {recipe.time}</Text> : null}
+        {recipe.time ? (
+          <View style={styles.recipeTimeRow}>
+            <FluentEmoji emoji="⏱️" size={14} />
+            <Text style={styles.recipeTime}>{recipe.time}</Text>
+          </View>
+        ) : null}
       </View>
       <View style={styles.recipeBody}>
         {recipe.intro ? <Text style={styles.recipeIntro}>{recipe.intro}</Text> : null}
         {recipe.sections.map((section, idx) => (
           <View key={idx} style={styles.section}>
-            <Text style={styles.sectionLabel}>
-              {section.kind === "ingredients" ? "🥗 " : "👨‍🍳 "}
-              {section.label || (section.kind === "ingredients" ? "Ingrédients" : "Étapes")}
-            </Text>
+            <View style={styles.sectionLabelRow}>
+              <FluentEmoji
+                emoji={section.kind === "ingredients" ? "🥗" : "👨‍🍳"}
+                size={14}
+              />
+              <Text style={styles.sectionLabel}>
+                {section.label || (section.kind === "ingredients" ? "Ingrédients" : "Étapes")}
+              </Text>
+            </View>
             {section.items.map((item, itemIdx) => (
               <View key={itemIdx} style={styles.sectionRow}>
                 {section.kind === "steps" ? (
@@ -232,28 +244,37 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   recipeTitle: { fontSize: 15, fontWeight: "700", color: "#111827", lineHeight: 20 },
-  recipeTime: {
+  recipeTimeRow: {
     marginTop: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     alignSelf: "flex-start",
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#9A3412",
     backgroundColor: "#fff",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 999,
-    overflow: "hidden",
+  },
+  recipeTime: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#9A3412",
   },
   recipeBody: { paddingHorizontal: 12, paddingVertical: 10 },
   recipeIntro: { fontSize: 13, color: "#6B7280", fontStyle: "italic", marginBottom: 6 },
   section: { marginTop: 8 },
+  sectionLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 6,
+  },
   sectionLabel: {
     fontSize: 11,
     fontWeight: "700",
     color: "#9A3412",
     textTransform: "uppercase",
     letterSpacing: 0.4,
-    marginBottom: 6,
   },
   sectionRow: { flexDirection: "row", gap: 8, marginBottom: 4, alignItems: "flex-start" },
   bullet: { color: "#FB923C", fontSize: 14, lineHeight: 20, width: 10 },

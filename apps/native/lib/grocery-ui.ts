@@ -1,4 +1,5 @@
 import type { GroceryCategory } from "./grocery-detect";
+import { resolveItemEmojiFromTitle } from "@repo/emoji";
 
 export const CATEGORY_LABELS: Record<GroceryCategory, string> = {
   LEGUME: "Légumes",
@@ -39,8 +40,16 @@ export const PICKABLE_CATEGORIES: GroceryCategory[] = [
   "AUTRE",
 ];
 
-export function itemIcon(category: GroceryCategory, icon?: string | null): string {
+export function itemIcon(
+  category: GroceryCategory,
+  icon?: string | null,
+  title?: string | null,
+): string {
   if (icon) return icon;
+  if (title) {
+    const fromTitle = resolveItemEmojiFromTitle(title);
+    if (fromTitle) return fromTitle;
+  }
   return CATEGORY_ICONS[category];
 }
 

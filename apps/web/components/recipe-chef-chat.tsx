@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 import { ChefChatMessageContent } from "@/components/chef-chat-message-content";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { detectCategory } from "@/lib/grocery-detect";
 import { trpc } from "@/lib/trpc";
 
@@ -236,7 +237,10 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                   onClick={() => selectMode("from_list")}
                   className="rounded-xl border-2 border-app-border-soft bg-orange-50/80 p-4 text-left transition hover:border-orange-400 hover:bg-orange-50"
                 >
-                  <p className="font-semibold text-app-text">🍳 Recettes avec ma liste</p>
+                  <p className="flex items-center gap-2 font-semibold text-app-text">
+                    <FluentEmoji emoji="🍳" size={20} />
+                    <span>Recettes avec ma liste</span>
+                  </p>
                   <p className="mt-1 text-sm text-app-text-muted">
                     Des idées de plats à partir des articles déjà dans vos courses.
                   </p>
@@ -246,7 +250,10 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                   onClick={() => selectMode("suggest_items")}
                   className="rounded-xl border-2 border-app-border-soft bg-app-badge-bg/80 p-4 text-left transition hover:border-app-primary hover:bg-app-badge-bg"
                 >
-                  <p className="font-semibold text-app-text">🛒 Articles pour cuisiner</p>
+                  <p className="flex items-center gap-2 font-semibold text-app-text">
+                    <FluentEmoji emoji="🛒" size={20} />
+                    <span>Articles pour cuisiner</span>
+                  </p>
                   <p className="mt-1 text-sm text-app-text-muted">
                     Décrivez un plat : je vous dis quoi ajouter à la liste.
                   </p>
@@ -256,7 +263,10 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                   onClick={() => selectMode("seasonal_produce")}
                   className="rounded-xl border-2 border-app-border-soft bg-green-50/80 p-4 text-left transition hover:border-green-400 hover:bg-green-50"
                 >
-                  <p className="font-semibold text-app-text">🌿 Fruits & légumes de saison</p>
+                  <p className="flex items-center gap-2 font-semibold text-app-text">
+                    <FluentEmoji emoji="🌿" size={20} />
+                    <span>Fruits & légumes de saison</span>
+                  </p>
                   <p className="mt-1 text-sm text-app-text-muted">
                     Calendrier des produits par saison — pas de recettes.
                   </p>

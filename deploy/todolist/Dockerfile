@@ -13,7 +13,6 @@ COPY packages/api/package.json ./packages/api/
 COPY packages/db/package.json ./packages/db/
 COPY packages/db/prisma.config.ts ./packages/db/
 COPY packages/db/prisma ./packages/db/prisma/
-COPY packages/ui/package.json ./packages/ui/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?sslmode=require"
 RUN pnpm install --frozen-lockfile --filter web...

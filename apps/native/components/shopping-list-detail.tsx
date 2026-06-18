@@ -19,6 +19,7 @@ import {
 import { useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { PushOptInCard } from "@/components/push-opt-in-card";
 import { RecipeChefChat } from "@/components/recipe-chef-chat";
 import { TitleSuggestionList } from "@/components/title-suggestion-list";
@@ -475,7 +476,7 @@ export function ShoppingListDetail({
       opts?: { drag?: () => void; isActive?: boolean; draggable?: boolean },
     ) => {
       const category = item.category as GroceryCategory;
-      const icon = itemIcon(category, item.icon);
+      const icon = itemIcon(category, item.icon, item.title);
       const { drag, isActive, draggable } = opts ?? {};
 
       if (editingId === item.id) {
@@ -558,7 +559,7 @@ export function ShoppingListDetail({
               >
                 {item.checked && <Text style={styles.checkmark}>✓</Text>}
               </Pressable>
-              <Text style={styles.itemIcon}>{icon}</Text>
+              <FluentEmoji emoji={icon} size={20} />
               <View style={styles.itemContent}>
                 <Text style={[styles.itemTitle, item.checked && styles.itemTitleDone]}>
                   {item.title}
@@ -573,10 +574,10 @@ export function ShoppingListDetail({
               {canWrite && (
                 <View style={styles.rowBtns}>
                   <Pressable onPress={() => startEdit(item)}>
-                    <Text style={styles.editIcon}>✏️</Text>
+                    <FluentEmoji emoji="✏️" size={16} />
                   </Pressable>
                   <Pressable onPress={() => deleteItem.mutate({ itemId: item.id })}>
-                    <Text style={styles.deleteIcon}>🗑</Text>
+                    <FluentEmoji emoji="🗑️" size={16} />
                   </Pressable>
                 </View>
               )}
@@ -655,9 +656,7 @@ export function ShoppingListDetail({
                     }
                     disabled={createItem.isPending}
                   >
-                    <Text style={styles.frequentIcon}>
-                      {itemIcon(f.category)}
-                    </Text>
+                    <FluentEmoji emoji={itemIcon(f.category, null, f.title)} size={16} />
                     <Text style={styles.frequentLabel} numberOfLines={1}>
                       {f.title}
                     </Text>

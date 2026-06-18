@@ -20,6 +20,7 @@ import { applyListOrder } from "@/lib/reorder-list";
 import { normalizeActionRows } from "@/lib/normalize-action-row";
 import { StreakBadge } from "@/components/streak-badge";
 import { LoadingIndicator } from "@/components/loading-logo";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { PushOptInCard } from "@/components/push-opt-in-card";
 import { TodoListShareModal } from "@/components/todo-list-share-modal";
 import { useToggleAction } from "@/lib/use-toggle-action";
@@ -429,10 +430,10 @@ export default function ListDetailScreen() {
                         setEditTitle(item.title);
                       }}
                     >
-                      <Text style={styles.editIcon}>✏️</Text>
+                      <FluentEmoji emoji="✏️" size={16} />
                     </Pressable>
                     <Pressable onPress={() => deleteAction.mutate({ actionId: item.id })}>
-                      <Text style={styles.deleteIcon}>🗑</Text>
+                      <FluentEmoji emoji="🗑️" size={16} />
                     </Pressable>
                   </View>
                 ) : null}

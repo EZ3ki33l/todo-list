@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { LoadingLogo } from "@/components/loading-logo";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { useFocusEffect } from "expo-router";
 
 import {
@@ -202,9 +203,7 @@ export function PushOptInCard({ visible, embedded, listKind = "shopping" }: Prop
         <LoadingLogo size={18} tintColor={active ? "#22C55E" : "#EF4444"} />
       ) : (
         <View style={[styles.chip, active ? styles.chipOn : styles.chipOff]}>
-          <Text style={styles.bell} accessibilityElementsHidden importantForAccessibility="no">
-            🔔
-          </Text>
+          <FluentEmoji emoji="🔔" size={16} />
           <Text style={[styles.label, active ? styles.labelOn : styles.labelOff]}>
             Alertes
           </Text>

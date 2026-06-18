@@ -101,14 +101,14 @@ export default async function DayWeekView({
     <section className="mb-10">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div>
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-gray-900">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-app-text">
             Aujourd&apos;hui
-            <span className="text-sm font-normal text-gray-400">
+            <span className="text-sm font-normal text-app-text-subtle">
               {now.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
             </span>
           </h2>
           {todayActions.length === 0 ? (
-            <p className="text-sm text-gray-400">Rien de prévu aujourd&apos;hui.</p>
+            <p className="text-sm text-app-text-subtle">Rien de prévu aujourd&apos;hui.</p>
           ) : (
             <ul className="space-y-2">
               {todayActions.map((a) => (
@@ -125,13 +125,13 @@ export default async function DayWeekView({
 
         <div>
           <div className="mb-3">
-            <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-app-text">
               Cette semaine
-              <span className="text-sm font-normal text-gray-400">{formatWeekRangeLabel(now)}</span>
+              <span className="text-sm font-normal text-app-text-subtle">{formatWeekRangeLabel(now)}</span>
             </h2>
           </div>
           {weekDayGroups.length === 0 ? (
-            <p className="text-sm text-gray-400">Rien de prévu cette semaine.</p>
+            <p className="text-sm text-app-text-subtle">Rien de prévu cette semaine.</p>
           ) : (
             <div className="space-y-3">
               {weekDayGroups.map((group) => {
@@ -143,10 +143,10 @@ export default async function DayWeekView({
                   month: "short",
                 });
                 return (
-                  <div key={group.key} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
+                  <div key={group.key} className="rounded-xl border border-app-border-soft bg-app-bg-soft/60 p-3">
                     <div className="mb-2 flex items-baseline gap-2">
-                      <span className="text-sm font-semibold capitalize text-gray-900">{weekday}</span>
-                      <span className="text-xs text-gray-400">{dayMonth}</span>
+                      <span className="text-sm font-semibold capitalize text-app-text">{weekday}</span>
+                      <span className="text-xs text-app-text-subtle">{dayMonth}</span>
                     </div>
                     <ul className="space-y-2">
                       {group.actions.map((a) => {
@@ -169,20 +169,20 @@ export default async function DayWeekView({
             </div>
           )}
           {laterCount > 0 && (
-            <details className="mt-4 border-t border-gray-100 pt-4">
-              <summary className="cursor-pointer text-sm text-indigo-600 hover:text-indigo-700">
+            <details className="mt-4 border-t border-app-border-soft pt-4">
+              <summary className="cursor-pointer text-sm text-app-primary hover:text-app-badge-text">
                 Voir plus loin ({laterCount})
               </summary>
               <div className="mt-3 space-y-3">
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-app-text-subtle">
                   Tâches ponctuelles planifiées au-delà de cette semaine.
                 </p>
                 {laterDayGroups.map((group) => (
                   <div
                     key={group.key}
-                    className="rounded-xl border border-dashed border-gray-200 p-3"
+                    className="rounded-xl border border-dashed border-app-border-soft p-3"
                   >
-                    <p className="mb-2 text-sm font-medium capitalize text-gray-700">{group.label}</p>
+                    <p className="mb-2 text-sm font-medium capitalize text-app-text">{group.label}</p>
                     <ul className="space-y-2">
                       {group.actions.map((a) => {
                         const withList = allForSchedule.find((x) => x.id === a.id) as ActionWithList;

@@ -54,7 +54,7 @@ export default async function ShoppingPage() {
   return (
     <div className="space-y-10">
       <header>
-        <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
+        <h1 className="text-2xl font-bold text-app-text">Courses</h1>
       </header>
 
       <ShoppingListDetail
@@ -66,9 +66,9 @@ export default async function ShoppingPage() {
       <ShoppingRecipeIdeas listId={personalShopping.id} />
 
       <section id="listes-partagees" className="scroll-mt-8 space-y-3">
-        <h2 className="text-sm font-semibold text-gray-500">Listes partagées</h2>
+        <h2 className="text-sm font-semibold text-app-text-subtle">Listes partagées</h2>
         {sharedShopping.length === 0 ? (
-          <p className="text-sm text-gray-400">Aucune liste de courses partagée.</p>
+          <p className="text-sm text-app-text-subtle">Aucune liste de courses partagée.</p>
         ) : (
           <ul className="space-y-2">
             {sharedShopping.map((list) => {

@@ -27,6 +27,8 @@ import { sameDay } from "@/lib/task-agenda";
 import { useToggleAction } from "@/lib/use-toggle-action";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth-context";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 const STACK_BREAKPOINT = 640;
 
@@ -36,13 +38,16 @@ function TaskColumnShell({
   isEmpty,
   emptyMessage = "Rien de prévu.",
   stacked,
+  palette,
 }: {
   header: React.ReactNode;
   children: React.ReactNode;
   isEmpty?: boolean;
   emptyMessage?: string;
   stacked?: boolean;
+  palette: ReturnType<typeof getPalette>;
 }) {
+  const styles = useMemo(() => getStyles(palette), [palette]);
   return (
     <View style={[styles.columnShell, stacked && styles.columnShellStacked]}>
       <View style={styles.columnHeader}>{header}</View>
@@ -117,10 +122,12 @@ function DayGroupBlock({
   group,
   sectionProps,
   compact,
+  styles,
 }: {
   group: DayGroup<ActionRow>;
   sectionProps: Omit<TaskSectionProps, "actions" | "hideDayTag" | "compact">;
   compact?: boolean;
+  styles: ReturnType<typeof getStyles>;
 }) {
   const weekday = group.date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
   const dayMonth = group.date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
@@ -145,6 +152,9 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
   const { width } = useWindowDimensions();
   const stacked = width < STACK_BREAKPOINT;
   const compact = !stacked;
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const styles = useMemo(() => getStyles(palette), [palette]);
 
   const [now] = useState(() => new Date());
   const today = startOfDay(now);
@@ -271,6 +281,7 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
     <View style={styles.wrapper}>
       <View style={[styles.grid, stacked && styles.gridStacked]}>
         <TaskColumnShell
+          palette={palette}
           stacked={stacked}
           isEmpty={split.today.length === 0}
           header={
@@ -288,6 +299,7 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
         </TaskColumnShell>
 
         <TaskColumnShell
+          palette={palette}
           stacked={stacked}
           isEmpty={dayGroups.length === 0}
           emptyMessage="Rien de prévu sur cette période."
@@ -315,6 +327,7 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
                 group={group}
                 sectionProps={sectionProps}
                 compact={compact}
+                styles={styles}
               />
             ))}
           </View>
@@ -333,16 +346,17 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(palette: ReturnType<typeof getPalette>) {
+  return StyleSheet.create({
   wrapper: { marginBottom: 20 },
   grid: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
   gridStacked: { flexDirection: "column", gap: 16 },
   columnShell: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#F3F4F6",
+    borderColor: palette.borderSoft,
   },
   columnShellStacked: {
     flex: undefined,
@@ -350,14 +364,14 @@ const styles = StyleSheet.create({
   },
   columnHeader: {
     borderBottomWidth: 1,
-    borderBottomColor: "#F9FAFB",
+    borderBottomColor: palette.bgSoft,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  columnTitle: { fontSize: 16, fontWeight: "600", color: "#111827" },
-  columnSub: { fontSize: 13, color: "#9CA3AF", marginTop: 2 },
+  columnTitle: { fontSize: 16, fontWeight: "600", color: palette.text },
+  columnSub: { fontSize: 13, color: palette.textSubtle, marginTop: 2 },
   columnBody: { paddingHorizontal: 10, paddingVertical: 10 },
-  empty: { fontSize: 13, color: "#9CA3AF", padding: 12, fontStyle: "italic" },
+  empty: { fontSize: 13, color: palette.textSubtle, padding: 12, fontStyle: "italic" },
   periodActions: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -365,21 +379,21 @@ const styles = StyleSheet.create({
     marginTop: 6,
     alignItems: "center",
   },
-  periodLink: { fontSize: 11, color: "#6B7280" },
+  periodLink: { fontSize: 11, color: palette.textMuted },
   periodBtn: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: palette.border,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
   },
-  periodBtnText: { fontSize: 11, color: "#374151", fontWeight: "500" },
+  periodBtnText: { fontSize: 11, color: palette.textMuted, fontWeight: "500" },
   dayGroup: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: palette.bg,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#F3F4F6",
+    borderColor: palette.borderSoft,
     padding: 8,
     marginBottom: 8,
   },
@@ -387,8 +401,9 @@ const styles = StyleSheet.create({
   dayGroupWeekday: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#111827",
+    color: palette.text,
     textTransform: "capitalize",
   },
-  dayGroupDate: { fontSize: 11, color: "#9CA3AF" },
+  dayGroupDate: { fontSize: 11, color: palette.textSubtle },
 });
+}

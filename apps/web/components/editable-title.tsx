@@ -54,13 +54,13 @@ export function EditableTitle({ listId, initialTitle, href, className, readOnly 
         onChange={(e) => setTitle(e.target.value)}
         onBlur={save}
         onKeyDown={onKeyDown}
-        className="flex-1 rounded border border-indigo-300 px-1.5 py-0.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className="flex-1 rounded border border-app-border px-1.5 py-0.5 text-sm font-medium text-app-text focus:outline-none focus:ring-2 focus:ring-app-primary"
         autoFocus
       />
     );
   }
 
-  const textClass = className ?? "font-medium text-gray-800";
+  const textClass = className ?? "font-medium text-app-text";
 
   if (href) {
     return (

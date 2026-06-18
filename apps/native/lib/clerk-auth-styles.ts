@@ -1,22 +1,26 @@
 import { StyleSheet } from "react-native";
+import type { ThemeName } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
-export const clerkAuthStyles = StyleSheet.create({
+export function getClerkAuthStyles(themeName: ThemeName) {
+  const palette = getPalette(themeName);
+  return StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: palette.bg,
     padding: 24,
     justifyContent: "center",
   },
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#111827",
+    color: palette.text,
     textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: "#6B7280",
+    color: palette.textMuted,
     marginBottom: 24,
     textAlign: "center",
   },
@@ -30,22 +34,22 @@ export const clerkAuthStyles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#374151",
+    color: palette.textMuted,
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: palette.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#111827",
+    backgroundColor: palette.bgElevated,
+    color: palette.text,
     marginBottom: 12,
   },
   button: {
-    backgroundColor: "#111827",
+    backgroundColor: palette.primary,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: "center",
@@ -55,7 +59,7 @@ export const clerkAuthStyles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    color: "#fff",
+    color: palette.onPrimary,
     fontSize: 16,
     fontWeight: "600",
   },
@@ -67,15 +71,15 @@ export const clerkAuthStyles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
-    color: "#6B7280",
+    color: palette.textMuted,
   },
   linkAction: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#111827",
+    color: palette.primary,
   },
   error: {
-    color: "#DC2626",
+    color: palette.danger,
     fontSize: 13,
     marginBottom: 8,
   },
@@ -87,18 +91,18 @@ export const clerkAuthStyles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#111827",
+    color: palette.primary,
   },
   googleButton: {
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: palette.border,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: "center",
   },
   googleButtonText: {
-    color: "#111827",
+    color: palette.text,
     fontSize: 16,
     fontWeight: "600",
   },
@@ -111,11 +115,12 @@ export const clerkAuthStyles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: palette.borderSoft,
   },
   dividerText: {
     fontSize: 13,
-    color: "#9CA3AF",
+    color: palette.textSubtle,
     fontWeight: "500",
   },
 });
+}

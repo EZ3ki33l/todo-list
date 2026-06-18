@@ -24,7 +24,7 @@ export function TodoListShareHeader({
   return (
     <div className="flex items-center gap-2">
       {isShared && (
-        <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+        <span className="rounded-full bg-app-badge-bg px-2 py-0.5 text-xs font-medium text-app-badge-text">
           Partagée
         </span>
       )}

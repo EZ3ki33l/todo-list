@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -14,7 +14,9 @@ import { AddActionForm } from "@/components/add-action-form";
 import { DayWeekView } from "@/components/day-week-view";
 import { TodoHubSkeleton } from "@/components/todo-hub-skeleton";
 import { TabListHeader } from "@/components/tab-list-header";
-import { listHubStyles as hub } from "@/lib/list-hub-styles";
+import { getListHubStyles } from "@/lib/list-hub-styles";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth-context";
 import { usePersonalTodoList } from "@/lib/use-personal-todo-list";
@@ -34,6 +36,9 @@ function ownerSubtitle(
 export default function DashboardScreen() {
   const router = useRouter();
   const { signOut, user } = useAuth();
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const hub = useMemo(() => getListHubStyles(palette), [palette]);
   const [newSharedTitle, setNewSharedTitle] = useState("");
   const [pullRefreshing, setPullRefreshing] = useState(false);
 
@@ -160,7 +165,7 @@ export default function DashboardScreen() {
             <TextInput
               style={hub.input}
               placeholder="Ex. Projet maison…"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={palette.textSubtle}
               value={newSharedTitle}
               onChangeText={setNewSharedTitle}
               returnKeyType="done"

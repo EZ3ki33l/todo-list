@@ -181,14 +181,14 @@ function InlineText({ text }: { text: string }) {
       {parts.map((part, idx) => {
         if (part.startsWith("**") && part.endsWith("**")) {
           return (
-            <strong key={idx} className="font-semibold text-gray-900">
+            <strong key={idx} className="font-semibold text-app-text">
               {part.slice(2, -2)}
             </strong>
           );
         }
         if (part.startsWith("*") && part.endsWith("*")) {
           return (
-            <em key={idx} className="text-gray-600">
+            <em key={idx} className="text-app-text-muted">
               {part.slice(1, -1)}
             </em>
           );
@@ -203,17 +203,17 @@ function SectionBlock({ section }: { section: ParsedSection }) {
   const icon = section.kind === "ingredients" ? "🥗" : section.kind === "steps" ? "👨‍🍳" : "ℹ️";
   return (
     <div className="mt-2">
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-orange-800/80">
+      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-app-badge-text/80">
         {icon} {section.label || (section.kind === "ingredients" ? "Ingrédients" : "Étapes")}
       </p>
       <ul className="space-y-1">
         {section.items.map((item, idx) => (
           <li
             key={idx}
-            className={`text-sm text-gray-700 ${section.kind === "steps" ? "flex gap-2" : "flex gap-2 before:mt-2 before:text-orange-400 before:content-['•']"}`}
+            className={`text-sm text-app-text ${section.kind === "steps" ? "flex gap-2" : "flex gap-2 before:mt-2 before:text-orange-400 before:content-['•']"}`}
           >
             {section.kind === "steps" ? (
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-800">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-app-badge-bg text-xs font-bold text-app-badge-text">
                 {idx + 1}
               </span>
             ) : null}
@@ -227,18 +227,18 @@ function SectionBlock({ section }: { section: ParsedSection }) {
 
 function RecipeCard({ recipe }: { recipe: ParsedRecipe }) {
   return (
-    <article className="overflow-hidden rounded-xl border border-orange-100 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-xl border border-orange-100 bg-app-bg-elevated shadow-sm">
       <header className="border-b border-orange-50 bg-linear-to-r from-orange-50 to-amber-50 px-3.5 py-2.5">
-        <h4 className="text-[15px] font-bold leading-snug text-gray-900">{recipe.title}</h4>
+        <h4 className="text-[15px] font-bold leading-snug text-app-text">{recipe.title}</h4>
         {recipe.time ? (
-          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium text-orange-800">
+          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-app-bg-elevated/80 px-2 py-0.5 text-xs font-medium text-app-badge-text">
             ⏱ {recipe.time}
           </p>
         ) : null}
       </header>
       <div className="px-3.5 py-2.5">
         {recipe.intro ? (
-          <p className="mb-1 text-sm italic leading-snug text-gray-500">{recipe.intro}</p>
+          <p className="mb-1 text-sm italic leading-snug text-app-text-subtle">{recipe.intro}</p>
         ) : null}
         {recipe.sections.map((section, idx) => (
           <SectionBlock key={idx} section={section} />
@@ -250,11 +250,11 @@ function RecipeCard({ recipe }: { recipe: ParsedRecipe }) {
 
 function SeasonCard({ season }: { season: ParsedSeason }) {
   return (
-    <article className="rounded-xl border border-green-100 bg-white px-3.5 py-2.5 shadow-sm">
+    <article className="rounded-xl border border-green-100 bg-app-bg-elevated px-3.5 py-2.5 shadow-sm">
       <h4 className="text-sm font-bold text-green-900">{season.name}</h4>
       <ul className="mt-2 space-y-1">
         {season.lines.map((line, idx) => (
-          <li key={idx} className="text-sm leading-snug text-gray-700">
+          <li key={idx} className="text-sm leading-snug text-app-text">
             <InlineText text={line} />
           </li>
         ))}
@@ -276,7 +276,7 @@ export function ChefChatMessageContent({
 
   if (recipes.length === 0 && parsed.seasons.length === 0) {
     return (
-      <div className="space-y-2 text-sm leading-relaxed text-gray-700">
+      <div className="space-y-2 text-sm leading-relaxed text-app-text">
         {text.split("\n").map((line, idx) => {
           const trimmed = line.trim();
           if (!trimmed) return <div key={idx} className="h-1" />;
@@ -302,7 +302,7 @@ export function ChefChatMessageContent({
 
   if (parsed.intro.length > 0) {
     blocks.push(
-      <p key="intro" className="text-sm leading-relaxed text-gray-600">
+      <p key="intro" className="text-sm leading-relaxed text-app-text-muted">
         {parsed.intro.join(" ")}
       </p>,
     );
@@ -318,7 +318,7 @@ export function ChefChatMessageContent({
 
   if (parsed.tail.length > 0) {
     blocks.push(
-      <p key="tail" className="text-sm text-gray-600">
+      <p key="tail" className="text-sm text-app-text-muted">
         {parsed.tail.join(" ")}
       </p>,
     );

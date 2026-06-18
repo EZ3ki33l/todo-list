@@ -35,19 +35,19 @@ export function ShareListForm({ listId }: Props) {
       <button
         type="button"
         onClick={() => { setOpen((v) => !v); setError(null); setSuccess(false); }}
-        className="rounded px-2 py-1 text-xs text-indigo-700 hover:bg-indigo-50 border border-indigo-200"
+        className="rounded px-2 py-1 text-xs text-app-badge-text hover:bg-app-badge-bg border border-app-border-soft"
       >
         Partager
       </button>
 
       {open && (
-        <div className="absolute right-0 top-8 z-10 w-72 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
-          <p className="mb-3 text-sm font-medium text-gray-800">Partager la liste</p>
+        <div className="absolute right-0 top-8 z-10 w-72 rounded-lg border border-app-border-soft bg-app-bg-elevated p-4 shadow-lg">
+          <p className="mb-3 text-sm font-medium text-app-text">Partager la liste</p>
           <form ref={formRef} action={handleSubmit} className="space-y-3">
             <input type="hidden" name="listId" value={listId} />
 
             <div>
-              <label className="mb-1 block text-xs text-gray-500">
+              <label className="mb-1 block text-xs text-app-text-subtle">
                 Email ou ID de l&apos;utilisateur
               </label>
               <input
@@ -55,12 +55,12 @@ export function ShareListForm({ listId }: Props) {
                 name="emailOrId"
                 required
                 placeholder="email@exemple.com"
-                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full rounded border border-app-border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-app-primary"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Accès</label>
+              <label className="mb-1 block text-xs text-app-text-subtle">Accès</label>
               <div className="flex gap-3">
                 <label className="flex items-center gap-1.5 text-sm cursor-pointer">
                   <input
@@ -68,7 +68,7 @@ export function ShareListForm({ listId }: Props) {
                     name="role"
                     value="invité"
                     defaultChecked
-                    className="accent-indigo-600"
+                    className="accent-app-primary"
                   />
                   Peut voir
                 </label>
@@ -77,27 +77,27 @@ export function ShareListForm({ listId }: Props) {
                     type="radio"
                     name="role"
                     value="membre"
-                    className="accent-indigo-600"
+                    className="accent-app-primary"
                   />
                   Peut modifier
                 </label>
               </div>
             </div>
 
-            {error && <p className="text-xs text-red-600">{error}</p>}
-            {success && <p className="text-xs text-green-600">Liste partagée avec succès !</p>}
+            {error && <p className="text-xs text-app-danger">{error}</p>}
+            {success && <p className="text-xs text-app-primary">Liste partagée avec succès !</p>}
 
             <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 border border-gray-200"
+                className="rounded px-3 py-1.5 text-xs text-app-text-muted hover:bg-app-bg-soft border border-app-border-soft"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded px-3 py-1.5 text-xs text-white bg-indigo-600 hover:bg-indigo-500"
+                className="rounded px-3 py-1.5 text-xs text-app-on-primary bg-app-primary hover:bg-app-primary"
               >
                 Partager
               </button>

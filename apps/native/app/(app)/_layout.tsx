@@ -1,19 +1,24 @@
 import { Tabs } from "expo-router";
 
 import { TabBarIcon } from "@/components/tab-bar-icon";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 export default function AppLayout() {
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: "#fff" },
-        headerTintColor: "#111827",
+        headerStyle: { backgroundColor: palette.bgElevated },
+        headerTintColor: palette.text,
         headerTitleStyle: { fontWeight: "700" },
         headerShadowVisible: false,
-        tabBarActiveTintColor: "#111827",
-        tabBarInactiveTintColor: "#9CA3AF",
-        tabBarStyle: { backgroundColor: "#fff", borderTopColor: "#E5E7EB" },
-        sceneStyle: { backgroundColor: "#F9FAFB" },
+        tabBarActiveTintColor: palette.primary,
+        tabBarInactiveTintColor: palette.textSubtle,
+        tabBarStyle: { backgroundColor: palette.bgElevated, borderTopColor: palette.border },
+        sceneStyle: { backgroundColor: palette.bg },
       }}
     >
       <Tabs.Screen

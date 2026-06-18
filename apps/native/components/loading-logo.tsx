@@ -1,5 +1,8 @@
 import { useEffect } from "react";
 import { ImageStyle, StyleProp, View, ViewStyle } from "react-native";
+
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -15,6 +18,9 @@ type LoadingLogoProps = {
 };
 
 export function LoadingLogo({ size = 72, tintColor, style }: LoadingLogoProps) {
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const resolvedTint = tintColor ?? palette.logoTint;
   const rotation = useSharedValue(0);
 
   useEffect(() => {
@@ -32,7 +38,7 @@ export function LoadingLogo({ size = 72, tintColor, style }: LoadingLogoProps) {
   return (
     <Animated.Image
       source={require("../assets/logo.png")}
-      style={[{ width: size, height: size, tintColor }, style, animatedStyle]}
+      style={[{ width: size, height: size, tintColor: resolvedTint }, style, animatedStyle]}
       accessibilityLabel="Chargement"
     />
   );

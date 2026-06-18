@@ -13,7 +13,7 @@ export function UnitPicker({
 }) {
   return (
     <div>
-      <p className="mb-1.5 text-xs text-gray-500">{label}</p>
+      <p className="mb-1.5 text-xs text-app-text-subtle">{label}</p>
       <div className="flex flex-wrap gap-1.5">
         {SHOPPING_UNITS.map((u) => {
           const selected = (value ?? null) === u.value;
@@ -24,8 +24,8 @@ export function UnitPicker({
               onClick={() => onChange(u.value)}
               className={`rounded-full border px-2.5 py-1 text-xs ${
                 selected
-                  ? "border-gray-900 bg-gray-900 text-white"
-                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                  ? "border-app-primary bg-app-primary text-app-on-primary"
+                  : "border-app-border-soft bg-app-bg-elevated text-app-text hover:bg-app-bg-soft"
               }`}
             >
               {u.label}

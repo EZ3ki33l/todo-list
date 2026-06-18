@@ -1,7 +1,9 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable } from "react-native";
+import { Text, View, XStack } from "tamagui";
 
 import { ActivityBell } from "@/components/activity-bell";
-import { listHubStyles as styles } from "@/lib/list-hub-styles";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 type Props = {
   title: string;
@@ -9,19 +11,29 @@ type Props = {
 };
 
 export function TabListHeader({ title, onSignOut }: Props) {
+  const { themeName, toggleTheme } = useThemeMode();
+  const palette = getPalette(themeName);
+
   return (
-    <View style={styles.header}>
-      <Text style={styles.screenTitle}>{title}</Text>
-      <View style={styles.headerActions}>
+    <XStack justifyContent="space-between" alignItems="center" marginBottom={20}>
+      <Text fontSize={24} fontWeight="700" color={palette.text}>
+        {title}
+      </Text>
+      <XStack alignItems="center" gap={10}>
+        <Pressable onPress={toggleTheme} hitSlop={8}>
+          <Text fontSize={16}>{themeName === "latte" ? "🌙" : "🌤️"}</Text>
+        </Pressable>
         <ActivityBell />
         {onSignOut ? (
           <Pressable onPress={onSignOut} hitSlop={8}>
-            <Text style={styles.signOut}>Déconnexion</Text>
+            <Text fontSize={13} color={palette.textMuted}>
+              Déconnexion
+            </Text>
           </Pressable>
         ) : (
-          <View style={{ width: 72 }} />
+          <View width={72} />
         )}
-      </View>
-    </View>
+      </XStack>
+    </XStack>
   );
 }

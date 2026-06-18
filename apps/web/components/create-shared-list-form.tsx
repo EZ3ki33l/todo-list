@@ -48,7 +48,7 @@ export function CreateSharedListForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md border border-dashed border-indigo-300 px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-50"
+        className="rounded-md border border-dashed border-app-border px-3 py-2 text-sm text-app-badge-text hover:bg-app-badge-bg"
       >
         + Nouvelle liste partagée
       </button>
@@ -64,12 +64,12 @@ export function CreateSharedListForm({
         placeholder={placeholder}
         required
         autoFocus
-        className="min-w-[12rem] flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className="min-w-[12rem] flex-1 rounded-md border border-app-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-app-primary"
       />
       <button
         type="submit"
         disabled={!title.trim() || pending}
-        className="rounded-md bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-40"
+        className="rounded-md bg-app-primary px-4 py-2 text-sm text-app-on-primary hover:bg-app-primary disabled:opacity-40"
       >
         Créer
       </button>
@@ -79,7 +79,7 @@ export function CreateSharedListForm({
           setOpen(false);
           setTitle("");
         }}
-        className="rounded-md border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+        className="rounded-md border border-app-border-soft px-4 py-2 text-sm text-app-text-muted hover:bg-app-bg-soft"
       >
         Annuler
       </button>

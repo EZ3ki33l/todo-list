@@ -20,19 +20,19 @@ export function SharedTodoListSection({
   return (
     <section
       id={`shared-todo-${listId}`}
-      className="scroll-mt-8 rounded-xl border-2 border-indigo-200 bg-indigo-50/40 p-5 space-y-4"
+      className="scroll-mt-8 rounded-xl border-2 border-app-border-soft bg-app-badge-bg/40 p-5 space-y-4"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">
+            <h3 className="text-lg font-semibold text-app-text">{title}</h3>
+            <span className="rounded-full bg-app-badge-bg px-2 py-0.5 text-xs font-medium text-app-badge-text">
               Partagée
             </span>
           </div>
-          <p className="mt-0.5 text-sm text-indigo-700/80">{ownerLabel}</p>
+          <p className="mt-0.5 text-sm text-app-badge-text/80">{ownerLabel}</p>
           {!canWrite && (
-            <p className="mt-1 text-sm text-amber-700">Lecture seule (rôle invité)</p>
+            <p className="mt-1 text-sm text-app-badge-text">Lecture seule (rôle invité)</p>
           )}
         </div>
         {isOwner && (

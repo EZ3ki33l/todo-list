@@ -11,10 +11,10 @@ const LAST_UPDATED = "15 juin 2026";
 
 export default function PolitiqueConfidentialitePage() {
   return (
-    <article className="mx-auto max-w-3xl space-y-8 text-gray-700">
-      <header className="space-y-2 border-b border-gray-200 pb-6">
-        <p className="text-sm text-gray-500">Dernière mise à jour : {LAST_UPDATED}</p>
-        <h1 className="text-2xl font-semibold text-gray-900">
+    <article className="mx-auto max-w-3xl space-y-8 text-app-text">
+      <header className="space-y-2 border-b border-app-border-soft pb-6">
+        <p className="text-sm text-app-text-subtle">Dernière mise à jour : {LAST_UPDATED}</p>
+        <h1 className="text-2xl font-semibold text-app-text">
           Politique de confidentialité
         </h1>
         <p className="text-sm leading-relaxed">
@@ -24,7 +24,7 @@ export default function PolitiqueConfidentialitePage() {
           sur{" "}
           <a
             href="https://todolist.ez3ki33l.ovh"
-            className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
+            className="text-app-text underline underline-offset-2 hover:text-app-text"
           >
             todolist.ez3ki33l.ovh
           </a>{" "}
@@ -38,7 +38,7 @@ export default function PolitiqueConfidentialitePage() {
       </header>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">1. Responsable du traitement</h2>
+        <h2 className="text-lg font-semibold text-app-text">1. Responsable du traitement</h2>
         <p className="text-sm leading-relaxed">
           Le service est édité par <strong>EZ3ki33l</strong> (développeur indépendant).
         </p>
@@ -46,7 +46,7 @@ export default function PolitiqueConfidentialitePage() {
           Contact :{" "}
           <a
             href="mailto:r.rousset31@gmail.com"
-            className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
+            className="text-app-text underline underline-offset-2 hover:text-app-text"
           >
             r.rousset31@gmail.com
           </a>
@@ -54,7 +54,7 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">2. Données collectées</h2>
+        <h2 className="text-lg font-semibold text-app-text">2. Données collectées</h2>
         <p className="text-sm leading-relaxed">
           Dans le cadre de l&apos;utilisation du service, nous traitons les catégories
           de données suivantes :
@@ -107,7 +107,7 @@ export default function PolitiqueConfidentialitePage() {
           votre compte Google et à la{" "}
           <a
             href="https://policies.google.com/privacy"
-            className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
+            className="text-app-text underline underline-offset-2 hover:text-app-text"
             rel="noopener noreferrer"
             target="_blank"
           >
@@ -122,7 +122,7 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">3. Finalités et bases légales</h2>
+        <h2 className="text-lg font-semibold text-app-text">3. Finalités et bases légales</h2>
         <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
           <li>
             <strong>Fourniture du service</strong> (exécution du contrat) : créer et
@@ -159,7 +159,7 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">4. Partage et sous-traitants</h2>
+        <h2 className="text-lg font-semibold text-app-text">4. Partage et sous-traitants</h2>
         <p className="text-sm leading-relaxed">
           Vos données peuvent être traitées par les prestataires suivants, dans la
           limite nécessaire au fonctionnement du service :
@@ -170,7 +170,7 @@ export default function PolitiqueConfidentialitePage() {
             session sur le site web et l&apos;application mobile.{" "}
             <a
               href="https://clerk.com/privacy"
-              className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
+              className="text-app-text underline underline-offset-2 hover:text-app-text"
               rel="noopener noreferrer"
               target="_blank"
             >
@@ -210,7 +210,7 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section id="suppression-compte" className="space-y-3 scroll-mt-8">
-        <h2 className="text-lg font-semibold text-gray-900">5. Suppression de compte</h2>
+        <h2 className="text-lg font-semibold text-app-text">5. Suppression de compte</h2>
         <p className="text-sm leading-relaxed">
           Vous pouvez demander la suppression de votre compte et de l&apos;ensemble des
           données associées (listes, tâches, listes de courses, préférences,
@@ -220,7 +220,7 @@ export default function PolitiqueConfidentialitePage() {
           <strong>Procédure :</strong> envoyez un e-mail à{" "}
           <a
             href="mailto:r.rousset31@gmail.com?subject=Suppression%20de%20compte%20TodoList"
-            className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
+            className="text-app-text underline underline-offset-2 hover:text-app-text"
           >
             r.rousset31@gmail.com
           </a>{" "}
@@ -242,7 +242,7 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">6. Durée de conservation</h2>
+        <h2 className="text-lg font-semibold text-app-text">6. Durée de conservation</h2>
         <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
           <li>
             Données de compte et contenus : conservées tant que votre compte est actif.
@@ -261,7 +261,7 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">7. Sécurité</h2>
+        <h2 className="text-lg font-semibold text-app-text">7. Sécurité</h2>
         <p className="text-sm leading-relaxed">
           Nous mettons en œuvre des mesures techniques raisonnables : connexion
           chiffrée (HTTPS), authentification déléguée à Clerk, jetons d&apos;accès à
@@ -272,7 +272,7 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">8. Vos droits</h2>
+        <h2 className="text-lg font-semibold text-app-text">8. Vos droits</h2>
         <p className="text-sm leading-relaxed">
           Conformément au Règlement général sur la protection des données (RGPD), vous
           disposez des droits d&apos;accès, de rectification, d&apos;effacement, de
@@ -283,14 +283,14 @@ export default function PolitiqueConfidentialitePage() {
           Pour exercer ces droits, contactez-nous à{" "}
           <a
             href="mailto:r.rousset31@gmail.com"
-            className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
+            className="text-app-text underline underline-offset-2 hover:text-app-text"
           >
             r.rousset31@gmail.com
           </a>
           . Vous pouvez également introduire une réclamation auprès de la CNIL (
           <a
             href="https://www.cnil.fr"
-            className="text-gray-900 underline underline-offset-2 hover:text-gray-600"
+            className="text-app-text underline underline-offset-2 hover:text-app-text"
             rel="noopener noreferrer"
             target="_blank"
           >
@@ -301,7 +301,7 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-app-text">
           9. Cookies, stockage local et traceurs
         </h2>
         <p className="text-sm leading-relaxed">
@@ -323,7 +323,7 @@ export default function PolitiqueConfidentialitePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">10. Modifications</h2>
+        <h2 className="text-lg font-semibold text-app-text">10. Modifications</h2>
         <p className="text-sm leading-relaxed">
           Cette politique peut être mise à jour. La date de dernière révision est
           indiquée en haut de page. En cas de changement important, nous pourrons vous
@@ -331,10 +331,10 @@ export default function PolitiqueConfidentialitePage() {
         </p>
       </section>
 
-      <footer className="border-t border-gray-200 pt-6">
+      <footer className="border-t border-app-border-soft pt-6">
         <Link
           href="/"
-          className="text-sm text-gray-600 underline underline-offset-2 hover:text-gray-900"
+          className="text-sm text-app-text-muted underline underline-offset-2 hover:text-app-text"
         >
           ← Retour à l&apos;accueil
         </Link>

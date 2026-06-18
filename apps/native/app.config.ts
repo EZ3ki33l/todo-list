@@ -15,6 +15,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       }
     : undefined;
 
+  const existingPlugins = (config as ExpoConfig).plugins ?? appJson.expo.plugins ?? [];
+  const hasEdgeToEdgePlugin = existingPlugins.some((plugin) => {
+    if (typeof plugin === "string") return plugin === "react-native-edge-to-edge";
+    if (Array.isArray(plugin)) return plugin[0] === "react-native-edge-to-edge";
+    return false;
+  });
+
   return {
     ...appJson.expo,
     ...config,
@@ -27,5 +34,19 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID:
         process.env.EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID,
     },
+    plugins: hasEdgeToEdgePlugin
+      ? existingPlugins
+      : [
+          ...existingPlugins,
+          [
+            "react-native-edge-to-edge",
+            {
+              android: {
+                parentTheme: "Default",
+                enforceNavigationBarContrast: false,
+              },
+            },
+          ],
+        ],
   };
 };

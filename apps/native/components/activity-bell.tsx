@@ -11,6 +11,8 @@ import {
 } from "react-native";
 
 import { LoadingIndicator } from "@/components/loading-logo";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 const NotificationSettings = lazy(() =>
   import("@/components/notification-settings").then((m) => ({
@@ -26,6 +28,9 @@ export function ActivityBell() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<PanelTab>("history");
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const styles = getStyles(palette);
 
   const utils = trpc.useUtils();
   const { data: prefs } = trpc.notifications.getPreferences.useQuery();
@@ -178,7 +183,8 @@ export function ActivityBell() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(palette: ReturnType<typeof getPalette>) {
+  return StyleSheet.create({
   bellBtn: { position: "relative", paddingHorizontal: 4, paddingVertical: 2 },
   bellIcon: { fontSize: 20 },
   badge: {
@@ -188,19 +194,19 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: "#DC2626",
+    backgroundColor: palette.danger,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 3,
   },
-  badgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
+  badgeText: { color: palette.onPrimary, fontSize: 9, fontWeight: "700" },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#fff",
+    backgroundColor: palette.bgElevated,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: "82%",
@@ -213,28 +219,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: palette.borderSoft,
   },
-  sheetTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  close: { fontSize: 14, color: "#6B7280", fontWeight: "600" },
+  sheetTitle: { fontSize: 16, fontWeight: "700", color: palette.text },
+  close: { fontSize: 14, color: palette.textMuted, fontWeight: "600" },
   tabs: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: palette.borderSoft,
   },
   tab: {
     flex: 1,
     paddingVertical: 12,
     alignItems: "center",
   },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: "#111827" },
-  tabText: { fontSize: 14, fontWeight: "600", color: "#9CA3AF" },
-  tabTextActive: { color: "#111827" },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: palette.primary },
+  tabText: { fontSize: 14, fontWeight: "600", color: palette.textSubtle },
+  tabTextActive: { color: palette.primary },
   markAll: { paddingHorizontal: 16, paddingVertical: 10 },
-  markAllText: { fontSize: 13, color: "#6B7280" },
+  markAllText: { fontSize: 13, color: palette.textMuted },
   empty: {
     fontSize: 13,
-    color: "#9CA3AF",
+    color: palette.textSubtle,
     textAlign: "center",
     marginVertical: 24,
     paddingHorizontal: 16,
@@ -244,10 +250,11 @@ const styles = StyleSheet.create({
   item: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F8FAFC",
+    borderBottomColor: palette.borderSoft,
   },
-  itemUnread: { backgroundColor: "#EFF6FF" },
-  itemTitle: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  itemBody: { fontSize: 13, color: "#475569", marginTop: 4, lineHeight: 18 },
-  itemTime: { fontSize: 11, color: "#9CA3AF", marginTop: 6 },
+  itemUnread: { backgroundColor: palette.bgSoft },
+  itemTitle: { fontSize: 14, fontWeight: "600", color: palette.text },
+  itemBody: { fontSize: 13, color: palette.textMuted, marginTop: 4, lineHeight: 18 },
+  itemTime: { fontSize: 11, color: palette.textSubtle, marginTop: 6 },
 });
+}

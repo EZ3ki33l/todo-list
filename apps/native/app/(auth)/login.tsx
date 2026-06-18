@@ -1,7 +1,7 @@
 import { useSignIn } from "@clerk/expo";
 import { SignIn } from "@clerk/expo/web";
 import { Link } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -13,11 +13,13 @@ import {
   View,
 } from "react-native";
 
-import { clerkAuthStyles as styles } from "@/lib/clerk-auth-styles";
+import { getClerkAuthStyles } from "@/lib/clerk-auth-styles";
 import { ClerkAuthDivider, ClerkGoogleSignInButton } from "@/components/clerk-google-sign-in-button";
 import { LoadingLogo } from "@/components/loading-logo";
 import { useCompleteClerkAppSignIn } from "@/hooks/use-complete-clerk-app-sign-in";
 import { useAuth } from "@/lib/auth-context";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 async function finalizeClerkSignIn(signIn: ReturnType<typeof useSignIn>["signIn"]) {
   if (signIn.status !== "complete") return;
@@ -28,6 +30,9 @@ function NativeLoginScreen() {
   const { signIn, errors, fetchStatus } = useSignIn();
   const completeAppSignIn = useCompleteClerkAppSignIn();
   const { setAuthFlowBusy } = useAuth();
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const styles = useMemo(() => getClerkAuthStyles(themeName), [themeName]);
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -115,7 +120,7 @@ function NativeLoginScreen() {
             keyboardType="number-pad"
             autoComplete="one-time-code"
             placeholder="123456"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={palette.textSubtle}
           />
           {errors.fields.code ? (
             <Text style={styles.error}>{errors.fields.code.message}</Text>
@@ -152,7 +157,7 @@ function NativeLoginScreen() {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
         <Image
           source={require("../../assets/logo.png")}
-          style={styles.logo}
+          style={[styles.logo, palette.logoTint ? { tintColor: palette.logoTint } : null]}
           accessibilityLabel="Logo EZ3"
         />
         <Text style={styles.title}>Todolist by EZ3</Text>
@@ -170,7 +175,7 @@ function NativeLoginScreen() {
           value={emailAddress}
           onChangeText={setEmailAddress}
           placeholder="vous@exemple.fr"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={palette.textSubtle}
         />
         {errors.fields.identifier ? (
           <Text style={styles.error}>{errors.fields.identifier.message}</Text>
@@ -184,7 +189,7 @@ function NativeLoginScreen() {
           secureTextEntry
           autoComplete="password"
           placeholder="••••••••"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={palette.textSubtle}
         />
         {errors.fields.password ? (
           <Text style={styles.error}>{errors.fields.password.message}</Text>
@@ -218,10 +223,10 @@ export default function LoginScreen() {
   if (Platform.OS === "web") {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#fff" }}>
-        <Text style={{ fontSize: 28, fontWeight: "700", color: "#111827", marginBottom: 24 }}>Todo List</Text>
+        <Text style={{ fontSize: 28, fontWeight: "700", color: "#4c4f69", marginBottom: 24 }}>Todo List</Text>
         <SignIn routing="hash" signUpUrl="/sign-up" />
         <Link href="/(auth)/sign-up" asChild>
-          <Text style={{ marginTop: 20, fontSize: 14, fontWeight: "600", color: "#111827" }}>Créer un compte</Text>
+          <Text style={{ marginTop: 20, fontSize: 14, fontWeight: "600", color: "#1e66f5" }}>Créer un compte</Text>
         </Link>
       </View>
     );

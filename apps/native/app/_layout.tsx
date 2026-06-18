@@ -4,17 +4,23 @@ import "react-native-reanimated";
 import { ClerkProvider, useAuth as useClerkAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useEffect, useMemo, useState } from "react";
+import { SystemBars } from "react-native-edge-to-edge";
 import { AppState, StyleSheet, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { TamaguiProvider } from "tamagui";
+
+import tamaguiConfig from "../tamagui.config";
 
 import { AuthLoadingOverlay } from "@/components/auth-loading-overlay";
 import { ClerkSessionBridge } from "@/components/clerk-session-bridge";
 import { PushTokenSync } from "@/components/push-registration";
 import { trpc, createTrpcClient } from "@/lib/trpc";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { ThemeModeProvider, useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -46,6 +52,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
   const segment = segments[0];
   const [meValidationTimedOut, setMeValidationTimedOut] = useState(false);
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
 
   const shouldValidateStoredToken = !!token && ready && !skipMeValidation;
 
@@ -96,6 +104,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     authFlowBusy;
   const renderChildren = !meUnauthorized;
   const showShell = renderChildren && !leavingAuthRoute && !bootstrapping;
+  // Filet de sécurité : évite un écran blanc si shell masqué sans overlay explicite.
+  const showOverlay = showLoadingOverlay || !showShell;
 
   useEffect(() => {
     if (token && segment === "(app)") {
@@ -119,9 +129,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [bootstrapping, meUnauthorized, token, segment, router]);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: palette.bgElevated }]}>
       {showShell ? children : null}
-      {showLoadingOverlay ? <AuthLoadingOverlay /> : null}
+      {showOverlay ? <AuthLoadingOverlay /> : null}
     </View>
   );
 }
@@ -149,16 +159,41 @@ function RootNavigator() {
   );
 }
 
+function RootApp() {
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const isDark = themeName === "mocha";
+  const systemBarStyle = isDark ? "light" : "dark";
+
+  useEffect(() => {
+    SystemBars.setStyle({
+      statusBar: systemBarStyle,
+      navigationBar: systemBarStyle,
+    });
+  }, [systemBarStyle]);
+
+  return (
+    <>
+      <SystemBars style={{ statusBar: systemBarStyle, navigationBar: systemBarStyle }} />
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: palette.bgElevated }}>
+        <TamaguiProvider config={tamaguiConfig as any} defaultTheme={themeName}>
+          <SafeAreaProvider>
+            <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
+              <AuthProvider>
+                <RootNavigator />
+              </AuthProvider>
+            </ClerkProvider>
+          </SafeAreaProvider>
+        </TamaguiProvider>
+      </GestureHandlerRootView>
+    </>
+  );
+}
+
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
-        </ClerkProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ThemeModeProvider>
+      <RootApp />
+    </ThemeModeProvider>
   );
 }

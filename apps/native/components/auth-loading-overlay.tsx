@@ -3,10 +3,15 @@ import { StyleSheet, View } from "react-native";
 import { LoadingLogo } from "@/components/loading-logo";
 import { Skeleton, SkeletonLine } from "@/components/skeleton";
 import { TodoHubSkeleton } from "@/components/todo-hub-skeleton";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 export function AuthLoadingOverlay() {
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+
   return (
-    <View style={styles.overlay} pointerEvents="auto">
+    <View style={[styles.overlay, { backgroundColor: palette.bg }]} pointerEvents="auto">
       <View style={styles.logoWrap}>
         <LoadingLogo size={64} />
       </View>
@@ -24,7 +29,6 @@ export function AuthLoadingOverlay() {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#F9FAFB",
     zIndex: 999,
     elevation: 999,
     paddingHorizontal: 16,

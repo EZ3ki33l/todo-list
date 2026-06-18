@@ -1,7 +1,7 @@
 import { DAY_WEEK_GRID_CLASS, DAY_WEEK_SECTION_CLASS } from "@/lib/day-week-layout";
 
 function SkeletonLine({ className = "" }: { className?: string }) {
-  return <div className={`rounded bg-gray-200 ${className}`} />;
+  return <div className={`rounded bg-app-skeleton ${className}`} />;
 }
 
 function TaskRowSkeleton() {
@@ -15,8 +15,8 @@ function TaskRowSkeleton() {
 
 export function TaskColumnSkeleton() {
   return (
-    <div className="flex h-full min-h-[8rem] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm motion-safe:animate-pulse">
-      <div className="shrink-0 border-b border-gray-50 px-4 py-3">
+    <div className="flex h-full min-h-[8rem] flex-col overflow-hidden rounded-xl border border-app-border-soft bg-app-bg-elevated shadow-sm motion-safe:animate-pulse">
+      <div className="shrink-0 border-b border-app-border-soft px-4 py-3">
         <SkeletonLine className="h-5 w-36" />
         <SkeletonLine className="mt-2 h-3 w-24" />
       </div>

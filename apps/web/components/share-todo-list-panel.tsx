@@ -71,18 +71,18 @@ export function ShareTodoListPanel({
           setError(null);
           setSuccess(false);
         }}
-        className="rounded border border-indigo-200 px-2 py-1 text-xs text-indigo-700 hover:bg-indigo-50"
+        className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-badge-text hover:bg-app-badge-bg"
       >
         Partager
       </button>
 
       {open && (
-        <div className="absolute right-0 top-8 z-20 w-80 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
-          <p className="mb-3 text-sm font-medium text-gray-800">Partager la liste</p>
+        <div className="absolute right-0 top-8 z-20 w-80 rounded-lg border border-app-border-soft bg-app-bg-elevated p-4 shadow-lg">
+          <p className="mb-3 text-sm font-medium text-app-text">Partager la liste</p>
 
           <form onSubmit={handleShare} className="space-y-3">
             <div>
-              <label className="mb-1 block text-xs text-gray-500">
+              <label className="mb-1 block text-xs text-app-text-subtle">
                 Email ou ID de l&apos;utilisateur
               </label>
               <input
@@ -91,12 +91,12 @@ export function ShareTodoListPanel({
                 onChange={(e) => setEmailOrId(e.target.value)}
                 required
                 placeholder="email@exemple.com"
-                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full rounded border border-app-border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-app-primary"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Accès</label>
+              <label className="mb-1 block text-xs text-app-text-subtle">Accès</label>
               <div className="flex gap-2">
                 {(["invité", "membre"] as ShareRole[]).map((r) => (
                   <button
@@ -105,8 +105,8 @@ export function ShareTodoListPanel({
                     onClick={() => setRole(r)}
                     className={`flex-1 rounded border px-2 py-1.5 text-xs ${
                       role === r
-                        ? "border-indigo-600 bg-indigo-50 text-indigo-800"
-                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        ? "border-app-primary bg-app-badge-bg text-app-badge-text"
+                        : "border-app-border-soft text-app-text-muted hover:bg-app-bg-soft"
                     }`}
                   >
                     {r === "membre" ? "Peut modifier" : "Peut voir"}
@@ -115,42 +115,42 @@ export function ShareTodoListPanel({
               </div>
             </div>
 
-            {error && <p className="text-xs text-red-600">{error}</p>}
+            {error && <p className="text-xs text-app-danger">{error}</p>}
             {success && (
-              <p className="text-xs text-green-600">Liste partagée avec succès !</p>
+              <p className="text-xs text-app-primary">Liste partagée avec succès !</p>
             )}
 
             <button
               type="submit"
               disabled={!emailOrId.trim() || shareList.isPending}
-              className="w-full rounded bg-indigo-600 px-3 py-1.5 text-xs text-white hover:bg-indigo-500 disabled:opacity-40"
+              className="w-full rounded bg-app-primary px-3 py-1.5 text-xs text-app-on-primary hover:bg-app-primary disabled:opacity-40"
             >
               Ajouter
             </button>
           </form>
 
-          <div className="mt-4 border-t border-gray-100 pt-3">
-            <p className="mb-2 text-xs font-medium text-gray-500">Membres</p>
+          <div className="mt-4 border-t border-app-border-soft pt-3">
+            <p className="mb-2 text-xs font-medium text-app-text-subtle">Membres</p>
             <ul className="space-y-2">
               {list.owner && (
-                <li className="text-sm text-gray-800">
+                <li className="text-sm text-app-text">
                   {list.owner.name ?? list.owner.email}
-                  <span className="ml-1 text-xs text-gray-400">(propriétaire)</span>
+                  <span className="ml-1 text-xs text-app-text-subtle">(propriétaire)</span>
                 </li>
               )}
               {list.members.map((m) => (
                 <li key={m.userId} className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-gray-800">
+                    <p className="truncate text-sm text-app-text">
                       {m.user.name ?? m.user.email}
                     </p>
-                    <p className="text-xs text-gray-400">{m.role}</p>
+                    <p className="text-xs text-app-text-subtle">{m.role}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => unshare.mutate({ listId, userId: m.userId })}
                     disabled={unshare.isPending}
-                    className="shrink-0 text-xs text-red-500 hover:text-red-700 disabled:opacity-40"
+                    className="shrink-0 text-xs text-app-danger hover:text-app-danger disabled:opacity-40"
                   >
                     Retirer
                   </button>
@@ -163,7 +163,7 @@ export function ShareTodoListPanel({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
+              className="rounded border border-app-border-soft px-3 py-1.5 text-xs text-app-text-muted hover:bg-app-bg-soft"
             >
               Fermer
             </button>

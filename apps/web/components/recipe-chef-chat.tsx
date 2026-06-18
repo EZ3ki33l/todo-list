@@ -157,8 +157,8 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
 
   const triggerClass =
     variant === "floating"
-      ? "fixed right-4 z-40 bottom-[max(1.5rem,env(safe-area-inset-bottom))] inline-flex items-center gap-2.5 rounded-full border border-orange-200 bg-white py-1.5 pl-1.5 pr-4 shadow-lg transition hover:border-orange-300 hover:bg-orange-50 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 sm:right-8 sm:bottom-[max(2rem,env(safe-area-inset-bottom))]"
-      : "inline-flex items-center gap-2.5 rounded-full border border-orange-200 bg-white py-1 pl-1 pr-4 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2";
+      ? "fixed right-4 z-40 bottom-[max(1.5rem,env(safe-area-inset-bottom))] inline-flex items-center gap-2.5 rounded-full border border-app-border-soft bg-app-bg-elevated py-1.5 pl-1.5 pr-4 shadow-lg transition hover:border-orange-300 hover:bg-orange-50 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 sm:right-8 sm:bottom-[max(2rem,env(safe-area-inset-bottom))]"
+      : "inline-flex items-center gap-2.5 rounded-full border border-app-border-soft bg-app-bg-elevated py-1 pl-1 pr-4 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2";
 
   return (
     <>
@@ -176,7 +176,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
           className="rounded-full"
           aria-hidden
         />
-        <span className="text-sm font-semibold text-gray-900">Chef IA</span>
+        <span className="text-sm font-semibold text-app-text">Chef IA</span>
       </button>
 
       {open ? (
@@ -191,9 +191,9 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="chef-chat-title"
-            className="relative flex h-[min(92dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:rounded-2xl"
+            className="relative flex h-[min(92dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-app-border-soft bg-app-bg-elevated shadow-2xl sm:rounded-2xl"
           >
-            <header className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white px-4 py-3">
+            <header className="flex items-center gap-3 border-b border-app-border-soft bg-gradient-to-r from-orange-50 to-white px-4 py-3">
               <Image
                 src="/chef-ia.png"
                 alt=""
@@ -203,10 +203,10 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                 aria-hidden
               />
               <div className="min-w-0 flex-1">
-                <h3 id="chef-chat-title" className="font-semibold text-gray-900">
+                <h3 id="chef-chat-title" className="font-semibold text-app-text">
                   Chef IA
                 </h3>
-                <p className="truncate text-xs text-gray-500">
+                <p className="truncate text-xs text-app-text-subtle">
                   {mode === "from_list"
                     ? "Recettes avec votre liste"
                     : mode === "suggest_items"
@@ -220,7 +220,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                 type="button"
                 onClick={closeModal}
                 aria-label="Fermer"
-                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-lg p-2 text-app-text-subtle hover:bg-app-bg-soft hover:text-app-text"
               >
                 ✕
               </button>
@@ -228,36 +228,36 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
 
             {mode === null ? (
               <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-sm text-app-text-muted">
                   Bonjour ! Que souhaitez-vous faire ?
                 </p>
                 <button
                   type="button"
                   onClick={() => selectMode("from_list")}
-                  className="rounded-xl border-2 border-orange-200 bg-orange-50/80 p-4 text-left transition hover:border-orange-400 hover:bg-orange-50"
+                  className="rounded-xl border-2 border-app-border-soft bg-orange-50/80 p-4 text-left transition hover:border-orange-400 hover:bg-orange-50"
                 >
-                  <p className="font-semibold text-gray-900">🍳 Recettes avec ma liste</p>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <p className="font-semibold text-app-text">🍳 Recettes avec ma liste</p>
+                  <p className="mt-1 text-sm text-app-text-muted">
                     Des idées de plats à partir des articles déjà dans vos courses.
                   </p>
                 </button>
                 <button
                   type="button"
                   onClick={() => selectMode("suggest_items")}
-                  className="rounded-xl border-2 border-indigo-200 bg-indigo-50/80 p-4 text-left transition hover:border-indigo-400 hover:bg-indigo-50"
+                  className="rounded-xl border-2 border-app-border-soft bg-app-badge-bg/80 p-4 text-left transition hover:border-app-primary hover:bg-app-badge-bg"
                 >
-                  <p className="font-semibold text-gray-900">🛒 Articles pour cuisiner</p>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <p className="font-semibold text-app-text">🛒 Articles pour cuisiner</p>
+                  <p className="mt-1 text-sm text-app-text-muted">
                     Décrivez un plat : je vous dis quoi ajouter à la liste.
                   </p>
                 </button>
                 <button
                   type="button"
                   onClick={() => selectMode("seasonal_produce")}
-                  className="rounded-xl border-2 border-green-200 bg-green-50/80 p-4 text-left transition hover:border-green-400 hover:bg-green-50"
+                  className="rounded-xl border-2 border-app-border-soft bg-green-50/80 p-4 text-left transition hover:border-green-400 hover:bg-green-50"
                 >
-                  <p className="font-semibold text-gray-900">🌿 Fruits & légumes de saison</p>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <p className="font-semibold text-app-text">🌿 Fruits & légumes de saison</p>
+                  <p className="mt-1 text-sm text-app-text-muted">
                     Calendrier des produits par saison — pas de recettes.
                   </p>
                 </button>
@@ -276,7 +276,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                       <div
                         className={
                           msg.role === "user"
-                            ? "max-w-[88%] rounded-2xl bg-gray-900 px-3.5 py-2.5 text-sm leading-relaxed text-white"
+                            ? "max-w-[88%] rounded-2xl bg-app-primary px-3.5 py-2.5 text-sm leading-relaxed text-app-on-primary"
                             : "max-w-[95%] rounded-2xl border border-orange-100 bg-orange-50/30 p-2.5 sm:p-3"
                         }
                       >
@@ -290,7 +290,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                         )}
                       </div>
                       {msg.role === "assistant" && (msg.sources?.length ?? 0) > 0 ? (
-                        <div className="max-w-[88%] text-xs text-gray-500">
+                        <div className="max-w-[88%] text-xs text-app-text-subtle">
                           <span className="font-medium">Sources : </span>
                           {msg.sources!.map((source, si) => (
                             <span key={`${source.label}-${si}`}>
@@ -300,7 +300,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                                   href={source.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-indigo-600 underline-offset-2 hover:underline"
+                                  className="text-app-primary underline-offset-2 hover:underline"
                                 >
                                   {source.label}
                                 </a>
@@ -312,7 +312,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                         </div>
                       ) : null}
                       {msg.role === "assistant" && (msg.itemsToAdd?.length ?? 0) > 0 ? (
-                        <div className="max-w-[88%] rounded-xl border border-green-200 bg-green-50/80 p-2.5">
+                        <div className="max-w-[88%] rounded-xl border border-app-border-soft bg-green-50/80 p-2.5">
                           <p className="mb-2 text-xs font-medium text-green-900">
                             Ajouter à la liste
                           </p>
@@ -326,7 +326,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                                   type="button"
                                   disabled={added || createItem.isPending}
                                   onClick={() => void addItemToList(item, index)}
-                                  className="rounded-full border border-green-300 bg-white px-2.5 py-1 text-xs text-green-900 hover:bg-green-50 disabled:opacity-50"
+                                  className="rounded-full border border-green-300 bg-app-bg-elevated px-2.5 py-1 text-xs text-green-900 hover:bg-green-50 disabled:opacity-50"
                                 >
                                   {added ? `✓ ${item.title}` : `+ ${item.title}`}
                                 </button>
@@ -349,24 +349,24 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                   ))}
                   {chat.isPending ? (
                     <div className="flex justify-start">
-                      <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-500">
+                      <div className="rounded-2xl border border-app-border-soft bg-app-bg-soft px-4 py-2 text-sm text-app-text-subtle">
                         Le chef réfléchit…
                       </div>
                     </div>
                   ) : null}
                   {chat.error ? (
-                    <p className="text-center text-sm text-red-600">
+                    <p className="text-center text-sm text-app-danger">
                       {recipesApiHint(chat.error.message) ?? chat.error.message}
                     </p>
                   ) : null}
                   {welcome.error ? (
-                    <p className="text-center text-sm text-red-600">
+                    <p className="text-center text-sm text-app-danger">
                       {recipesApiHint(welcome.error.message) ?? welcome.error.message}
                     </p>
                   ) : null}
                 </div>
 
-                <div className="border-t border-gray-100 bg-white p-3">
+                <div className="border-t border-app-border-soft bg-app-bg-elevated p-3">
                   {messages.length <= 1 &&
                   (mode === "from_list" || mode === "seasonal_produce") ? (
                     <div className="mb-2 flex flex-wrap gap-2">
@@ -383,7 +383,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                           type="button"
                           onClick={() => void sendMessage(chip)}
                           disabled={chat.isPending}
-                          className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          className="rounded-full border border-app-border-soft bg-app-bg-elevated px-3 py-1 text-xs text-app-text hover:bg-app-bg-soft disabled:opacity-50"
                         >
                           {chip}
                         </button>
@@ -407,12 +407,12 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                           : "Votre message…"
                       }
                       disabled={chat.isPending}
-                      className="min-w-0 flex-1 rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                      className="min-w-0 flex-1 rounded-xl border border-app-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
                     />
                     <button
                       type="submit"
                       disabled={!draft.trim() || chat.isPending}
-                      className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-40"
+                      className="rounded-xl bg-app-primary px-4 py-2 text-sm font-medium text-app-on-primary hover:opacity-90 disabled:opacity-40"
                     >
                       Envoyer
                     </button>
@@ -420,7 +420,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                   <button
                     type="button"
                     onClick={resetChat}
-                    className="mt-2 w-full text-center text-xs text-gray-400 hover:text-gray-600"
+                    className="mt-2 w-full text-center text-xs text-app-text-subtle hover:text-app-text"
                   >
                     ← Changer de mode
                   </button>

@@ -111,28 +111,28 @@ export function ActivityBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-md p-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        className="relative rounded-md p-1.5 text-app-text-muted hover:bg-app-bg-soft hover:text-app-text"
         aria-label={count > 0 ? `${count} notification(s) non lue(s)` : "Notifications et historique"}
         aria-expanded={open}
       >
         <BellIcon className="size-5" />
         {count > 0 ? (
-          <span className="absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white">
+          <span className="absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-app-danger px-1 text-[10px] font-semibold text-app-on-primary">
             {count > 99 ? "99+" : count}
           </span>
         ) : null}
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-9 z-30 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white shadow-lg">
-          <div className="flex border-b border-gray-100">
+        <div className="absolute right-0 top-9 z-30 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-app-border-soft bg-app-bg-elevated shadow-lg">
+          <div className="flex border-b border-app-border-soft">
             <button
               type="button"
               onClick={() => setTab("history")}
               className={`flex-1 px-3 py-2.5 text-sm font-medium ${
                 tab === "history"
-                  ? "border-b-2 border-gray-900 text-gray-900"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "border-b-2 border-app-primary text-app-text"
+                  : "text-app-text-subtle hover:text-app-text"
               }`}
             >
               Historique
@@ -142,8 +142,8 @@ export function ActivityBell() {
               onClick={() => setTab("settings")}
               className={`flex-1 px-3 py-2.5 text-sm font-medium ${
                 tab === "settings"
-                  ? "border-b-2 border-gray-900 text-gray-900"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "border-b-2 border-app-primary text-app-text"
+                  : "text-app-text-subtle hover:text-app-text"
               }`}
             >
               Réglages
@@ -153,11 +153,11 @@ export function ActivityBell() {
           {tab === "history" ? (
             <>
               {count > 0 ? (
-                <div className="flex justify-end border-b border-gray-50 px-3 py-1.5">
+                <div className="flex justify-end border-b border-app-border-soft px-3 py-1.5">
                   <button
                     type="button"
                     onClick={() => markAllRead.mutate()}
-                    className="text-xs text-gray-500 hover:text-gray-800"
+                    className="text-xs text-app-text-subtle hover:text-app-text"
                     disabled={markAllRead.isPending}
                   >
                     Tout marquer lu
@@ -167,23 +167,23 @@ export function ActivityBell() {
 
               <div className="max-h-80 overflow-y-auto">
                 {isLoading ? (
-                  <p className="px-3 py-6 text-center text-sm text-gray-400">Chargement…</p>
+                  <p className="px-3 py-6 text-center text-sm text-app-text-subtle">Chargement…</p>
                 ) : !feed?.items.length ? (
-                  <p className="px-3 py-6 text-center text-sm text-gray-400">
+                  <p className="px-3 py-6 text-center text-sm text-app-text-subtle">
                     {alertsActive
                       ? "Aucune modification récente sur vos listes partagées."
                       : "Les notifications sont désactivées. Activez-les dans Réglages."}
                   </p>
                 ) : (
-                  <ul className="divide-y divide-gray-50">
+                  <ul className="divide-y divide-app-border-soft">
                     {feed.items.map((item) => {
                       const href = activityHref(item.listKind, item.listId);
                       const isUnread = !item.readAt;
                       const inner = (
                         <>
-                          <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                          <p className="mt-0.5 text-xs leading-relaxed text-gray-600">{item.body}</p>
-                          <p className="mt-1 text-[11px] text-gray-400">
+                          <p className="text-sm font-medium text-app-text">{item.title}</p>
+                          <p className="mt-0.5 text-xs leading-relaxed text-app-text-muted">{item.body}</p>
+                          <p className="mt-1 text-[11px] text-app-text-subtle">
                             {formatActivityTime(item.createdAt)}
                           </p>
                         </>
@@ -195,7 +195,7 @@ export function ActivityBell() {
                             <Link
                               href={href}
                               onClick={() => handleItemClick(item.id, isUnread)}
-                              className={`block px-3 py-2.5 hover:bg-gray-50 ${isUnread ? "bg-blue-50/50" : ""}`}
+                              className={`block px-3 py-2.5 hover:bg-app-bg-soft ${isUnread ? "bg-blue-50/50" : ""}`}
                             >
                               {inner}
                             </Link>
@@ -203,7 +203,7 @@ export function ActivityBell() {
                             <button
                               type="button"
                               onClick={() => handleItemClick(item.id, isUnread)}
-                              className={`block w-full px-3 py-2.5 text-left hover:bg-gray-50 ${isUnread ? "bg-blue-50/50" : ""}`}
+                              className={`block w-full px-3 py-2.5 text-left hover:bg-app-bg-soft ${isUnread ? "bg-blue-50/50" : ""}`}
                             >
                               {inner}
                             </button>

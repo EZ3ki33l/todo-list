@@ -16,26 +16,26 @@ export function ListLinkCard({
   return (
     <Link
       href={href}
-      className={`block rounded-lg border px-4 py-3 shadow-sm transition-colors hover:bg-gray-50 ${
+      className={`block rounded-lg border px-4 py-3 shadow-sm transition-colors hover:bg-app-bg-soft ${
         shared
-          ? "border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50/70"
-          : "border-gray-200 bg-white"
+          ? "border-app-border-soft bg-app-badge-bg/40 hover:bg-app-badge-bg/70"
+          : "border-app-border-soft bg-app-bg-elevated"
       }`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium text-gray-900">{title}</span>
+        <span className="font-medium text-app-text">{title}</span>
         {shared && (
-          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">
+          <span className="rounded-full bg-app-badge-bg px-2 py-0.5 text-xs font-medium text-app-badge-text">
             Partagée
           </span>
         )}
         {badge && (
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+          <span className="rounded-full bg-app-bg-soft px-2 py-0.5 text-xs text-app-text-muted">
             {badge}
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p>
+      <p className="mt-0.5 text-sm text-app-text-subtle">{subtitle}</p>
     </Link>
   );
 }

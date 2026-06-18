@@ -13,13 +13,13 @@ export function SessionNav() {
       <>
         <Link
           href="/login"
-          className="text-sm px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-700"
+          className="text-sm px-3 py-1.5 rounded-md bg-app-primary text-app-on-primary hover:opacity-90"
         >
           Se connecter
         </Link>
         <Link
           href="/sign-up"
-          className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-100"
+          className="text-sm px-3 py-1.5 rounded-md border border-app-border bg-app-bg-elevated hover:bg-app-bg-soft"
         >
           Créer un compte
         </Link>
@@ -29,10 +29,10 @@ export function SessionNav() {
 
   return (
     <>
-      <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
+      <Link href="/dashboard" className="text-sm text-app-text-muted hover:text-app-text">
         Tâches
       </Link>
-      <Link href="/dashboard/shopping" className="text-sm text-gray-600 hover:text-gray-900">
+      <Link href="/dashboard/shopping" className="text-sm text-app-text-muted hover:text-app-text">
         Courses
       </Link>
       <UserButton />

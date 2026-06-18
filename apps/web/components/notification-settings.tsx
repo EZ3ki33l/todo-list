@@ -63,17 +63,17 @@ export function NotificationSettings() {
   }
 
   if (isPending && prefs === undefined) {
-    return <p className="px-3 py-6 text-center text-sm text-gray-400">Chargement…</p>;
+    return <p className="px-3 py-6 text-center text-sm text-app-text-subtle">Chargement…</p>;
   }
 
   if (isError || !prefs) {
     return (
       <div className="px-3 py-6 text-center text-sm">
-        <p className="text-red-600">Impossible de charger les réglages.</p>
+        <p className="text-app-danger">Impossible de charger les réglages.</p>
         <button
           type="button"
           onClick={() => void refetch()}
-          className="mt-2 text-gray-600 underline hover:text-gray-900"
+          className="mt-2 text-app-text-muted underline hover:text-app-text"
         >
           Réessayer
         </button>
@@ -85,23 +85,23 @@ export function NotificationSettings() {
 
   return (
     <div className="px-3 py-3 text-sm">
-      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-app-border-soft bg-app-bg-soft px-3 py-3">
         <input
           type="checkbox"
           checked={prefs.alertsEnabled}
           onChange={(e) => patch({ alertsEnabled: e.target.checked })}
           disabled={update.isPending}
-          className="mt-0.5 rounded border-gray-300"
+          className="mt-0.5 rounded border-app-border"
         />
         <span>
-          <span className="font-medium text-gray-900">Recevoir des notifications</span>
-          <span className="mt-0.5 block text-xs text-gray-500">
+          <span className="font-medium text-app-text">Recevoir des notifications</span>
+          <span className="mt-0.5 block text-xs text-app-text-subtle">
             Désactivé = plus d&apos;alertes ni d&apos;historique pour les types ci-dessous.
           </span>
         </span>
       </label>
 
-      <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
+      <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-app-text-subtle">
         Types de notifications
       </p>
       <ul className="space-y-2">
@@ -109,7 +109,7 @@ export function NotificationSettings() {
           <li key={opt.key}>
             <label
               className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 ${
-                typesDisabled ? "border-gray-100 opacity-50" : "border-gray-200"
+                typesDisabled ? "border-app-border-soft opacity-50" : "border-app-border-soft"
               }`}
             >
               <input
@@ -117,25 +117,25 @@ export function NotificationSettings() {
                 checked={prefs[opt.key]}
                 onChange={(e) => patch({ [opt.key]: e.target.checked })}
                 disabled={typesDisabled}
-                className="mt-0.5 rounded border-gray-300"
+                className="mt-0.5 rounded border-app-border"
               />
               <span>
-                <span className="font-medium text-gray-900">{opt.label}</span>
-                <span className="mt-0.5 block text-xs text-gray-500">{opt.description}</span>
+                <span className="font-medium text-app-text">{opt.label}</span>
+                <span className="mt-0.5 block text-xs text-app-text-subtle">{opt.description}</span>
               </span>
             </label>
           </li>
         ))}
       </ul>
 
-      <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
+      <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-app-text-subtle">
         Sur le navigateur
       </p>
       <ul className="space-y-2">
         <li>
           <label
             className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 ${
-              !prefs.alertsEnabled ? "border-gray-100 opacity-50" : "border-gray-200"
+              !prefs.alertsEnabled ? "border-app-border-soft opacity-50" : "border-app-border-soft"
             }`}
           >
             <input
@@ -143,15 +143,15 @@ export function NotificationSettings() {
               checked={prefs.browserPopups}
               onChange={(e) => void toggleBrowserPopups(e.target.checked)}
               disabled={!prefs.alertsEnabled || update.isPending}
-              className="rounded border-gray-300"
+              className="rounded border-app-border"
             />
-            <span className="text-gray-800">Popups du navigateur</span>
+            <span className="text-app-text">Popups du navigateur</span>
           </label>
         </li>
         <li>
           <label
             className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 ${
-              !prefs.alertsEnabled ? "border-gray-100 opacity-50" : "border-gray-200"
+              !prefs.alertsEnabled ? "border-app-border-soft opacity-50" : "border-app-border-soft"
             }`}
           >
             <input
@@ -159,9 +159,9 @@ export function NotificationSettings() {
               checked={prefs.browserTitleBadge}
               onChange={(e) => patch({ browserTitleBadge: e.target.checked })}
               disabled={!prefs.alertsEnabled || update.isPending}
-              className="rounded border-gray-300"
+              className="rounded border-app-border"
             />
-            <span className="text-gray-800">Compteur dans le titre de l&apos;onglet</span>
+            <span className="text-app-text">Compteur dans le titre de l&apos;onglet</span>
           </label>
         </li>
       </ul>

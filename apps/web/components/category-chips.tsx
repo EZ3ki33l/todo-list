@@ -19,8 +19,8 @@ export function CategoryChips({
           onClick={() => onChange(cat)}
           className={`rounded-full border px-2.5 py-1 text-xs ${
             value === cat
-              ? "border-gray-900 bg-gray-900 text-white"
-              : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+              ? "border-app-primary bg-app-primary text-app-on-primary"
+              : "border-app-border-soft bg-app-bg-elevated text-app-text hover:bg-app-bg-soft"
           }`}
         >
           {CATEGORY_LABELS[cat]}

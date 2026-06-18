@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -14,7 +14,9 @@ import { ShoppingListDetail } from "@/components/shopping-list-detail";
 import { ShoppingHubSkeleton } from "@/components/shopping-hub-skeleton";
 import { TabListHeader } from "@/components/tab-list-header";
 import { useAuth } from "@/lib/auth-context";
-import { listHubStyles as hub } from "@/lib/list-hub-styles";
+import { getListHubStyles } from "@/lib/list-hub-styles";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 import { trpc } from "@/lib/trpc";
 import { usePersonalShoppingList } from "@/lib/use-personal-shopping-list";
 
@@ -39,10 +41,14 @@ function SharedShoppingSection({
   personalId,
   newSharedTitle,
   setNewSharedTitle,
+  placeholderTextColor,
+  hub,
 }: {
   personalId: string;
   newSharedTitle: string;
   setNewSharedTitle: (value: string) => void;
+  placeholderTextColor: string;
+  hub: ReturnType<typeof getListHubStyles>;
 }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -113,7 +119,7 @@ function SharedShoppingSection({
         <TextInput
           style={hub.input}
           placeholder="Ex. Courses du chalet…"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={placeholderTextColor}
           value={newSharedTitle}
           onChangeText={setNewSharedTitle}
           returnKeyType="done"
@@ -141,6 +147,9 @@ function SharedShoppingSection({
 
 export default function ShoppingScreen() {
   const { signOut } = useAuth();
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const hub = useMemo(() => getListHubStyles(palette), [palette]);
   const [newSharedTitle, setNewSharedTitle] = useState("");
   const [pullRefreshing, setPullRefreshing] = useState(false);
   const utils = trpc.useUtils();
@@ -171,6 +180,8 @@ export default function ShoppingScreen() {
         personalId={personalList.id}
         newSharedTitle={newSharedTitle}
         setNewSharedTitle={setNewSharedTitle}
+        placeholderTextColor={palette.textSubtle}
+        hub={hub}
       />
     ) : null;
 
@@ -186,7 +197,7 @@ export default function ShoppingScreen() {
   return (
     <SafeAreaView style={hub.safe} edges={["top"]}>
       <View style={{ flex: 1 }}>
-        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, backgroundColor: palette.bg }}>
           <TabListHeader title="Courses" onSignOut={signOut} />
         </View>
 

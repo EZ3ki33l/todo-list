@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import { StyleProp, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -7,6 +7,8 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
+import { useThemeMode } from "@/lib/theme-context";
+import { getPalette } from "@/lib/theme-palette";
 
 type SkeletonProps = {
   width?: number | `${number}%`;
@@ -16,11 +18,13 @@ type SkeletonProps = {
 };
 
 export function Skeleton({ width = "100%", height = 14, borderRadius = 8, style }: SkeletonProps) {
-  const opacity = useSharedValue(0.45);
+  const { themeName } = useThemeMode();
+  const palette = getPalette(themeName);
+  const opacity = useSharedValue(0.55);
 
   useEffect(() => {
     opacity.value = withRepeat(
-      withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.95, { duration: 900, easing: Easing.inOut(Easing.ease) }),
       -1,
       true,
     );
@@ -32,7 +36,12 @@ export function Skeleton({ width = "100%", height = 14, borderRadius = 8, style 
 
   return (
     <Animated.View
-      style={[styles.block, { width, height, borderRadius }, style, animatedStyle]}
+      style={[
+        styles.block,
+        style,
+        { width, height, borderRadius, backgroundColor: palette.skeleton },
+        animatedStyle,
+      ]}
     />
   );
 }
@@ -42,7 +51,5 @@ export function SkeletonLine({ width = "100%", style }: { width?: number | `${nu
 }
 
 const styles = StyleSheet.create({
-  block: {
-    backgroundColor: "#E5E7EB",
-  },
+  block: {},
 });

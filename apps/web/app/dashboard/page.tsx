@@ -68,7 +68,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-10">
       <header>
-        <h1 className="text-2xl font-bold text-gray-900">Tâches</h1>
+        <h1 className="text-2xl font-bold text-app-text">Tâches</h1>
       </header>
 
       <DayWeekView
@@ -82,9 +82,9 @@ export default async function DashboardPage() {
       <AddActionForm listId={personalTodo.id} />
 
       <section id="listes-partagees" className="scroll-mt-8 space-y-3">
-        <h2 className="text-sm font-semibold text-gray-500">Listes partagées</h2>
+        <h2 className="text-sm font-semibold text-app-text-subtle">Listes partagées</h2>
         {sharedTodos.length === 0 ? (
-          <p className="text-sm text-gray-400">Aucune liste partagée pour l&apos;instant.</p>
+          <p className="text-sm text-app-text-subtle">Aucune liste partagée pour l&apos;instant.</p>
         ) : (
           <ul className="space-y-2">
             {sharedTodos.map((list) => {

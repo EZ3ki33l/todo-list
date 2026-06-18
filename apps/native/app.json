@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Todo List",
+    "name": "TodoList By EZ3",
     "slug": "todo-list",
     "version": "1.0.1",
     "scheme": "todolist",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/app-icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/app-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F3FBF6"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -25,13 +25,13 @@
       "versionCode": 4,
       "googleServicesFile": "./android/app/google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/app-icon-foreground.png",
+        "backgroundColor": "#F3FBF6"
       },
       "package": "com.ez3ki33l.todolist"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/app-icon.png",
       "bundler": "metro"
     },
     "plugins": [

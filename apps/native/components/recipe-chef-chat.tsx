@@ -17,6 +17,7 @@ import { LoadingLogo } from "@/components/loading-logo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ChefChatMessageContent } from "@/components/chef-chat-message-content";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { detectCategory } from "@/lib/grocery-detect";
 import { trpc } from "@/lib/trpc";
 
@@ -228,7 +229,10 @@ export function RecipeChefChat({ listId }: Props) {
               <ScrollView contentContainerStyle={styles.modePicker}>
                 <Text style={styles.modeIntro}>Bonjour ! Que souhaitez-vous faire ?</Text>
                 <Pressable style={styles.modeCardOrange} onPress={() => selectMode("from_list")}>
-                  <Text style={styles.modeCardTitle}>🍳 Recettes avec ma liste</Text>
+                  <View style={styles.modeCardTitleRow}>
+                    <FluentEmoji emoji="🍳" size={20} />
+                    <Text style={styles.modeCardTitle}>Recettes avec ma liste</Text>
+                  </View>
                   <Text style={styles.modeCardDesc}>
                     Des idées de plats à partir des articles déjà dans vos courses.
                   </Text>
@@ -237,7 +241,10 @@ export function RecipeChefChat({ listId }: Props) {
                   style={styles.modeCardIndigo}
                   onPress={() => selectMode("suggest_items")}
                 >
-                  <Text style={styles.modeCardTitle}>🛒 Articles pour cuisiner</Text>
+                  <View style={styles.modeCardTitleRow}>
+                    <FluentEmoji emoji="🛒" size={20} />
+                    <Text style={styles.modeCardTitle}>Articles pour cuisiner</Text>
+                  </View>
                   <Text style={styles.modeCardDesc}>
                     Décrivez un plat : je vous dis quoi ajouter à la liste.
                   </Text>
@@ -246,7 +253,10 @@ export function RecipeChefChat({ listId }: Props) {
                   style={styles.modeCardGreen}
                   onPress={() => selectMode("seasonal_produce")}
                 >
-                  <Text style={styles.modeCardTitle}>🌿 Fruits & légumes de saison</Text>
+                  <View style={styles.modeCardTitleRow}>
+                    <FluentEmoji emoji="🌿" size={20} />
+                    <Text style={styles.modeCardTitle}>Fruits & légumes de saison</Text>
+                  </View>
                   <Text style={styles.modeCardDesc}>
                     Calendrier des produits par saison — pas de recettes.
                   </Text>
@@ -488,6 +498,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
   },
+  modeCardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   modeCardTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
   modeCardDesc: { fontSize: 13, color: "#4B5563", marginTop: 4, lineHeight: 18 },
   messages: { flex: 1 },

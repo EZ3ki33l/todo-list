@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { LoadingIndicator } from "@/components/loading-logo";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { useThemeMode } from "@/lib/theme-context";
 import { getPalette } from "@/lib/theme-palette";
 
@@ -91,7 +92,7 @@ export function ActivityBell() {
         }
         style={styles.bellBtn}
       >
-        <Text style={styles.bellIcon}>🔔</Text>
+        <FluentEmoji emoji="🔔" size={20} />
         {count > 0 ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{count > 99 ? "99+" : count}</Text>

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { normalizeItemTitle, type TitleSuggestion } from "@/lib/grocery-detect";
 import { CATEGORY_LABELS, itemIcon } from "@/lib/grocery-ui";
 
@@ -29,7 +30,7 @@ export function TitleSuggestionList({
           ]}
           onPress={() => onSelect(s)}
         >
-          <Text style={styles.icon}>{itemIcon(s.category)}</Text>
+          <FluentEmoji emoji={itemIcon(s.category, null, s.title)} size={18} />
           <Text style={styles.title}>{s.title}</Text>
           <Text style={styles.meta}>{suggestionMeta(s)}</Text>
         </Pressable>
@@ -58,7 +59,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E7EB",
   },
   rowLast: { borderBottomWidth: 0 },
-  icon: { fontSize: 18 },
   title: { flex: 1, fontSize: 15, color: "#111827", fontWeight: "500" },
   meta: { fontSize: 12, color: "#6B7280" },
 });

@@ -12,7 +12,7 @@
     "@clerk/nextjs": "^7.5.2",
     "@repo/api": "workspace:*",
     "@repo/db": "workspace:*",
-    "@repo/ui": "workspace:*",
+    "@repo/emoji": "workspace:*",
     "@tailwindcss/postcss": "^4.3.0",
     "@tanstack/react-query": "^5.80.5",
     "@trpc/client": "catalog:",
@@ -22,7 +22,6 @@
     "next": "16.2.6",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "react-native-web": "^0.21.0",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
@@ -30,7 +29,6 @@
     "@types/node": "^20.10.6",
     "@types/react": "~19.2.10",
     "@types/react-dom": "~19.2.0",
-    "babel-plugin-react-native-web": "^0.21.2",
     "eslint": "^9.16.0",
     "eslint-config-next": "16.2.6",
     "typescript": "5.9.2"

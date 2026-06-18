@@ -41,6 +41,13 @@ Chaque entrée cite la PR GitHub quand elle existe.
 | [0.19.0](#0190---2026-06-09) | 2026-06-09 | Sécurité API & perf dashboard |
 | [1.0.0](#100---2026-06-09) | 2026-06-09 | Notifications in-app, SSE, Web Push, perf tRPC |
 | [1.0.1](#101---2026-06-10) | 2026-06-10 | Play Store, légal web, parité native tâches & push |
+| [1.1.0](#110---2026-06-11) | 2026-06-11 | Chef IA (Mistral) — recettes & produits de saison |
+| [1.1.1](#111---2026-06-11) | 2026-06-11 | Google Sign-In Play Store (OAuth, EAS, diagnostic) |
+| [1.1.2](#112---2026-06-12) | 2026-06-12 | Rôles lecture/écriture native + push partage |
+| [2.0.0](#200---2026-06-15) | 2026-06-15 | Migration auth **Clerk** (web + native) |
+| [2.0.1](#201---2026-06-15) | 2026-06-15 | Sécurité dépôt + politique confidentialité Clerk |
+| [2.1.0](#210---2026-06-16) | 2026-06-16 | Branding EZ3 (logos, splash, skeletons) |
+| [2.2.0](#220---2026-06-18) | 2026-06-18 | Charte graphique Catppuccin (native + web) |
 
 ---
 
@@ -326,6 +333,121 @@ pnpm --filter @repo/db db:push
 - Chip **« Alertes »** (cloche + libellé + pastille) sur listes courses et tâches partagées
 - Fix cache tRPC (`getPreferences` / `isPushRegistered`) à l’activation via la cloche
 - Messages d’aide distincts courses / tâches (`listKind` sur `PushOptInCard`)
+
+---
+
+### 1.1.0 — 2026-06-11
+
+**Chef IA (Mistral) — recettes & produits de saison**
+
+- Router tRPC **`recipes`** : suggestions de plats, chat culinaire, ajout d’articles à la liste depuis l’IA
+- Intégration **Mistral** (`mistral-client`, `recipe-chat`, `recipe-suggestions`)
+- Mode **saison** : fruits et légumes par période (`french-season`, sources saisonnières) — sans proposer de plats complets
+- **Web + native** : `RecipeChefChat`, `RecipeSuggestions`, bouton flottant « Chef IA » sur les listes courses
+- Asset `chef-ia.png` (web `public/`, native `assets/`)
+- Correctif build Android : conversion en vrai PNG — PR [#20](https://github.com/EZ3ki33l/todo-list/pull/20)
+
+---
+
+### 1.1.1 — 2026-06-11
+
+**Google Sign-In Play Store (OAuth, EAS, diagnostic)** — PR [#21](https://github.com/EZ3ki33l/todo-list/pull/21), [#22](https://github.com/EZ3ki33l/todo-list/pull/22)
+
+- Mise à jour **`google-services.json`** pour la signature Play Store
+- Alignement config **OAuth Google** native (`eas.json`, `app.config`, manifests Gradle)
+- Erreurs **Google Sign-In détaillées** affichées à l’écran (diagnostic appareil)
+- Verrouillage des builds / résolution conflits dépendances OAuth
+
+---
+
+### 1.1.2 — 2026-06-12
+
+**Rôles lecture/écriture native + push partage**
+
+- UI **lecture seule / écriture** sur listes partagées (tâches + courses) selon le rôle membre
+- Modales de partage : choix du rôle à l’invitation (`share-roles`)
+- Correctifs **notifications push** au partage de liste (todo + shopping)
+- Fix build Docker TypeScript (`google-oauth-audiences`)
+
+---
+
+### 2.0.0 — 2026-06-15
+
+**Migration auth Clerk (web + native)** — PR [#23](https://github.com/EZ3ki33l/todo-list/pull/23)
+
+> **Breaking change** : Auth.js / NextAuth remplacé par **Clerk** sur le web ; flux OAuth Google natif custom remplacé par `@clerk/expo`.
+
+#### Web
+
+- `@clerk/nextjs` : `ClerkProvider`, `proxy.ts` (`clerkMiddleware`), pages login / sign-up
+- Suppression routes Auth.js (`[...nextauth]`, mobile OAuth callback)
+- Session Clerk → JWT tRPC via `getAppUser` / `ensureUserFromClerk` (`@repo/api`)
+- Mise à jour pages dashboard et routes API protégées
+
+#### Native
+
+- `@clerk/expo` : écrans login / sign-up, `ClerkSessionBridge`, échange session → JWT API
+- Bouton **Google Sign-In** via Clerk (`clerk-google-sign-in-button`, `clerk-google-native-auth`)
+- Styles auth dédiés (`clerk-auth-styles.ts`)
+- Suppression scripts `verify-google-oauth` / `google-oauth-verify` (ancien flux)
+
+#### Infra
+
+- Schéma Prisma / contexte API adaptés au modèle utilisateur Clerk
+- Variables d’environnement : `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, clients Google Clerk, etc.
+
+---
+
+### 2.0.1 — 2026-06-15
+
+**Sécurité dépôt + politique confidentialité Clerk** — PR [#24](https://github.com/EZ3ki33l/todo-list/pull/24), [#25](https://github.com/EZ3ki33l/todo-list/pull/25)
+
+- Retrait des **identifiants réels** des exemples et de l’historique Git (`chore/security-sanitize-env`)
+- Mise à jour **politique de confidentialité** : sous-traitant Clerk, date du 15 juin 2026
+- Correctifs TypeScript post-migration
+
+---
+
+### 2.1.0 — 2026-06-16
+
+**Branding EZ3 (logos, splash, skeletons)** — PR [#26](https://github.com/EZ3ki33l/todo-list/pull/26)
+
+- Assets marque : `logo.png`, `ez3-todolist.png`, `ez3-caddie.png`
+- **`LoadingLogo`** animé (auth + écrans de chargement)
+- **`AuthLoadingOverlay`** + skeletons hubs (`TodoHubSkeleton`, `ShoppingHubSkeleton`, `SharedListsSkeleton`)
+- Icônes onglets **Tâches / Courses** personnalisées (`TabBarIcon`)
+- Améliorations UX auth (overlay boot, correctifs bugs connexion post-Clerk)
+- Mise à jour `app.config` / splash
+
+---
+
+### 2.2.0 — 2026-06-18
+
+**Charte graphique Catppuccin (native + web)** — branche `feat/graphicChart`
+
+#### Native — thème & UI
+
+- Intégration **Tamagui** (provider, config latte/mocha alignée sur Catppuccin)
+- **`ThemeModeProvider`** : bascule clair / sombre (latte / mocha), persistance `SecureStore` / `localStorage`
+- Toggle 🌙 / 🌤️ dans le header des hubs tâches & courses
+- Palette sémantique (`bg`, `text`, `primary`, `skeleton`, etc.) appliquée aux écrans principaux : hubs listes/courses, auth Clerk, skeletons, onglets, formulaires
+- **`tintColor`** des logos PNG en mode sombre (sans fond ajouté)
+- Barre système Android : **`SystemBars`** + `react-native-edge-to-edge` (remplace `expo-navigation-bar` incompatible edge-to-edge)
+- **Branding launcher** : nom « TodoList By EZ3 », icône EZ3 sur fond `#F3FBF6`, prebuild Android
+- Correctifs : crash `ClerkAuthDivider` (`styles` hors scope), skeletons blancs en dark, flash latte → mocha au démarrage
+
+#### Web — thème & UI
+
+- Package partagé **`@repo/theme`** (palette latte/mocha commune au monorepo)
+- Variables CSS + tokens Tailwind (`bg-app-*`, `text-app-*`, etc.)
+- **`ThemeModeProvider`**, script anti-flash, toggle dans le header
+- Migration des composants web vers les tokens sémantiques (dashboard, courses, partage, activité, chat chef, skeletons…)
+- Écrans Clerk (**SignIn** / **SignUp**) thémés via `appearance`
+- Correctifs : résolution module thème sous Turbopack, `NextResponse.redirect` dans le proxy Clerk (Next.js 16)
+
+#### Packages
+
+- **`packages/theme`** : `getPalette`, `THEME_STORAGE_KEY` (`ui_theme_name` — synchro possible web ↔ mobile sur même origine)
 
 ---
 

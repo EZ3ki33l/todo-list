@@ -1,4 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
+
+import { FluentEmoji } from "@/components/fluent-emoji";
 
 type SectionKind = "ingredients" | "steps" | "info";
 
@@ -203,8 +207,11 @@ function SectionBlock({ section }: { section: ParsedSection }) {
   const icon = section.kind === "ingredients" ? "🥗" : section.kind === "steps" ? "👨‍🍳" : "ℹ️";
   return (
     <div className="mt-2">
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-app-badge-text/80">
-        {icon} {section.label || (section.kind === "ingredients" ? "Ingrédients" : "Étapes")}
+      <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-app-badge-text/80">
+        <FluentEmoji emoji={icon} size={14} />
+        <span>
+          {section.label || (section.kind === "ingredients" ? "Ingrédients" : "Étapes")}
+        </span>
       </p>
       <ul className="space-y-1">
         {section.items.map((item, idx) => (

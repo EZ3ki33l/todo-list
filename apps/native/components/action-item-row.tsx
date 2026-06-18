@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { StreakBadge } from "@/components/streak-badge";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import type { ActionRow } from "@/lib/day-week-split";
 
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -127,15 +128,16 @@ function ActionItemRowInner({
         {canEdit && (
           <View style={styles.rowBtns}>
             <Pressable onPress={onStartEdit} hitSlop={6} accessibilityLabel="Modifier">
-              <Text style={styles.actionIcon}>✏️</Text>
+              <FluentEmoji emoji="✏️" size={16} />
             </Pressable>
             <Pressable
               onPress={onDelete}
               hitSlop={6}
               disabled={deletePending}
               accessibilityLabel="Supprimer"
+              style={deletePending ? styles.actionIconDisabled : undefined}
             >
-              <Text style={[styles.actionIcon, deletePending && styles.actionIconDisabled]}>🗑</Text>
+              <FluentEmoji emoji="🗑️" size={16} />
             </Pressable>
           </View>
         )}

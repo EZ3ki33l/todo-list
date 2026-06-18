@@ -3,6 +3,7 @@
 import { memo } from "react";
 
 import { CategoryChips } from "@/components/category-chips";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { TitleSuggestionList } from "@/components/title-suggestion-list";
 import { UnitPicker } from "@/components/unit-picker";
 import {
@@ -87,7 +88,7 @@ function ShoppingItemRowInner({
   onDragEnd?: () => void;
 }) {
   const category = item.category as GroceryCategory;
-  const icon = itemIcon(category, item.icon);
+  const icon = itemIcon(category, item.icon, item.title);
   const editDetected = detectCategory(edit.title, itemMemory);
 
   if (isEditing) {
@@ -176,9 +177,7 @@ function ShoppingItemRowInner({
         onChange={onToggle}
         className="size-4 shrink-0 rounded border-app-border"
       />
-      <span className="text-lg leading-none" aria-hidden>
-        {icon}
-      </span>
+      <FluentEmoji emoji={icon} size={20} className="shrink-0" />
       <div className="min-w-0 flex-1">
         <span
           className={`block text-sm ${item.checked ? "text-app-text-subtle line-through" : "text-app-text"}`}
@@ -200,7 +199,7 @@ function ShoppingItemRowInner({
             className="rounded p-1 text-sm hover:bg-app-bg-soft"
             aria-label="Modifier"
           >
-            ✏️
+            <FluentEmoji emoji="✏️" size={18} />
           </button>
           <button
             type="button"

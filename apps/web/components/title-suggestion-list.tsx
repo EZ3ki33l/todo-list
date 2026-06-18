@@ -1,5 +1,6 @@
 "use client";
 
+import { FluentEmoji } from "@/components/fluent-emoji";
 import {
   normalizeItemTitle,
   type TitleSuggestion,
@@ -35,7 +36,7 @@ export function TitleSuggestionList({
               index < suggestions.length - 1 ? "border-b border-app-border-soft" : ""
             }`}
           >
-            <span aria-hidden>{itemIcon(s.category)}</span>
+            <FluentEmoji emoji={itemIcon(s.category, null, s.title)} size={20} />
             <span className="flex-1 font-medium text-app-text">{s.title}</span>
             <span className="text-xs text-app-text-subtle">{suggestionMeta(s)}</span>
           </button>

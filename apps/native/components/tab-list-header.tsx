@@ -2,6 +2,7 @@ import { Pressable } from "react-native";
 import { Text, View, XStack } from "tamagui";
 
 import { ActivityBell } from "@/components/activity-bell";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { useThemeMode } from "@/lib/theme-context";
 import { getPalette } from "@/lib/theme-palette";
 
@@ -21,7 +22,7 @@ export function TabListHeader({ title, onSignOut }: Props) {
       </Text>
       <XStack alignItems="center" gap={10}>
         <Pressable onPress={toggleTheme} hitSlop={8}>
-          <Text fontSize={16}>{themeName === "latte" ? "🌙" : "🌤️"}</Text>
+          <FluentEmoji emoji={themeName === "latte" ? "🌙" : "🌤️"} size={18} />
         </Pressable>
         <ActivityBell />
         {onSignOut ? (

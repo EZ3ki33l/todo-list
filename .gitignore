@@ -16,6 +16,13 @@ build
 
 # expo
 .expo
+.expo-shared
+
+# tamagui (cache généré par metro/babel)
+.tamagui
+
+# typescript incremental
+*.tsbuildinfo
 
 # misc
 .DS_Store

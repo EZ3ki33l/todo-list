@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CategoryChips } from "@/components/category-chips";
+import { FluentEmoji } from "@/components/fluent-emoji";
 import { RecipeChefChat } from "@/components/recipe-chef-chat";
 import { ShareShoppingListPanel } from "@/components/share-shopping-list-panel";
 import {
@@ -431,7 +432,7 @@ export function ShoppingListDetail({
                 disabled={createItem.isPending}
                 className="inline-flex max-w-48 items-center gap-1.5 rounded-full border border-app-border-soft bg-app-bg-elevated px-3 py-1.5 text-sm hover:bg-app-bg-soft disabled:opacity-40"
               >
-                <span aria-hidden>{itemIcon(f.category)}</span>
+                <FluentEmoji emoji={itemIcon(f.category, null, f.title)} size={18} className="shrink-0" />
                 <span className="truncate">{f.title}</span>
               </button>
             ))}

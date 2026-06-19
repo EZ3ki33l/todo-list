@@ -18,12 +18,14 @@ ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?sslmode=require"
 RUN pnpm install --frozen-lockfile --filter web...
 
 FROM base AS builder
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
 COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 # URL factice : Next charge @repo/db au build (collect page data) sans accès à Neon
 ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?sslmode=require"
 RUN mkdir -p apps/web/public

@@ -1,8 +1,11 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { ActionLocationSheet } from "@/components/action-location-sheet";
 import { StreakBadge } from "@/components/streak-badge";
 import { FluentEmoji } from "@/components/fluent-emoji";
+import { formatActionLocation, resolveMapsQuery } from "@repo/api/lib/maps";
+import { formatActionDueTime } from "@repo/api/lib/action-form";
 import type { ActionRow } from "@/lib/day-week-split";
 
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -44,14 +47,19 @@ function ActionItemRowInner({
   onDelete,
   deletePending = false,
 }: Props) {
+  const [locationOpen, setLocationOpen] = useState(false);
+
   const time = action.recurrenceTime
     ? action.recurrenceTime.slice(0, 5)
-    : action.dueAt
-      ? new Date(action.dueAt).toLocaleTimeString("fr-FR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : null;
+    : formatActionDueTime(action.dueAt);
+
+  const hasLocation = Boolean(
+    resolveMapsQuery(action.locationLabel ?? null, action.locationAddress ?? null),
+  );
+  const locationText = formatActionLocation(
+    action.locationLabel ?? null,
+    action.locationAddress ?? null,
+  );
 
   if (editing) {
     return (
@@ -107,6 +115,11 @@ function ActionItemRowInner({
           >
             {action.title}
           </Text>
+          {action.notes ? (
+            <Text style={styles.notes} numberOfLines={2}>
+              {action.notes}
+            </Text>
+          ) : null}
           <View style={[styles.metaRow, compact && styles.metaRowCompact]}>
             {time && <Text style={styles.meta}>{time}</Text>}
             {action.recurrence === "DAILY" && (
@@ -123,6 +136,11 @@ function ActionItemRowInner({
             {action.recurrence !== "NONE" && (
               <StreakBadge streakCount={action.streakCount} bestStreak={action.bestStreak} />
             )}
+            {hasLocation && locationText ? (
+              <Pressable onPress={() => setLocationOpen(true)} hitSlop={6}>
+                <Text style={styles.locationLink}>📍 {locationText}</Text>
+              </Pressable>
+            ) : null}
           </View>
         </Pressable>
         {canEdit && (
@@ -142,6 +160,12 @@ function ActionItemRowInner({
           </View>
         )}
       </View>
+      <ActionLocationSheet
+        visible={locationOpen}
+        locationLabel={action.locationLabel ?? null}
+        locationAddress={action.locationAddress ?? null}
+        onClose={() => setLocationOpen(false)}
+      />
     </View>
   );
 }
@@ -175,6 +199,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, minWidth: 0 },
   title: { fontSize: 15, lineHeight: 21, color: "#111827" },
   titleDone: { textDecorationLine: "line-through", color: "#9CA3AF" },
+  notes: { fontSize: 12, color: "#6B7280", marginTop: 2 },
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" },
   metaRowCompact: { marginTop: 5 },
   meta: { fontSize: 11, color: "#9CA3AF" },
@@ -194,6 +219,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
+  locationLink: { fontSize: 11, color: "#2563EB" },
   rowBtns: { flexDirection: "row", gap: 8, flexShrink: 0, paddingTop: 1 },
   actionIcon: { fontSize: 16 },
   actionIconDisabled: { opacity: 0.4 },
@@ -240,6 +266,8 @@ function actionRowPropsEqual(prev: Props, next: Props): boolean {
     String(a.dueAt ?? "") === String(b.dueAt ?? "") &&
     a.streakCount === b.streakCount &&
     a.bestStreak === b.bestStreak &&
+    a.locationLabel === b.locationLabel &&
+    a.locationAddress === b.locationAddress &&
     prev.onToggle === next.onToggle &&
     prev.onLongPressDrag === next.onLongPressDrag &&
     prev.dragEnabled === next.dragEnabled &&

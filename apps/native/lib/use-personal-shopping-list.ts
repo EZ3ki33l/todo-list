@@ -45,6 +45,8 @@ export function usePersonalShoppingList() {
     },
   });
 
+  const createListMutate = createList.mutate;
+
   const fallbackList = useMemo(() => {
     if (!user?.id || !fallback.data) return null;
     return pickPersonalShoppingList(fallback.data, user.id) ?? null;
@@ -59,14 +61,16 @@ export function usePersonalShoppingList() {
       !createList.isPending &&
       !createList.isSuccess
     ) {
-      createList.mutate({ title: "Courses" });
+      createListMutate({ title: "Courses" });
     }
   }, [
     primary.isError,
     fallback.isSuccess,
     fallbackList,
     user?.id,
-    createList,
+    createList.isPending,
+    createList.isSuccess,
+    createListMutate,
   ]);
 
   const list =

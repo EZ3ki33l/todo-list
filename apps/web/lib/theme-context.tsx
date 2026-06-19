@@ -1,6 +1,6 @@
 "use client";
 
-import { THEME_STORAGE_KEY, type ThemeName } from "@/lib/theme";
+import { DEFAULT_THEME_NAME, THEME_STORAGE_KEY, type ThemeName } from "@/lib/theme";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 type ThemeContextValue = {
@@ -23,7 +23,7 @@ function readStoredTheme(): ThemeName | null {
 function readThemeFromDocument(): ThemeName {
   const fromDom = document.documentElement.dataset.theme;
   if (fromDom === "latte" || fromDom === "mocha") return fromDom;
-  return readStoredTheme() ?? "latte";
+  return readStoredTheme() ?? DEFAULT_THEME_NAME;
 }
 
 function applyThemeToDocument(themeName: ThemeName) {
@@ -31,9 +31,8 @@ function applyThemeToDocument(themeName: ThemeName) {
 }
 
 export function ThemeModeProvider({ children }: { children: ReactNode }) {
-  // Toujours « latte » au premier rendu (SSR + hydratation) pour éviter un mismatch
-  // avec ThemeScript qui lit localStorage avant React.
-  const [themeName, setThemeName] = useState<ThemeName>("latte");
+  // Même valeur que ThemeScript (SSR + hydratation) pour éviter un mismatch.
+  const [themeName, setThemeName] = useState<ThemeName>(DEFAULT_THEME_NAME);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {

@@ -6,9 +6,12 @@ import { checkRateLimit, getClientIp, rateLimitResponse } from "@repo/api";
 const isPublicRoute = createRouteMatcher([
   "/",
   "/login",
+  "/login/sso-callback",
   "/sign-up",
+  "/sign-up/sso-callback",
   "/politique-de-confidentialite",
   "/api/trpc(.*)",
+  "/api/activity/stream",
 ]);
 
 function rateLimitApi(req: Request): Response | undefined {

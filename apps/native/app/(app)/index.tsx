@@ -7,11 +7,11 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AddActionForm } from "@/components/add-action-form";
 import { DayWeekView } from "@/components/day-week-view";
+import { SharedListRow } from "@/components/shared-list-row";
 import { TodoHubSkeleton } from "@/components/todo-hub-skeleton";
 import { TabListHeader } from "@/components/tab-list-header";
 import { getListHubStyles } from "@/lib/list-hub-styles";
@@ -34,7 +34,6 @@ function ownerSubtitle(
 }
 
 export default function DashboardScreen() {
-  const router = useRouter();
   const { signOut, user } = useAuth();
   const { themeName } = useThemeMode();
   const palette = getPalette(themeName);
@@ -136,27 +135,21 @@ export default function DashboardScreen() {
                   ? (list.owner as { name: string | null; email: string | null })
                   : null;
               return (
-                <Pressable
+                <SharedListRow
                   key={list.id}
-                  style={hub.listCard}
-                  onPress={() => router.push(`/(app)/lists/${list.id}`)}
-                >
-                  <View style={hub.listMain}>
-                    <View style={hub.listTitleRow}>
-                      <Text style={hub.listTitle}>{list.title}</Text>
-                      <Text style={hub.sharedBadge}>partagée</Text>
-                    </View>
-                    <Text style={hub.listMeta}>
-                      {list._count.actions} action{list._count.actions !== 1 ? "s" : ""} ·{" "}
-                      {ownerSubtitle(
-                        isOwner,
-                        list._count.members,
-                        owner?.name,
-                        owner?.email,
-                      )}
-                    </Text>
-                  </View>
-                </Pressable>
+                  kind="todo"
+                  listId={list.id}
+                  title={list.title}
+                  subtitle={`${list._count.actions} action${list._count.actions !== 1 ? "s" : ""} · ${ownerSubtitle(
+                    isOwner,
+                    list._count.members,
+                    owner?.name,
+                    owner?.email,
+                  )}`}
+                  isOwner={isOwner}
+                  href={`/(app)/lists/${list.id}`}
+                  palette={palette}
+                />
               );
             })
           )}

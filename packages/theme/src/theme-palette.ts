@@ -1,5 +1,7 @@
 export type ThemeName = "latte" | "mocha";
 
+export const DEFAULT_THEME_NAME: ThemeName = "mocha";
+
 export type AppPalette = {
   bg: string;
   bgElevated: string;

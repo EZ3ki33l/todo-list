@@ -26,6 +26,10 @@ import { TitleSuggestionList } from "@/components/title-suggestion-list";
 import { UnitPicker } from "@/components/unit-picker";
 import { useAuth } from "@/lib/auth-context";
 import {
+  confirmPermanentBulkDelete,
+  confirmPermanentDelete,
+} from "@/lib/confirm-delete";
+import {
   detectCategory,
   getTitleSuggestions,
   mergeItemMemory,
@@ -294,6 +298,15 @@ export function ShoppingListDetail({
   });
 
   type ShoppingItemRow = NonNullable<typeof items>[number];
+
+  const handleDeleteItem = useCallback(
+    async (item: ShoppingItemRow) => {
+      if (!(await confirmPermanentDelete(item.title))) return;
+      deleteItem.mutate({ itemId: item.id });
+    },
+    [deleteItem],
+  );
+
   const checkedItems = useMemo(
     () => (items ?? []).filter((i) => i.checked),
     [items],
@@ -576,7 +589,7 @@ export function ShoppingListDetail({
                   <Pressable onPress={() => startEdit(item)}>
                     <FluentEmoji emoji="✏️" size={16} />
                   </Pressable>
-                  <Pressable onPress={() => deleteItem.mutate({ itemId: item.id })}>
+                  <Pressable onPress={() => void handleDeleteItem(item)}>
                     <FluentEmoji emoji="🗑️" size={16} />
                   </Pressable>
                 </View>
@@ -596,7 +609,7 @@ export function ShoppingListDetail({
       itemMemory,
       canWrite,
       toggleItem,
-      deleteItem,
+      handleDeleteItem,
     ],
   );
 
@@ -723,7 +736,16 @@ export function ShoppingListDetail({
         {hasChecked && canWrite && (
           <Pressable
             style={styles.clearBtn}
-            onPress={() => clearChecked.mutate({ listId: listId! })}
+            onPress={() => {
+              void (async () => {
+                const label =
+                  checkedCount === 1
+                    ? "l'article coché"
+                    : `les ${checkedCount} articles cochés`;
+                if (!(await confirmPermanentBulkDelete(label))) return;
+                clearChecked.mutate({ listId: listId! });
+              })();
+            }}
             disabled={clearChecked.isPending}
           >
             <Text style={styles.clearBtnText}>

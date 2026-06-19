@@ -26,6 +26,10 @@ import { CATEGORY_LABELS, itemIcon } from "@/lib/grocery-ui";
 import { applyListOrder } from "@/lib/reorder-list";
 import { parseQuantity } from "@/lib/shopping-quantity";
 import { trpc } from "@/lib/trpc";
+import {
+  confirmPermanentBulkDelete,
+  confirmPermanentDelete,
+} from "@/lib/confirm-delete";
 
 interface Props {
   listId: string;
@@ -253,6 +257,11 @@ export function ShoppingListDetail({
   const clearChecked = trpc.shoppingItems.clearChecked.useMutation({
     onSuccess: () => invalidateItems(),
   });
+
+  function handleDeleteItem(item: ShoppingItemRowData) {
+    if (!confirmPermanentDelete(item.title)) return;
+    deleteItem.mutate({ itemId: item.id });
+  }
 
   const reorderItems = trpc.shoppingItems.reorder.useMutation({
     onSuccess: (_result, { listId: lid, orderedIds }) => {
@@ -490,7 +499,14 @@ export function ShoppingListDetail({
       {checkedItems.length > 0 && canWrite && (
         <button
           type="button"
-          onClick={() => clearChecked.mutate({ listId })}
+          onClick={() => {
+            const label =
+              checkedItems.length === 1
+                ? "l'article coché"
+                : `les ${checkedItems.length} articles cochés`;
+            if (!confirmPermanentBulkDelete(label)) return;
+            clearChecked.mutate({ listId });
+          }}
           disabled={clearChecked.isPending}
           className="text-sm text-app-danger hover:text-red-800 disabled:opacity-40"
         >
@@ -534,7 +550,7 @@ export function ShoppingListDetail({
                     itemMemory={itemMemory}
                     editSuggestions={editTitleSuggestions}
                     onToggle={() => toggleItem.mutate({ itemId: item.id })}
-                    onDelete={() => deleteItem.mutate({ itemId: item.id })}
+                    onDelete={() => handleDeleteItem(item)}
                     onStartEdit={() => startEdit(item)}
                     onEditTitleChange={setEditTitle}
                     onEditQuantityChange={setEditQuantityText}
@@ -595,7 +611,7 @@ export function ShoppingListDetail({
                     itemMemory={itemMemory}
                     editSuggestions={editTitleSuggestions}
                     onToggle={() => toggleItem.mutate({ itemId: item.id })}
-                    onDelete={() => deleteItem.mutate({ itemId: item.id })}
+                    onDelete={() => handleDeleteItem(item)}
                     onStartEdit={() => startEdit(item)}
                     onEditTitleChange={setEditTitle}
                     onEditQuantityChange={setEditQuantityText}

@@ -41,6 +41,7 @@ export function ActivityBell() {
 
   const utils = trpc.useUtils();
   const [tabVisible, setTabVisible] = useState(true);
+  const [sseActive, setSseActive] = useState(true);
 
   useEffect(() => {
     const onVis = () => setTabVisible(document.visibilityState === "visible");
@@ -52,11 +53,14 @@ export function ActivityBell() {
   const { data: prefs } = trpc.notifications.getPreferences.useQuery(undefined, {
     staleTime: 5 * 60_000,
   });
-  useActivitySse(tabVisible);
+  useActivitySse(tabVisible && sseActive, {
+    onPermanentFailure: () => setSseActive(false),
+  });
 
   const { data: unread } = trpc.activity.unreadCount.useQuery(undefined, {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
+    refetchInterval: tabVisible && !sseActive ? 60_000 : false,
   });
   const { data: feed, isLoading } = trpc.activity.list.useQuery(
     { limit: 40 },

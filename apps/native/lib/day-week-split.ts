@@ -12,6 +12,9 @@ export type ActionRow = SchedulableAction & {
   done: boolean;
   streakCount: number;
   bestStreak: number;
+  locationLabel?: string | null;
+  locationAddress?: string | null;
+  notes?: string | null;
 };
 
 export type DayGroup<T extends { id: string } = SchedulableAction> = {
@@ -80,6 +83,11 @@ function actionOnDay(a: SchedulableAction, day: Date): boolean {
   }
   if (a.recurrence === "WEEKLY" && a.recurrenceDow === dow) return true;
   return false;
+}
+
+/** Tâches ponctuelles sans date d'échéance — absentes des colonnes jour/semaine. */
+export function getUnscheduledActions<T extends SchedulableAction>(actions: T[]): T[] {
+  return actions.filter((a) => a.recurrence === "NONE" && !a.dueAt);
 }
 
 function sortActionsInDay<T extends SchedulableAction>(

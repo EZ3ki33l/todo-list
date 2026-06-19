@@ -7,9 +7,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
 import {
   LazyDraggableFlatList,
   type RenderItemParams,
@@ -18,6 +15,8 @@ import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 
 import { applyListOrder } from "@/lib/reorder-list";
 import { normalizeActionRows } from "@/lib/normalize-action-row";
+import { AddActionForm } from "@/components/add-action-form";
+import { ActionLocationSheet } from "@/components/action-location-sheet";
 import { StreakBadge } from "@/components/streak-badge";
 import { LoadingIndicator } from "@/components/loading-logo";
 import { FluentEmoji } from "@/components/fluent-emoji";
@@ -27,25 +26,13 @@ import { useToggleAction } from "@/lib/use-toggle-action";
 import { useRefetchTasksOnFocus } from "@/lib/use-refetch-tasks-on-focus";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth-context";
+import { formatActionDueTime } from "@repo/api/lib/action-form";
+import { confirmPermanentDelete } from "@/lib/confirm-delete";
+import { formatActionLocation, resolveMapsQuery } from "@repo/api/lib/maps";
 
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
 type Recurrence = "NONE" | "DAILY" | "WEEKLY";
-
-function formatDateFr(d: Date) {
-  return d.toLocaleDateString("fr-FR", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function formatTime24(d: Date) {
-  const h = d.getHours().toString().padStart(2, "0");
-  const m = d.getMinutes().toString().padStart(2, "0");
-  return `${h}:${m}`;
-}
 
 function RecurrenceBadge({
   recurrence,
@@ -90,15 +77,6 @@ export default function ListDetailScreen() {
     }
   }, [personalList, listId, router]);
 
-  const [title, setTitle] = useState("");
-  const [recurrence, setRecurrence] = useState<Recurrence>("NONE");
-  const [dueAt, setDueAt] = useState<Date | null>(null);
-  const [recurrenceTime, setRecurrenceTime] = useState<Date | null>(null);
-  const [recurrenceDow, setRecurrenceDow] = useState(1);
-
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
 
@@ -129,6 +107,7 @@ export default function ListDetailScreen() {
   }, [navigation, list?.title, isOwner]);
 
   type ActionRow = NonNullable<typeof actions>[number];
+  const [locationAction, setLocationAction] = useState<ActionRow | null>(null);
   const actionRows = useMemo(() => normalizeActionRows(actions ?? []), [actions]);
   const [orderOverride, setOrderOverride] = useState<ActionRow[] | null>(null);
   const listData = orderOverride ?? actionRows;
@@ -140,16 +119,6 @@ export default function ListDetailScreen() {
   useEffect(() => {
     setOrderOverride(null);
   }, [actionIdsKey]);
-
-  const createAction = trpc.actions.create.useMutation({
-    onSuccess: () => {
-      void utils.actions.getByList.invalidate({ listId });
-      setTitle("");
-      setDueAt(null);
-      setRecurrenceTime(null);
-      setRecurrence("NONE");
-    },
-  });
 
   const toggleAction = useToggleAction(listId!, { onUnauthorized: () => void signOut() });
 
@@ -188,29 +157,6 @@ export default function ListDetailScreen() {
     [listId, reorderActions],
   );
 
-  function handleCreate() {
-    if (!canWrite || !title.trim() || !listId) return;
-    createAction.mutate({
-      listId,
-      title,
-      recurrence,
-      dueAt: recurrence === "NONE" && dueAt ? dueAt.toISOString() : null,
-      recurrenceTime:
-        recurrence !== "NONE" && recurrenceTime ? formatTime24(recurrenceTime) : null,
-      recurrenceDow: recurrence === "WEEKLY" ? recurrenceDow : null,
-    });
-  }
-
-  function handleDateChange(event: DateTimePickerEvent, d?: Date) {
-    setShowDatePicker(false);
-    if (event.type === "set" && d) setDueAt(d);
-  }
-
-  function handleTimeChange(event: DateTimePickerEvent, d?: Date) {
-    setShowTimePicker(false);
-    if (event.type === "set" && d) setRecurrenceTime(d);
-  }
-
   const done = actionRows.filter((a) => a.done).length;
   const total = actionRows.length;
   const dragEnabled = canWrite && !editingId;
@@ -235,127 +181,12 @@ export default function ListDetailScreen() {
           </>
         )}
 
-        {canWrite ? (
-          <View style={styles.card}>
-            <TextInput
-              style={styles.input}
-              placeholder="Nouvelle action..."
-              placeholderTextColor="#9CA3AF"
-              value={title}
-              onChangeText={setTitle}
-              returnKeyType="done"
-            />
-
-            <View style={styles.radioRow}>
-              {(["NONE", "DAILY", "WEEKLY"] as Recurrence[]).map((r) => (
-                <Pressable key={r} style={styles.radioItem} onPress={() => setRecurrence(r)}>
-                  <View style={[styles.radio, recurrence === r && styles.radioActive]} />
-                  <Text style={styles.radioLabel}>
-                    {r === "NONE" ? "Ponctuelle" : r === "DAILY" ? "Chaque jour" : "Chaque semaine"}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            {recurrence === "NONE" && (
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldLabel}>À faire le</Text>
-                <Pressable style={styles.fieldInput} onPress={() => setShowDatePicker(true)}>
-                  <Text style={[styles.fieldText, !dueAt && styles.fieldTextPlaceholder]}>
-                    {dueAt ? formatDateFr(dueAt) : "Choisir une date"}
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-            {recurrence === "DAILY" && (
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldLabel}>À</Text>
-                <Pressable style={styles.fieldInput} onPress={() => setShowTimePicker(true)}>
-                  <Text
-                    style={[styles.fieldText, !recurrenceTime && styles.fieldTextPlaceholder]}
-                  >
-                    {recurrenceTime ? formatTime24(recurrenceTime) : "Choisir une heure"}
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-            {recurrence === "WEEKLY" && (
-              <View>
-                <View style={styles.dowRow}>
-                  {DOW_LABELS.map((d, i) => (
-                    <Pressable
-                      key={i}
-                      style={[styles.dowBtn, recurrenceDow === i && styles.dowBtnActive]}
-                      onPress={() => setRecurrenceDow(i)}
-                    >
-                      <Text style={[styles.dowLabel, recurrenceDow === i && styles.dowLabelActive]}>
-                        {d}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <View style={styles.fieldRow}>
-                  <Text style={styles.fieldLabel}>À</Text>
-                  <Pressable style={styles.fieldInput} onPress={() => setShowTimePicker(true)}>
-                    <Text
-                      style={[styles.fieldText, !recurrenceTime && styles.fieldTextPlaceholder]}
-                    >
-                      {recurrenceTime ? formatTime24(recurrenceTime) : "Choisir une heure"}
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={dueAt ?? new Date()}
-                mode="date"
-                onChange={handleDateChange}
-              />
-            )}
-            {showTimePicker && (
-              <DateTimePicker
-                value={recurrenceTime ?? new Date()}
-                mode="time"
-                is24Hour
-                onChange={handleTimeChange}
-              />
-            )}
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.addBtn,
-                pressed && { opacity: 0.8 },
-                !title.trim() && { opacity: 0.4 },
-              ]}
-              onPress={handleCreate}
-              disabled={!title.trim() || createAction.isPending}
-            >
-              <Text style={styles.addBtnText}>Ajouter</Text>
-            </Pressable>
-          </View>
-        ) : null}
+        {canWrite && listId ? <AddActionForm listId={listId} /> : null}
 
         {isLoading && <LoadingIndicator style={{ marginTop: 20, marginVertical: 20 }} />}
       </View>
     ),
-    [
-      total,
-      done,
-      title,
-      recurrence,
-      dueAt,
-      recurrenceTime,
-      recurrenceDow,
-      showDatePicker,
-      showTimePicker,
-      isLoading,
-      createAction.isPending,
-      list,
-      isShared,
-      canWrite,
-    ],
+    [total, done, isLoading, list, isShared, canWrite, listId],
   );
 
   const renderAction = useCallback(
@@ -415,11 +246,28 @@ export default function ListDetailScreen() {
                     )}
                     {item.dueAt && (
                       <Text style={styles.metaText}>
-                        {new Date(item.dueAt).toLocaleDateString("fr-FR")}
+                        {new Date(item.dueAt).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                        {formatActionDueTime(item.dueAt)
+                          ? ` · ${formatActionDueTime(item.dueAt)}`
+                          : ""}
                       </Text>
                     )}
                     <RecurrenceBadge recurrence={item.recurrence} dow={item.recurrenceDow} />
                     <StreakBadge streakCount={item.streakCount} bestStreak={item.bestStreak} />
+                    {resolveMapsQuery(item.locationLabel ?? null, item.locationAddress ?? null) ? (
+                      <Pressable onPress={() => setLocationAction(item)} hitSlop={6}>
+                        <Text style={styles.locationLink}>
+                          📍{" "}
+                          {formatActionLocation(
+                            item.locationLabel ?? null,
+                            item.locationAddress ?? null,
+                          )}
+                        </Text>
+                      </Pressable>
+                    ) : null}
                   </View>
                 </View>
                 {canWrite ? (
@@ -432,7 +280,14 @@ export default function ListDetailScreen() {
                     >
                       <FluentEmoji emoji="✏️" size={16} />
                     </Pressable>
-                    <Pressable onPress={() => deleteAction.mutate({ actionId: item.id })}>
+                    <Pressable
+                      onPress={() => {
+                        void (async () => {
+                          if (!(await confirmPermanentDelete(item.title))) return;
+                          deleteAction.mutate({ actionId: item.id });
+                        })();
+                      }}
+                    >
                       <FluentEmoji emoji="🗑️" size={16} />
                     </Pressable>
                   </View>
@@ -477,6 +332,12 @@ export default function ListDetailScreen() {
           onClose={() => setShareOpen(false)}
         />
       ) : null}
+      <ActionLocationSheet
+        visible={!!locationAction}
+        locationLabel={locationAction?.locationLabel ?? null}
+        locationAddress={locationAction?.locationAddress ?? null}
+        onClose={() => setLocationAction(null)}
+      />
     </>
   );
 }
@@ -592,6 +453,7 @@ const styles = StyleSheet.create({
   actionDone: { textDecorationLine: "line-through", color: "#9CA3AF" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" },
   metaText: { fontSize: 11, color: "#9CA3AF" },
+  locationLink: { fontSize: 11, color: "#2563EB" },
   badgeBlue: {
     fontSize: 11,
     color: "#2563EB",

@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
-import { ensureUserFromClerk } from "../lib/clerk-user";
+import { checkGoogleCalendarAccess } from "../lib/google-calendar";
+import { ensureUserFromClerk, userHasGoogleAccount } from "../lib/clerk-user";
 import { checkRateLimit } from "../lib/rate-limit";
 import { verifyClerkSessionToken } from "../lib/verify-clerk-session";
 import { issueJwt } from "../jwt";
@@ -17,6 +18,28 @@ export const authRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
     }
     return user;
+  }),
+
+  linkedProviders: protectedProcedure.query(async ({ ctx }) => {
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.userId },
+      select: { clerkId: true },
+    });
+    const hasGoogle = user?.clerkId
+      ? await userHasGoogleAccount(user.clerkId)
+      : false;
+    return { hasGoogle };
+  }),
+
+  googleCalendarStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.userId },
+      select: { clerkId: true },
+    });
+    if (!user?.clerkId) {
+      return { linked: false, hasToken: false, hasCalendarScope: false, tokenScopes: [] };
+    }
+    return checkGoogleCalendarAccess(user.clerkId);
   }),
 
   signInWithClerkToken: publicProcedure

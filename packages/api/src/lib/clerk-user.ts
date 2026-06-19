@@ -2,12 +2,23 @@ import { createClerkClient } from "@clerk/backend";
 
 import { prisma } from "@repo/db";
 
-function clerkClient() {
+export function getClerkClient() {
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) {
     throw new Error("CLERK_SECRET_KEY manquant");
   }
   return createClerkClient({ secretKey });
+}
+
+function clerkClient() {
+  return getClerkClient();
+}
+
+export async function userHasGoogleAccount(clerkUserId: string): Promise<boolean> {
+  const cu = await clerkClient().users.getUser(clerkUserId);
+  return cu.externalAccounts.some(
+    (account) => account.provider === "google" || account.provider === "oauth_google",
+  );
 }
 
 /** Résout ou crée l'utilisateur Prisma à partir d'un ID Clerk. */

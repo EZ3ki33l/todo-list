@@ -4,6 +4,9 @@ services:
     build:
       context: ./source
       dockerfile: deploy/todolist/Dockerfile
+      args:
+        # NEXT_PUBLIC_* doit être présent au build Next.js (pas seulement au runtime)
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
     env_file: .env
     restart: unless-stopped
     ports:

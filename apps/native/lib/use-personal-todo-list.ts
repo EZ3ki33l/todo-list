@@ -45,6 +45,8 @@ export function usePersonalTodoList() {
     },
   });
 
+  const createListMutate = createList.mutate;
+
   const fallbackList = useMemo(() => {
     if (!user?.id || !fallback.data) return null;
     return pickPersonalTodoList(fallback.data, user.id) ?? null;
@@ -59,14 +61,16 @@ export function usePersonalTodoList() {
       !createList.isPending &&
       !createList.isSuccess
     ) {
-      createList.mutate({ title: "Mes tâches" });
+      createListMutate({ title: "Mes tâches" });
     }
   }, [
     primary.isError,
     fallback.isSuccess,
     fallbackList,
     user?.id,
-    createList,
+    createList.isPending,
+    createList.isSuccess,
+    createListMutate,
   ]);
 
   const list =

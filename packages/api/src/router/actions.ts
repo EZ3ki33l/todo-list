@@ -1,6 +1,9 @@
 import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
+import { computeRemindAt, flushDueActionReminders } from "../lib/action-reminder";
+import { createGoogleCalendarEvent } from "../lib/google-calendar";
+import { formatActionLocation, resolveMapsQuery } from "../lib/maps";
 import { assertOrderedIdsMatch } from "../lib/reorder-positions";
 import { withEffectiveDone } from "../lib/action-recurrence";
 import { performActionToggle } from "../lib/perform-action-toggle";
@@ -84,7 +87,44 @@ export const actionsRouter = router({
       const last = await prisma.action.findFirst({
         where: { listId: input.listId }, orderBy: { position: "desc" }, select: { position: true },
       });
-      return prisma.action.create({
+
+      const dueAt =
+        input.recurrence === "NONE" && input.dueAt ? new Date(input.dueAt) : null;
+      const remindAt =
+        dueAt && input.remindBeforeMinutes
+          ? computeRemindAt(dueAt, input.remindBeforeMinutes)
+          : null;
+
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.userId },
+        select: { clerkId: true },
+      });
+
+      let googleCalendarEventId: string | null = null;
+      let googleCalendarWarning: string | undefined;
+      if (input.addToGoogleCalendar && dueAt && user?.clerkId) {
+        const locationQuery = resolveMapsQuery(
+          input.locationLabel ?? null,
+          input.locationAddress ?? null,
+        );
+        const calendarResult = await createGoogleCalendarEvent({
+          clerkUserId: user.clerkId,
+          title: input.title,
+          dueAt,
+          notes: input.notes ?? null,
+          location: locationQuery ? formatActionLocation(
+            input.locationLabel ?? null,
+            input.locationAddress ?? null,
+          ) : null,
+        });
+        if (calendarResult.ok) {
+          googleCalendarEventId = calendarResult.eventId;
+        } else {
+          googleCalendarWarning = calendarResult.error;
+        }
+      }
+
+      const action = await prisma.action.create({
         data: {
           listId: input.listId,
           title: input.title,
@@ -92,9 +132,24 @@ export const actionsRouter = router({
           recurrence: input.recurrence,
           recurrenceTime: input.recurrence !== "NONE" ? (input.recurrenceTime ?? null) : null,
           recurrenceDow: input.recurrence === "WEEKLY" ? (input.recurrenceDow ?? null) : null,
-          dueAt: input.recurrence === "NONE" && input.dueAt ? new Date(input.dueAt) : null,
+          dueAt,
+          locationLabel: input.locationLabel ?? null,
+          locationAddress: input.locationAddress ?? null,
+          notes: input.notes ?? null,
+          remindBeforeMinutes: remindAt ? (input.remindBeforeMinutes ?? null) : null,
+          remindAt,
+          googleCalendarEventId,
         },
       });
+
+      void flushDueActionReminders().catch((err) =>
+        console.error("[action-reminder] flushDueActionReminders", err),
+      );
+
+      return {
+        ...action,
+        ...(googleCalendarWarning ? { googleCalendarWarning } : {}),
+      };
     }),
 
   update: protectedProcedure
@@ -109,6 +164,15 @@ export const actionsRouter = router({
           recurrenceTime: input.recurrence !== "NONE" ? (input.recurrenceTime ?? null) : null,
           recurrenceDow: input.recurrence === "WEEKLY" ? (input.recurrenceDow ?? null) : null,
           dueAt: input.recurrence === "NONE" && input.dueAt ? new Date(input.dueAt) : null,
+          locationLabel: input.locationLabel ?? null,
+          locationAddress: input.locationAddress ?? null,
+          notes: input.notes ?? null,
+          remindBeforeMinutes: input.remindBeforeMinutes ?? null,
+          remindAt:
+            input.recurrence === "NONE" && input.dueAt && input.remindBeforeMinutes
+              ? computeRemindAt(new Date(input.dueAt), input.remindBeforeMinutes)
+              : null,
+          remindSentAt: null,
         },
       });
     }),

@@ -7,10 +7,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ShoppingListDetail } from "@/components/shopping-list-detail";
+import { SharedListRow } from "@/components/shared-list-row";
 import { ShoppingHubSkeleton } from "@/components/shopping-hub-skeleton";
 import { TabListHeader } from "@/components/tab-list-header";
 import { useAuth } from "@/lib/auth-context";
@@ -43,14 +43,15 @@ function SharedShoppingSection({
   setNewSharedTitle,
   placeholderTextColor,
   hub,
+  palette,
 }: {
   personalId: string;
   newSharedTitle: string;
   setNewSharedTitle: (value: string) => void;
   placeholderTextColor: string;
   hub: ReturnType<typeof getListHubStyles>;
+  palette: ReturnType<typeof getPalette>;
 }) {
-  const router = useRouter();
   const { user } = useAuth();
   const utils = trpc.useUtils();
 
@@ -90,27 +91,21 @@ function SharedShoppingSection({
               ? (list.owner as { name: string | null; email: string | null })
               : null;
           return (
-            <Pressable
+            <SharedListRow
               key={list.id}
-              style={hub.listCard}
-              onPress={() => router.push(`/(app)/shopping/${list.id}`)}
-            >
-              <View style={hub.listMain}>
-                <View style={hub.listTitleRow}>
-                  <Text style={hub.listTitle}>{list.title}</Text>
-                  <Text style={hub.sharedBadge}>partagée</Text>
-                </View>
-                <Text style={hub.listMeta}>
-                  {itemsSubtitle(list._count.items)} ·{" "}
-                  {ownerSubtitle(
-                    isOwner,
-                    list._count.members,
-                    owner?.name,
-                    owner?.email,
-                  )}
-                </Text>
-              </View>
-            </Pressable>
+              kind="shopping"
+              listId={list.id}
+              title={list.title}
+              subtitle={`${itemsSubtitle(list._count.items)} · ${ownerSubtitle(
+                isOwner,
+                list._count.members,
+                owner?.name,
+                owner?.email,
+              )}`}
+              isOwner={isOwner}
+              href={`/(app)/shopping/${list.id}`}
+              palette={palette}
+            />
           );
         })
       )}
@@ -182,6 +177,7 @@ export default function ShoppingScreen() {
         setNewSharedTitle={setNewSharedTitle}
         placeholderTextColor={palette.textSubtle}
         hub={hub}
+        palette={palette}
       />
     ) : null;
 

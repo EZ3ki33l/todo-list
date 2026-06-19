@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { getAppUser } from "@/lib/app-session";
 import { CreateSharedListForm } from "@/components/create-shared-list-form";
-import { ListLinkCard } from "@/components/list-link-card";
+import { SharedListRow } from "@/components/shared-list-row";
 import { ShoppingListDetail } from "@/components/shopping-list-detail";
 import { ShoppingRecipeIdeas } from "@/components/shopping-recipe-ideas";
 import {
@@ -76,8 +76,9 @@ export default async function ShoppingPage() {
               const counts = countsByListId.get(list.id) ?? { total: 0, unchecked: 0 };
               return (
                 <li key={list.id}>
-                  <ListLinkCard
-                    href={`/dashboard/shopping/${list.id}`}
+                  <SharedListRow
+                    kind="shopping"
+                    listId={list.id}
                     title={list.title}
                     subtitle={`${itemsSubtitle(counts.total, counts.unchecked)} · ${ownerSubtitle(
                       isOwner,
@@ -85,7 +86,8 @@ export default async function ShoppingPage() {
                       list.owner.name,
                       list.owner.email,
                     )}`}
-                    shared
+                    isOwner={isOwner}
+                    href={`/dashboard/shopping/${list.id}`}
                   />
                 </li>
               );

@@ -6,11 +6,11 @@ import {
   archiveTodoList,
   completeTodoList,
   createTodoList,
-  deleteTodoList,
   restoreTodoList,
 } from "@/app/actions/todo-list";
 import { EditableTitle } from "@/components/editable-title";
 import { ShareListForm } from "@/components/share-list-form";
+import { TodoListDeleteButton } from "@/components/todo-list-delete-button";
 
 interface Props {
   userId: string;
@@ -132,14 +132,7 @@ function ListCard({
               </button>
             </form>
           )}
-          <form action={deleteTodoList.bind(null, list.id)}>
-            <button
-              type="submit"
-              className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-danger hover:bg-red-50"
-            >
-              Supprimer
-            </button>
-          </form>
+          <TodoListDeleteButton listId={list.id} title={list.title} />
         </div>
       )}
     </div>

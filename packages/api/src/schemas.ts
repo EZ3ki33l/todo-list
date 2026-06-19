@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { toLocalDateInput } from "./lib/action-form";
+
 export const recurrenceEnum = z.enum(["NONE", "DAILY", "WEEKLY"]);
 export const listStatusEnum = z.enum(["ACTIVE", "ARCHIVED", "DONE"]);
 export const memberRoleEnum = z.enum(["membre", "invité"]);
@@ -23,6 +25,38 @@ export const recurrenceTimeSchema = z
   .transform((v) => (v === "" || v === undefined ? null : v));
 
 export const dueAtSchema = z.string().datetime().nullable().optional();
+
+export const locationLabelSchema = z
+  .string()
+  .trim()
+  .max(120)
+  .nullable()
+  .optional()
+  .transform((v) => (v === "" || v === undefined ? null : v));
+
+export const locationAddressSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .nullable()
+  .optional()
+  .transform((v) => (v === "" || v === undefined ? null : v));
+
+export const notesSchema = z
+  .string()
+  .trim()
+  .max(5000)
+  .nullable()
+  .optional()
+  .transform((v) => (v === "" || v === undefined ? null : v));
+
+export const remindBeforeMinutesSchema = z
+  .number()
+  .int()
+  .min(1)
+  .max(60 * 24 * 30)
+  .nullable()
+  .optional();
 
 export const emailOrIdSchema = z.union([
   z.string().email().max(254),
@@ -50,9 +84,13 @@ export const actionFieldsSchema = z.object({
   recurrenceTime: recurrenceTimeSchema,
   recurrenceDow: z.number().int().min(0).max(6).nullable().optional(),
   dueAt: dueAtSchema,
+  locationLabel: locationLabelSchema,
+  locationAddress: locationAddressSchema,
+  notes: notesSchema,
+  remindBeforeMinutes: remindBeforeMinutesSchema,
 });
 
-function refineWeeklyRecurrence<T extends z.ZodTypeAny>(schema: T) {
+function refineActionFields<T extends z.ZodTypeAny>(schema: T) {
   return schema.superRefine((data, ctx) => {
     const row = data as z.infer<typeof actionFieldsSchema>;
     if (row.recurrence === "WEEKLY" && row.recurrenceDow == null) {
@@ -62,14 +100,36 @@ function refineWeeklyRecurrence<T extends z.ZodTypeAny>(schema: T) {
         path: ["recurrenceDow"],
       });
     }
+    if (row.recurrence === "NONE") {
+      if (!row.dueAt) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La date est obligatoire pour une tâche ponctuelle",
+          path: ["dueAt"],
+        });
+        return;
+      }
+      const dueDay = toLocalDateInput(new Date(row.dueAt));
+      const today = toLocalDateInput(new Date());
+      if (dueDay < today) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La date ne peut pas être antérieure à aujourd'hui",
+          path: ["dueAt"],
+        });
+      }
+    }
   });
 }
 
-export const actionInputSchema = refineWeeklyRecurrence(actionFieldsSchema);
-export const createActionInput = refineWeeklyRecurrence(
-  actionFieldsSchema.extend({ listId: cuidSchema }),
+export const actionInputSchema = refineActionFields(actionFieldsSchema);
+export const createActionInput = refineActionFields(
+  actionFieldsSchema.extend({
+    listId: cuidSchema,
+    addToGoogleCalendar: z.boolean().optional(),
+  }),
 );
-export const updateActionInput = refineWeeklyRecurrence(
+export const updateActionInput = refineActionFields(
   actionFieldsSchema.extend({ actionId: cuidSchema }),
 );
 

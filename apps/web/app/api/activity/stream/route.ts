@@ -1,4 +1,4 @@
-import { getActivityUnreadSnapshot } from "@repo/api/server";
+import { getActivityUnreadSnapshot, verifyJwtSub } from "@repo/api/server";
 import { auth } from "@clerk/nextjs/server";
 
 import { getAppUser } from "@/lib/app-session";
@@ -8,18 +8,26 @@ export const runtime = "nodejs";
 
 const POLL_MS = 45_000;
 
-export async function GET(req: Request) {
-  const { userId: clerkUserId } = await auth();
-  if (!clerkUserId) {
-    return new Response("Unauthorized", { status: 401 });
+async function resolveUserId(req: Request): Promise<string | null> {
+  const token = new URL(req.url).searchParams.get("token");
+  if (token) {
+    const fromJwt = await verifyJwtSub(token);
+    if (fromJwt) return fromJwt;
   }
+
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) return null;
 
   const user = await getAppUser();
-  if (!user) {
+  return user?.id ?? null;
+}
+
+export async function GET(req: Request) {
+  const userId = await resolveUserId(req);
+  if (!userId) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const userId = user.id;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({

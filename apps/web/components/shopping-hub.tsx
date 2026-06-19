@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { TrashIcon } from "@/components/trash-icon";
 import { trpc } from "@/lib/trpc";
+import { confirmPermanentDelete } from "@/lib/confirm-delete";
 
 interface Props {
   userId: string;
@@ -26,7 +28,7 @@ function ListActions({
   const deleteList = trpc.shoppingLists.delete.useMutation({ onSuccess: onMutate });
 
   function handleDelete() {
-    if (!window.confirm(`Supprimer « ${title} » ? Cette action est irréversible.`)) return;
+    if (!confirmPermanentDelete(title)) return;
     deleteList.mutate({ listId });
   }
 
@@ -67,9 +69,10 @@ function ListActions({
           type="button"
           onClick={handleDelete}
           disabled={deleteList.isPending}
-          className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-danger hover:bg-red-50"
+          aria-label={`Supprimer la liste ${title}`}
+          className="rounded border border-app-border-soft p-2 text-app-danger hover:bg-red-50 disabled:opacity-40"
         >
-          Supprimer
+          <TrashIcon />
         </button>
       )}
     </div>

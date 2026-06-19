@@ -28,9 +28,22 @@ cd /srv/docker/todolist/source
 git pull origin main
 ```
 
-### 2.2 Compléter `.env` (nouveau en v1.0)
+### 2.2 Compléter `.env` (Clerk obligatoire depuis v2.0.0)
 
-Éditer `/srv/docker/todolist/.env` — modèle : [deploy/todolist/.env.example](todolist/.env.example).
+Éditer **`/srv/docker/todolist/.env`** (pas `apps/web/.env`) — modèle : [deploy/todolist/.env.example](todolist/.env.example).
+
+Variables **obligatoires** :
+
+```env
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+
+# Clerk — dashboard.clerk.com → API Keys
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+```
+
+> `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` doit être dans ce `.env` **avant** `docker compose build` (inlinée au build Next.js).
 
 Ajouter si absent :
 
@@ -63,9 +76,9 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000
 curl -sI "https://todolist.ez3ki33l.ovh/api/trpc" | head -3
 ```
 
-### 2.4 Clerk (web)
+### 2.4 Clerk (dashboard)
 
-Dans `apps/web/.env` sur le serveur : `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` et `CLERK_SECRET_KEY` (dashboard Clerk → API Keys).
+Dans [Clerk Dashboard](https://dashboard.clerk.com/) → **API Keys** : copier la publishable key et la secret key dans `/srv/docker/todolist/.env`, puis **rebuild** (voir §2.3).
 
 ---
 
@@ -167,6 +180,8 @@ npx eas-cli build --platform android --profile production
 
 | Problème | Solution |
 |----------|----------|
+| `Missing publishableKey` (Clerk) | Ajouter `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` dans `/srv/docker/todolist/.env`, puis `docker compose build --no-cache && docker compose up -d` |
+| `clerkMiddleware` / `auth()` | Souvent conséquence de l’absence de clés Clerk — corriger le `.env` ci-dessus |
 | Connexion Clerk échoue | Vérifier clés Clerk (web + native) |
 | Réglages notifs « chargement » | `db:push` + redémarrer Docker |
 | Build EAS échoue install | `git pull main`, Node 22, voir [apps/native/DEPLOY.md](../apps/native/DEPLOY.md) |

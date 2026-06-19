@@ -262,6 +262,13 @@ model Action {
   recurrence     Recurrence @default(NONE)
   recurrenceTime String?    // heure de la récurrence au format "HH:mm"
   recurrenceDow  Int?       // jour de la semaine (0=dim..6=sam) pour WEEKLY
+  locationLabel  String?    // nom du lieu (ex. « Cabinet médical »)
+  locationAddress String?   // adresse pour la navigation
+  notes          String?    @db.Text
+  remindBeforeMinutes Int? // délai avant échéance (minutes)
+  remindAt       DateTime?  // date/heure d'envoi du rappel
+  remindSentAt   DateTime?
+  googleCalendarEventId String?
   position       Int        @default(0)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
@@ -271,6 +278,7 @@ model Action {
   @@index([listId])
   @@index([dueAt])
   @@index([recurrence])
+  @@index([remindAt])
 }
 
 /// Une liste de courses : appartient à un utilisateur, peut être partagée via ShoppingListMember.

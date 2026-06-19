@@ -17,11 +17,13 @@ import {
 } from "@/components/task-period-calendar-modal";
 import {
   buildPeriodDayGroups,
+  getUnscheduledActions,
   splitActionsByDayWeek,
   startOfDay,
   type DayGroup,
 } from "@/lib/day-week-split";
 import { useDeleteAction, useUpdateAction } from "@/lib/use-action-mutations";
+import { confirmPermanentDelete } from "@/lib/confirm-delete";
 import { normalizeActionRows } from "@/lib/normalize-action-row";
 import { useRefetchTasksOnFocus } from "@/lib/use-refetch-tasks-on-focus";
 import { sameDay } from "@/lib/task-agenda";
@@ -184,6 +186,11 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
     return splitActionsByDayWeek(normalizedActions, now, "position");
   }, [normalizedActions, now]);
 
+  const unscheduled = useMemo(
+    () => getUnscheduledActions(normalizedActions),
+    [normalizedActions],
+  );
+
   const dayGroups = useMemo(() => {
     const groups = buildPeriodDayGroups(normalizedActions, periodStart, "position");
     return groups.filter((g) => !sameDay(g.date, today));
@@ -244,14 +251,16 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
   }, []);
 
   const onDelete = useCallback(
-    (actionId: string) => {
+    async (actionId: string) => {
+      const action = actions?.find((row) => row.id === actionId);
+      if (!(await confirmPermanentDelete(action?.title ?? "cette tâche"))) return;
       deleteAction.mutate({ actionId });
       if (editingId === actionId) {
         setEditingId(null);
         setEditTitle("");
       }
     },
-    [deleteAction, editingId],
+    [actions, deleteAction, editingId],
   );
 
   const sectionProps: Omit<TaskSectionProps, "actions" | "hideDayTag" | "compact"> = {
@@ -337,6 +346,16 @@ export function DayWeekView({ listId, canEdit = true }: { listId: string; canEdi
           </View>
         </TaskColumnShell>
       </View>
+
+      {unscheduled.length > 0 ? (
+        <TaskColumnShell
+          palette={palette}
+          stacked={stacked}
+          header={<Text style={styles.columnTitle}>Sans échéance</Text>}
+        >
+          <TaskSection actions={unscheduled} compact={compact} {...sectionProps} />
+        </TaskColumnShell>
+      ) : null}
 
       <TaskPeriodCalendarModal
         visible={calendarOpen}

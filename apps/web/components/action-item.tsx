@@ -4,9 +4,23 @@ import { memo, useState, type FormEvent } from "react";
 import Link from "next/link";
 
 import { ActionToggleButton } from "@/components/action-toggle-button";
+import { ActionLocationDialog } from "@/components/action-location-dialog";
 import { HydratableSvg } from "@/components/hydratable-svg";
 import { useDeleteAction, useUpdateAction } from "@/lib/use-action-mutations";
+import { confirmPermanentDelete } from "@/lib/confirm-delete";
 import { useMounted } from "@/lib/use-mounted";
+import { formatActionLocation, resolveMapsQuery } from "@repo/api/lib/maps";
+import {
+  clampDueTimeForDate,
+  formatActionDueTime,
+  minDueDateInput,
+  minDueTimeInput,
+  toActionMutationFields,
+  toDateInputValue,
+  toTimeInputValue,
+  validateActionSchedule,
+  type RecurrenceKind,
+} from "@repo/api/lib/action-form";
 
 export type ActionItemData = {
   id: string;
@@ -16,6 +30,9 @@ export type ActionItemData = {
   recurrenceTime: string | null;
   recurrenceDow: number | null;
   dueAt: Date | string | null;
+  locationLabel: string | null;
+  locationAddress: string | null;
+  notes?: string | null;
   streakCount: number;
   bestStreak: number;
   list: { id: string; title: string };
@@ -24,11 +41,6 @@ export type ActionItemData = {
 type ActionWithList = ActionItemData;
 
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-
-function toDateInputValue(date: Date | string | null) {
-  if (!date) return "";
-  return new Date(date).toISOString().slice(0, 10);
-}
 
 interface Props {
   action: ActionWithList;
@@ -52,9 +64,12 @@ function EditForm({
 }) {
   const listId = action.list.id;
   const update = useUpdateAction(listId);
-  const [recurrence, setRecurrence] = useState<"NONE" | "DAILY" | "WEEKLY">(
-    action.recurrence as "NONE" | "DAILY" | "WEEKLY",
+  const [recurrence, setRecurrence] = useState<RecurrenceKind>(
+    action.recurrence as RecurrenceKind,
   );
+  const [formError, setFormError] = useState<string | null>(null);
+  const [dueDate, setDueDate] = useState(() => toDateInputValue(action.dueAt) || minDueDateInput());
+  const [dueTime, setDueTime] = useState(() => toTimeInputValue(action.dueAt));
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -62,27 +77,41 @@ function EditForm({
     const title = String(fd.get("title") ?? "").trim();
     if (!title) return;
 
-    const dueAtRaw = fd.get("dueAt");
+    const dueAtRaw = recurrence === "NONE" ? dueDate : null;
+    const dueTimeRaw = recurrence === "NONE" ? dueTime : null;
     const recurrenceTimeRaw = fd.get("recurrenceTime");
     const recurrenceDowRaw = fd.get("recurrenceDow");
+    const locationLabelRaw = fd.get("locationLabel");
+    const locationAddressRaw = fd.get("locationAddress");
+
+    const formValues = {
+      title,
+      recurrence,
+      dueDate: recurrence === "NONE" ? dueAtRaw : null,
+      dueTime: recurrence === "NONE" && dueTimeRaw ? dueTimeRaw : null,
+      recurrenceTime:
+        recurrence !== "NONE" && typeof recurrenceTimeRaw === "string"
+          ? recurrenceTimeRaw
+          : null,
+      recurrenceDow:
+        recurrence === "WEEKLY" && recurrenceDowRaw != null
+          ? Number(recurrenceDowRaw)
+          : null,
+      locationLabel: typeof locationLabelRaw === "string" ? locationLabelRaw : null,
+      locationAddress: typeof locationAddressRaw === "string" ? locationAddressRaw : null,
+    };
+
+    const scheduleError = validateActionSchedule(formValues);
+    if (scheduleError) {
+      setFormError(scheduleError);
+      return;
+    }
+    setFormError(null);
 
     update.mutate(
       {
         actionId: action.id,
-        title,
-        recurrence,
-        dueAt:
-          recurrence === "NONE" && typeof dueAtRaw === "string" && dueAtRaw
-            ? new Date(`${dueAtRaw}T12:00:00`).toISOString()
-            : null,
-        recurrenceTime:
-          recurrence !== "NONE" && typeof recurrenceTimeRaw === "string" && recurrenceTimeRaw
-            ? recurrenceTimeRaw
-            : null,
-        recurrenceDow:
-          recurrence === "WEEKLY" && typeof recurrenceDowRaw === "string" && recurrenceDowRaw !== ""
-            ? Number(recurrenceDowRaw)
-            : null,
+        ...toActionMutationFields(formValues),
       },
       {
         onSuccess: () => {
@@ -123,16 +152,34 @@ function EditForm({
       </div>
 
       {recurrence === "NONE" && (
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
           <label className="text-app-text-subtle whitespace-nowrap">À faire le</label>
           <input
             type="date"
             name="dueAt"
-            defaultValue={toDateInputValue(action.dueAt)}
+            required
+            min={minDueDateInput()}
+            value={dueDate}
+            onChange={(e) => {
+              const value = e.target.value;
+              setDueDate(value);
+              setDueTime((prev) => clampDueTimeForDate(value, prev));
+            }}
+            className="rounded border border-app-border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
+          />
+          <label className="text-app-text-subtle whitespace-nowrap">à (optionnel)</label>
+          <input
+            type="time"
+            name="dueTime"
+            min={dueTime ? minDueTimeInput(dueDate) : undefined}
+            value={dueTime}
+            onChange={(e) => setDueTime(e.target.value)}
             className="rounded border border-app-border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-app-border"
           />
         </div>
       )}
+
+      {formError ? <p className="text-sm text-app-danger">{formError}</p> : null}
 
       {recurrence === "DAILY" && (
         <div className="flex items-center gap-2 text-sm">
@@ -175,6 +222,24 @@ function EditForm({
         </div>
       )}
 
+      <div className="space-y-2 border-t border-app-border-soft pt-3">
+        <p className="text-xs font-semibold text-app-text-muted">Lieu (optionnel)</p>
+        <input
+          type="text"
+          name="locationLabel"
+          defaultValue={action.locationLabel ?? ""}
+          placeholder="Nom du lieu"
+          className="w-full rounded border border-app-border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-app-primary"
+        />
+        <input
+          type="text"
+          name="locationAddress"
+          defaultValue={action.locationAddress ?? ""}
+          placeholder="Adresse"
+          className="w-full rounded border border-app-border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-app-primary"
+        />
+      </div>
+
       <div className="flex gap-2 pt-1">
         <button
           type="submit"
@@ -204,13 +269,19 @@ function ActionItemInner({
   hideDayTag = false,
 }: Props) {
   const [editing, setEditing] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
   const deleteAction = useDeleteAction(action.list.id);
   const mounted = useMounted();
 
+  const hasLocation = Boolean(
+    resolveMapsQuery(action.locationLabel, action.locationAddress),
+  );
+  const locationText = formatActionLocation(action.locationLabel, action.locationAddress);
+
   const time = action.recurrenceTime
     ? action.recurrenceTime.slice(0, 5)
-    : action.dueAt && mounted
-      ? new Date(action.dueAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+    : mounted
+      ? formatActionDueTime(action.dueAt)
       : null;
 
   const className = "rounded-lg border border-app-border-soft bg-app-bg-elevated px-3 py-2.5 shadow-sm";
@@ -231,6 +302,9 @@ function ActionItemInner({
             <p className={`text-sm ${action.done ? "text-app-text-subtle line-through" : "text-app-text"}`}>
               {action.title}
             </p>
+            {action.notes ? (
+              <p className="mt-0.5 text-xs text-app-text-muted line-clamp-2">{action.notes}</p>
+            ) : null}
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
               {time && <span className="text-xs text-app-text-subtle">{time}</span>}
               {showListLink && (
@@ -255,6 +329,15 @@ function ActionItemInner({
                   {action.bestStreak > action.streakCount ? ` · record ${action.bestStreak}` : ""}
                 </span>
               )}
+              {hasLocation && locationText ? (
+                <button
+                  type="button"
+                  onClick={() => setLocationOpen(true)}
+                  className="text-xs text-app-primary hover:underline"
+                >
+                  📍 {locationText}
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -277,6 +360,7 @@ function ActionItemInner({
                 type="button"
                 disabled={deleteAction.isPending}
                 onClick={() => {
+                  if (!confirmPermanentDelete(action.title)) return;
                   deleteAction.mutate(
                     { actionId: action.id },
                     { onSuccess: () => onChanged?.() },
@@ -296,6 +380,12 @@ function ActionItemInner({
           )}
         </div>
       )}
+      <ActionLocationDialog
+        open={locationOpen}
+        locationLabel={action.locationLabel}
+        locationAddress={action.locationAddress}
+        onClose={() => setLocationOpen(false)}
+      />
     </>
   );
 
@@ -317,6 +407,8 @@ function actionPropsEqual(prev: Props, next: Props): boolean {
     a.recurrenceTime === b.recurrenceTime &&
     a.recurrenceDow === b.recurrenceDow &&
     String(a.dueAt ?? "") === String(b.dueAt ?? "") &&
+    a.locationLabel === b.locationLabel &&
+    a.locationAddress === b.locationAddress &&
     a.streakCount === b.streakCount &&
     a.bestStreak === b.bestStreak &&
     a.list.id === b.list.id &&

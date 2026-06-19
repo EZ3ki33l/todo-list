@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Platform } from "react-native";
 
-import { THEME_STORAGE_KEY, type ThemeName } from "@repo/theme";
+import { DEFAULT_THEME_NAME, THEME_STORAGE_KEY, type ThemeName } from "@repo/theme";
 
 type ThemeContextValue = {
   ready: boolean;
@@ -33,7 +33,7 @@ async function storeSetTheme(themeName: ThemeName) {
 }
 
 export function ThemeModeProvider({ children }: { children: ReactNode }) {
-  const [themeName, setThemeName] = useState<ThemeName>("latte");
+  const [themeName, setThemeName] = useState<ThemeName>(DEFAULT_THEME_NAME);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -66,9 +66,6 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
     }),
     [ready, themeName],
   );
-
-  // Évite le flash latte → mocha au démarrage (thème lu de façon asynchrone).
-  if (!ready) return null;
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

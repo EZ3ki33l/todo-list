@@ -1,4 +1,5 @@
 export {
+  DEFAULT_THEME_NAME,
   getPalette,
   THEME_STORAGE_KEY,
   type AppPalette,

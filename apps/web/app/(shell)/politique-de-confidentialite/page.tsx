@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "Politique de confidentialité de TodoList by EZ3 : données collectées, finalités, sous-traitants et droits des utilisateurs.",
 };
 
-const LAST_UPDATED = "15 juin 2026";
+const LAST_UPDATED = "19 juin 2026";
 
 export default function PolitiqueConfidentialitePage() {
   return (
@@ -73,12 +73,28 @@ export default function PolitiqueConfidentialitePage() {
           </li>
           <li>
             <strong>Contenus que vous créez</strong> : listes de tâches, tâches
-            (titres, dates, récurrences), listes de courses, articles, quantités,
-            catégories et informations de partage entre utilisateurs.
+            (titres, dates, heures, récurrences, lieu, adresse, notes libres),
+            listes de courses, articles, quantités, catégories et informations de
+            partage entre utilisateurs.
+          </li>
+          <li>
+            <strong>Rappels sur les tâches</strong> : délai choisi avant l&apos;échéance
+            (ex. 15 minutes, 1 heure, 1 jour), date/heure calculée du rappel et état
+            d&apos;envoi, uniquement si vous configurez une alerte dans le formulaire
+            détaillé (« ++ »).
+          </li>
+          <li>
+            <strong>Google Agenda</strong> (optionnel) : si vous cochez « Ajouter à
+            Google Agenda » lors de la création d&apos;une tâche et que vous êtes
+            connecté avec Google, nous transmettons à Google (via l&apos;API Calendar)
+            le titre, la date/heure, les notes et le lieu de la tâche pour créer un
+            événement dans votre agenda. L&apos;identifiant de l&apos;événement créé
+            peut être conservé dans notre base pour référence technique.
           </li>
           <li>
             <strong>Préférences</strong> : réglages de notifications (alertes
-            navigateur, badge, types d&apos;événements activés).
+            navigateur, badge, types d&apos;événements activés) et préférence de
+            thème clair/sombre (stockée localement sur votre appareil ou navigateur).
           </li>
           <li>
             <strong>Données techniques de notification</strong> : jetons push mobile
@@ -113,7 +129,11 @@ export default function PolitiqueConfidentialitePage() {
           >
             politique de confidentialité de Google
           </a>
-          .
+          . Si vous activez l&apos;ajout à Google Agenda, nous utilisons en outre un
+          jeton d&apos;accès OAuth (délivré par Clerk avec votre autorisation) pour
+          créer des événements dans votre agenda Google ; ce traitement est limité aux
+          données de la tâche concernée et ne s&apos;effectue que lorsque vous cochez
+          explicitement cette option.
         </p>
         <p className="text-sm leading-relaxed">
           Nous ne vendons pas vos données et ne les utilisons pas à des fins
@@ -142,7 +162,14 @@ export default function PolitiqueConfidentialitePage() {
           <li>
             <strong>Notifications</strong> (consentement ou intérêt légitime selon le
             canal) : vous informer des activités sur vos listes partagées, si vous
-            avez activé les alertes correspondantes.
+            avez activé les alertes correspondantes ; vous rappeler une tâche à
+            l&apos;horaire choisi (notification navigateur sur le web, notification
+            système sur mobile).
+          </li>
+          <li>
+            <strong>Google Agenda</strong> (consentement) : création d&apos;un
+            événement dans votre agenda Google lorsque vous cochez l&apos;option
+            correspondante à l&apos;ajout d&apos;une tâche.
           </li>
           <li>
             <strong>Amélioration de l&apos;expérience</strong> (intérêt légitime) :
@@ -179,8 +206,9 @@ export default function PolitiqueConfidentialitePage() {
           </li>
           <li>
             <strong>Google</strong> : connexion optionnelle avec un compte Google
-            (OAuth) et, le cas échéant, Firebase Cloud Messaging pour les notifications
-            push Android.
+            (OAuth via Clerk), accès optionnel à Google Agenda pour créer des
+            événements à votre demande, et le cas échéant Firebase Cloud Messaging
+            pour les notifications push Android.
           </li>
           <li>
             <strong>Neon</strong> : hébergement de la base de données PostgreSQL
@@ -230,8 +258,11 @@ export default function PolitiqueConfidentialitePage() {
           applicable.
         </p>
         <p className="text-sm leading-relaxed">
-          <strong>Données supprimées :</strong> profil, contenus créés, partages,
-          historique d&apos;activité, jetons push et abonnements Web Push.
+          <strong>Données supprimées :</strong> profil, contenus créés (tâches, notes,
+          lieux, rappels programmés), partages, historique d&apos;activité, jetons push
+          et abonnements Web Push. Les événements déjà créés dans Google Agenda ne sont
+          pas supprimés automatiquement par notre service ; vous pouvez les retirer
+          directement depuis votre agenda Google.
         </p>
         <p className="text-sm leading-relaxed">
           <strong>Données conservées :</strong> aucune donnée personnelle n&apos;est
@@ -250,6 +281,10 @@ export default function PolitiqueConfidentialitePage() {
           <li>
             Jetons push et abonnements Web Push : supprimés lors de la désactivation
             des notifications ou de la suppression du compte.
+          </li>
+          <li>
+            Rappels programmés et identifiants d&apos;événements Google Agenda :
+            conservés tant que la tâche associée existe, ou supprimés avec celle-ci.
           </li>
           <li>
             Sessions et jetons d&apos;accès : durée limitée ; sur mobile, le jeton
@@ -313,7 +348,14 @@ export default function PolitiqueConfidentialitePage() {
         <p className="text-sm leading-relaxed">
           Les notifications Web Push reposent sur un service worker et un abonnement
           stocké côté navigateur, uniquement après votre accord explicite dans les
-          réglages.
+          réglages. Les rappels de tâches sur mobile utilisent les notifications
+          locales de l&apos;appareil, planifiées après votre configuration d&apos;une
+          alerte dans le formulaire détaillé.
+        </p>
+        <p className="text-sm leading-relaxed">
+          La préférence de thème (clair / sombre) est enregistrée dans le stockage
+          local du navigateur ou, sur mobile, dans l&apos;espace sécurisé de
+          l&apos;appareil ; elle n&apos;est pas transmise à nos serveurs.
         </p>
         <p className="text-sm leading-relaxed">
           Sur l&apos;application mobile Android, les jetons de session sont stockés dans

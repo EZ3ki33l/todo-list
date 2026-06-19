@@ -13,6 +13,7 @@ import {
 } from "@/components/task-period-calendar-modal";
 import {
   buildPeriodDayGroups,
+  getUnscheduledActions,
   moveInList,
   reorderSectionInGlobal,
   splitActionsByDayWeek,
@@ -464,6 +465,8 @@ export function DayWeekViewClient({
       recurrenceTime: a.recurrenceTime,
       recurrenceDow: a.recurrenceDow,
       dueAt: a.dueAt,
+      locationLabel: a.locationLabel ?? null,
+      locationAddress: a.locationAddress ?? null,
       streakCount: a.streakCount,
       bestStreak: a.bestStreak,
       list: { id: listId, title: listTitle },
@@ -472,6 +475,10 @@ export function DayWeekViewClient({
   );
 
   const todayItems = split.today.map(toItem);
+  const unscheduledItems = useMemo(
+    () => getUnscheduledActions(actions ?? []).map(toItem),
+    [actions, toItem],
+  );
   const scheduleActions = actions ?? [];
 
   const refresh = useCallback(() => {
@@ -526,6 +533,19 @@ export function DayWeekViewClient({
           toItem={toItem}
         />
       </div>
+
+      {unscheduledItems.length > 0 ? (
+        <ActionColumn
+          title="Sans échéance"
+          actions={unscheduledItems}
+          sectionIds={unscheduledItems.map((a) => a.id)}
+          globalIds={split.globalIds}
+          canEdit={canEdit}
+          showListLink={false}
+          onReorder={onReorder}
+          onChanged={refresh}
+        />
+      ) : null}
     </section>
   );
 }

@@ -5,7 +5,7 @@ import { getAppUser } from "@/lib/app-session";
 import { AddActionForm } from "@/components/add-action-form";
 import { CreateSharedListForm } from "@/components/create-shared-list-form";
 import DayWeekView from "@/components/day-week-view";
-import { ListLinkCard } from "@/components/list-link-card";
+import { SharedListRow } from "@/components/shared-list-row";
 import {
   getOrCreatePersonalTodoList,
   getSharedTodoLists,
@@ -91,8 +91,9 @@ export default async function DashboardPage() {
               const isOwner = list.ownerId === userId;
               return (
                 <li key={list.id}>
-                  <ListLinkCard
-                    href={`/dashboard/lists/${list.id}`}
+                  <SharedListRow
+                    kind="todo"
+                    listId={list.id}
                     title={list.title}
                     subtitle={`${progressLabel(progressByListId.get(list.id) ?? null)} · ${ownerSubtitle(
                       isOwner,
@@ -100,7 +101,8 @@ export default async function DashboardPage() {
                       list.owner.name,
                       list.owner.email,
                     )}`}
-                    shared
+                    isOwner={isOwner}
+                    href={`/dashboard/lists/${list.id}`}
                   />
                 </li>
               );

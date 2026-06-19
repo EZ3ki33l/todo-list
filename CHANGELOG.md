@@ -48,6 +48,7 @@ Chaque entrée cite la PR GitHub quand elle existe.
 | [2.0.1](#201---2026-06-15) | 2026-06-15 | Sécurité dépôt + politique confidentialité Clerk |
 | [2.1.0](#210---2026-06-16) | 2026-06-16 | Branding EZ3 (logos, splash, skeletons) |
 | [2.2.0](#220---2026-06-18) | 2026-06-18 | Charte graphique Catppuccin (native + web) |
+| [2.3.0](#230---2026-06-19) | 2026-06-19 | Détails tâches (++), rappels, Google Agenda |
 
 ---
 
@@ -448,6 +449,49 @@ pnpm --filter @repo/db db:push
 #### Packages
 
 - **`packages/theme`** : `getPalette`, `THEME_STORAGE_KEY` (`ui_theme_name` — synchro possible web ↔ mobile sur même origine)
+
+---
+
+### 2.3.0 — 2026-06-19
+
+**Détails tâches (++), rappels et Google Agenda**
+
+#### Formulaire & modal « ++ » (web + native)
+
+- Bouton **++** à côté de l’ajout rapide : lieu (nom + adresse, lien navigation Maps), notes, rappel, option Google Agenda
+- **Date obligatoire** pour les tâches ponctuelles ; **heure facultative** (sans heure : stockage à minuit, non affichée)
+- Date/heure modifiables dans le modal ; **brouillon persistant** (fermer le modal ne efface plus lieu / notes / rappel)
+- Helpers partagés `packages/api/src/lib/action-form.ts` : validation planning, presets rappel, fusion brouillon
+
+#### Base de données & API
+
+- Champs `Action` : `locationLabel`, `locationAddress`, `notes`, `remindBeforeMinutes`, `remindAt`, `remindSentAt`, `googleCalendarEventId`
+- Migrations : `20260619120000_action_location`, `20260619140000_action_notes_reminder`
+- **Rappels serveur** : `action-reminder.ts` — calcul `remindAt`, envoi Web Push + Expo à l’échéance
+- **Google Agenda** : `google-calendar.ts` — création d’événement via jeton OAuth Clerk (`calendar.events`), messages d’erreur explicites (scope, API Google Cloud)
+- Query **`auth.googleCalendarStatus`** : détection jeton + scope Agenda avant création
+
+#### Web
+
+- `add-action-detail-modal.tsx`, intégration dans `add-action-form.tsx`
+- Avertissement si l’ajout Agenda échoue (tâche créée quand même)
+- Correctif **SSE activité** : auth JWT via `?token=`, route publique dans `proxy.ts`, repli polling tRPC
+- Correctif hydratation **ThemeToggle** (placeholder tant que le thème n’est pas prêt)
+
+#### Native
+
+- Parité modal ++ et formulaire ; **rappels locaux** (`expo-notifications`, `action-local-reminder.ts`)
+- Alertes si Google Agenda refuse l’événement
+
+#### Configuration Google Agenda (credentials Clerk personnalisées)
+
+- Scope Clerk : `https://www.googleapis.com/auth/calendar.events`
+- Activation de l’**API Google Calendar** dans le projet Google Cloud lié au Client ID OAuth
+- Reconnexion Google après ajout du scope
+
+#### Légal
+
+- Mise à jour **politique de confidentialité** : lieu/notes/rappels, Google Agenda, stockage préférence thème
 
 ---
 

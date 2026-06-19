@@ -49,6 +49,7 @@ Chaque entrée cite la PR GitHub quand elle existe.
 | [2.1.0](#210---2026-06-16) | 2026-06-16 | Branding EZ3 (logos, splash, skeletons) |
 | [2.2.0](#220---2026-06-18) | 2026-06-18 | Charte graphique Catppuccin (native + web) |
 | [2.3.0](#230---2026-06-19) | 2026-06-19 | Détails tâches (++), rappels, Google Agenda |
+| [2.3.1](#231---2026-06-20) | 2026-06-20 | Suppression listes partagées + confirmations |
 
 ---
 
@@ -492,6 +493,38 @@ pnpm --filter @repo/db db:push
 #### Légal
 
 - Mise à jour **politique de confidentialité** : lieu/notes/rappels, Google Agenda, stockage préférence thème
+
+---
+
+### 2.3.1 — 2026-06-20
+
+**Suppression des listes partagées et confirmations définitives**
+
+#### Listes partagées (web + native)
+
+- Icône **corbeille** sur les listes de tâches et de courses partagées (réservée au **propriétaire**)
+- Composants `SharedListRow` (web) / `shared-list-row` (native) sur les hubs Tâches et Courses
+
+#### Confirmations avant suppression
+
+- Message unifié : *« Cette suppression est définitive et ne pourra pas être annulée »*
+- Helpers partagés `packages/api/src/lib/confirm-delete.ts`
+- Web : `window.confirm` ; native : `Alert.alert` (Annuler / Supprimer)
+- S’applique aux tâches, articles de courses, listes, vidage des articles cochés
+
+#### Correctifs native
+
+- **`ThemeModeProvider`** : ne bloque plus le rendu avec `return null` au démarrage (erreur React « state update on unmounted component » avec SecureStore)
+- Stabilisation des effets `usePersonalTodoList` / `usePersonalShoppingList`
+
+#### Google Agenda (complément 2.3.0)
+
+- Messages d’erreur détaillés (scope insuffisant, API Calendar désactivée dans Google Cloud)
+- Vérification des scopes du jeton OAuth avant appel à l’API
+
+#### Légal
+
+- Précision **politique de confidentialité** : suppression volontaire d’une liste par son propriétaire
 
 ---
 

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "Politique de confidentialité de TodoList by EZ3 : données collectées, finalités, sous-traitants et droits des utilisateurs.",
 };
 
-const LAST_UPDATED = "19 juin 2026";
+const LAST_UPDATED = "20 juin 2026";
 
 export default function PolitiqueConfidentialitePage() {
   return (
@@ -277,6 +277,11 @@ export default function PolitiqueConfidentialitePage() {
         <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
           <li>
             Données de compte et contenus : conservées tant que votre compte est actif.
+          </li>
+          <li>
+            Listes dont vous êtes propriétaire : vous pouvez les supprimer à tout moment
+            depuis l&apos;application (icône corbeille, après confirmation). La suppression
+            est définitive : la liste et son contenu sont retirés de nos serveurs.
           </li>
           <li>
             Jetons push et abonnements Web Push : supprimés lors de la désactivation

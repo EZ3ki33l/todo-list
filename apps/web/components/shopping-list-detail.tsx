@@ -21,9 +21,9 @@ import {
   type GroceryCategory,
   type SuggestionHistoryEntry,
   type TitleSuggestion,
-} from "@/lib/grocery-detect";
-import { CATEGORY_LABELS, itemIcon } from "@/lib/grocery-ui";
-import { applyListOrder } from "@/lib/reorder-list";
+} from "@repo/domain/grocery-detect";
+import { CATEGORY_LABELS, itemIcon } from "@repo/domain/grocery-ui";
+import { applyListOrder } from "@repo/domain/reorder-list";
 import { parseQuantity } from "@/lib/shopping-quantity";
 import { trpc } from "@/lib/trpc";
 import {
@@ -508,7 +508,7 @@ export function ShoppingListDetail({
             clearChecked.mutate({ listId });
           }}
           disabled={clearChecked.isPending}
-          className="text-sm text-app-danger hover:text-red-800 disabled:opacity-40"
+          className="text-sm text-app-danger hover:opacity-80 disabled:opacity-40"
         >
           Vider les articles cochés ({checkedItems.length})
         </button>

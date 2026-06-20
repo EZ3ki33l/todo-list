@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import { prisma } from "@repo/db";
 import { getOrCreatePersonalTodoList, getSharedTodoLists } from "../lib/default-lists";
-import { notifyTodoListShared } from "../lib/todo-list-share-notify";
+import { notifyListShared } from "../lib/list-share-notify";
 import { findAccessibleTodoList } from "../lib/todo-list-access";
 import {
   createListInput,
@@ -130,7 +130,8 @@ export const listsRouter = router({
         select: { name: true, email: true },
       });
 
-      void notifyTodoListShared({
+      void notifyListShared({
+        kind: "TODO",
         listId: input.listId,
         listTitle: list.title,
         targetUserId: target.id,

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { AppRouter } from "@repo/api/server";
 import { ActionItem } from "@/components/action-item";
-import { applyListOrder } from "@/lib/reorder-list";
+import { applyListOrder } from "@repo/domain/reorder-list";
 import { trpc } from "@/lib/trpc";
 
 type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];

@@ -15,7 +15,21 @@
   --app-badge-bg: #dce0e8;
   --app-badge-text: #1e66f5;
   --app-danger: #d20f39;
+  --app-danger-bg: #fff1f2;
   --app-skeleton: #ccd0da;
+  --app-overlay: rgba(0, 0, 0, 0.4);
+  --app-success: #16a34a;
+  --app-success-bg: #f0fdf4;
+  --app-recurrence-daily-bg: #eff6ff;
+  --app-recurrence-daily-text: #1d4ed8;
+  --app-recurrence-weekly-bg: #f5f3ff;
+  --app-recurrence-weekly-text: #6d28d9;
+  --app-marker-ponctual: #f59e0b;
+  --app-marker-ponctual-muted: #fde68a;
+  --app-marker-weekly: #a855f7;
+  --app-marker-weekly-muted: #e9d5ff;
+  --app-streak-bg: #fff7ed;
+  --app-streak-text: #c2410c;
 }
 
 [data-theme="mocha"] {
@@ -32,7 +46,21 @@
   --app-badge-bg: #45475a;
   --app-badge-text: #89b4fa;
   --app-danger: #f38ba8;
+  --app-danger-bg: rgba(243, 139, 168, 0.12);
   --app-skeleton: #45475a;
+  --app-overlay: rgba(0, 0, 0, 0.55);
+  --app-success: #a6e3a1;
+  --app-success-bg: rgba(166, 227, 161, 0.12);
+  --app-recurrence-daily-bg: rgba(137, 180, 250, 0.15);
+  --app-recurrence-daily-text: #89b4fa;
+  --app-recurrence-weekly-bg: rgba(203, 166, 247, 0.15);
+  --app-recurrence-weekly-text: #cba6f7;
+  --app-marker-ponctual: #f9e2af;
+  --app-marker-ponctual-muted: rgba(249, 226, 175, 0.4);
+  --app-marker-weekly: #cba6f7;
+  --app-marker-weekly-muted: rgba(203, 166, 247, 0.4);
+  --app-streak-bg: rgba(250, 179, 135, 0.15);
+  --app-streak-text: #fab387;
 }
 
 @theme inline {
@@ -49,7 +77,21 @@
   --color-app-badge-bg: var(--app-badge-bg);
   --color-app-badge-text: var(--app-badge-text);
   --color-app-danger: var(--app-danger);
+  --color-app-danger-bg: var(--app-danger-bg);
   --color-app-skeleton: var(--app-skeleton);
+  --color-app-overlay: var(--app-overlay);
+  --color-app-success: var(--app-success);
+  --color-app-success-bg: var(--app-success-bg);
+  --color-app-recurrence-daily-bg: var(--app-recurrence-daily-bg);
+  --color-app-recurrence-daily-text: var(--app-recurrence-daily-text);
+  --color-app-recurrence-weekly-bg: var(--app-recurrence-weekly-bg);
+  --color-app-recurrence-weekly-text: var(--app-recurrence-weekly-text);
+  --color-app-marker-ponctual: var(--app-marker-ponctual);
+  --color-app-marker-ponctual-muted: var(--app-marker-ponctual-muted);
+  --color-app-marker-weekly: var(--app-marker-weekly);
+  --color-app-marker-weekly-muted: var(--app-marker-weekly-muted);
+  --color-app-streak-bg: var(--app-streak-bg);
+  --color-app-streak-text: var(--app-streak-text);
 }
 
 body {

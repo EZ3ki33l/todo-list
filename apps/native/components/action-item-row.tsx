@@ -1,5 +1,7 @@
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+
+import { getPalette, type AppPalette } from "@repo/theme";
 
 import { ActionLocationSheet } from "@/components/action-location-sheet";
 import { StreakBadge } from "@/components/streak-badge";
@@ -7,6 +9,7 @@ import { FluentEmoji } from "@/components/fluent-emoji";
 import { formatActionLocation, resolveMapsQuery } from "@repo/api/lib/maps";
 import { formatActionDueTime } from "@repo/api/lib/action-form";
 import type { ActionRow } from "@/lib/day-week-split";
+import { useThemeMode } from "@/lib/theme-context";
 
 const DOW_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
@@ -48,6 +51,9 @@ function ActionItemRowInner({
   deletePending = false,
 }: Props) {
   const [locationOpen, setLocationOpen] = useState(false);
+  const { themeName } = useThemeMode();
+  const palette = useMemo(() => getPalette(themeName), [themeName]);
+  const styles = useMemo(() => getStyles(palette), [palette]);
 
   const time = action.recurrenceTime
     ? action.recurrenceTime.slice(0, 5)
@@ -70,7 +76,7 @@ function ActionItemRowInner({
           onChangeText={onEditTitleChange}
           autoFocus
           placeholder="Titre de la tâche"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={palette.textSubtle}
         />
         <View style={styles.editBtns}>
           <Pressable style={styles.saveBtn} onPress={onSaveEdit}>
@@ -170,88 +176,90 @@ function ActionItemRowInner({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    marginBottom: 10,
-  },
-  row: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  dragHandleBtn: { paddingTop: 3 },
-  dragHandle: { fontSize: 16, color: "#D1D5DB" },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: "#D1D5DB",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 1,
-    flexShrink: 0,
-  },
-  checkboxDone: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
-  checkmark: { color: "#fff", fontSize: 12, fontWeight: "700" },
-  content: { flex: 1, minWidth: 0 },
-  title: { fontSize: 15, lineHeight: 21, color: "#111827" },
-  titleDone: { textDecorationLine: "line-through", color: "#9CA3AF" },
-  notes: { fontSize: 12, color: "#6B7280", marginTop: 2 },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" },
-  metaRowCompact: { marginTop: 5 },
-  meta: { fontSize: 11, color: "#9CA3AF" },
-  badgeBlue: {
-    fontSize: 11,
-    color: "#2563EB",
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  badgePurple: {
-    fontSize: 11,
-    color: "#7C3AED",
-    backgroundColor: "#F5F3FF",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  locationLink: { fontSize: 11, color: "#2563EB" },
-  rowBtns: { flexDirection: "row", gap: 8, flexShrink: 0, paddingTop: 1 },
-  actionIcon: { fontSize: 16 },
-  actionIconDisabled: { opacity: 0.4 },
-  editInput: {
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: "#111827",
-    marginBottom: 8,
-  },
-  editBtns: { flexDirection: "row", gap: 8 },
-  saveBtn: {
-    flex: 1,
-    backgroundColor: "#111827",
-    borderRadius: 6,
-    paddingVertical: 8,
-    alignItems: "center",
-  },
-  saveBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  cancelBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 6,
-    paddingVertical: 8,
-    alignItems: "center",
-  },
-  cancelBtnText: { color: "#6B7280", fontSize: 13 },
-});
+function getStyles(p: AppPalette) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: p.bgElevated,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: p.borderSoft,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      marginBottom: 10,
+    },
+    row: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+    dragHandleBtn: { paddingTop: 3 },
+    dragHandle: { fontSize: 16, color: p.border },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 5,
+      borderWidth: 2,
+      borderColor: p.border,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 1,
+      flexShrink: 0,
+    },
+    checkboxDone: { backgroundColor: p.success, borderColor: p.success },
+    checkmark: { color: p.onPrimary, fontSize: 12, fontWeight: "700" },
+    content: { flex: 1, minWidth: 0 },
+    title: { fontSize: 15, lineHeight: 21, color: p.text },
+    titleDone: { textDecorationLine: "line-through", color: p.textSubtle },
+    notes: { fontSize: 12, color: p.textMuted, marginTop: 2 },
+    metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" },
+    metaRowCompact: { marginTop: 5 },
+    meta: { fontSize: 11, color: p.textSubtle },
+    badgeBlue: {
+      fontSize: 11,
+      color: p.recurrenceDailyText,
+      backgroundColor: p.recurrenceDailyBg,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    badgePurple: {
+      fontSize: 11,
+      color: p.recurrenceWeeklyText,
+      backgroundColor: p.recurrenceWeeklyBg,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    locationLink: { fontSize: 11, color: p.primary },
+    rowBtns: { flexDirection: "row", gap: 8, flexShrink: 0, paddingTop: 1 },
+    actionIcon: { fontSize: 16 },
+    actionIconDisabled: { opacity: 0.4 },
+    editInput: {
+      borderWidth: 1,
+      borderColor: p.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+      color: p.text,
+      marginBottom: 8,
+    },
+    editBtns: { flexDirection: "row", gap: 8 },
+    saveBtn: {
+      flex: 1,
+      backgroundColor: p.primary,
+      borderRadius: 6,
+      paddingVertical: 8,
+      alignItems: "center",
+    },
+    saveBtnText: { color: p.onPrimary, fontSize: 13, fontWeight: "600" },
+    cancelBtn: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: p.borderSoft,
+      borderRadius: 6,
+      paddingVertical: 8,
+      alignItems: "center",
+    },
+    cancelBtnText: { color: p.textMuted, fontSize: 13 },
+  });
+}
 
 function actionRowPropsEqual(prev: Props, next: Props): boolean {
   const a = prev.action;

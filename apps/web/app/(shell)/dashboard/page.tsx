@@ -9,7 +9,7 @@ import { SharedListRow } from "@/components/shared-list-row";
 import {
   getOrCreatePersonalTodoList,
   getSharedTodoLists,
-} from "@/lib/default-lists";
+} from "@repo/api/lib/default-lists";
 import { progressByListIdFromActions } from "@/lib/batch-list-stats";
 import { progressLabel } from "@/lib/list-progress";
 import { prisma } from "@repo/db";

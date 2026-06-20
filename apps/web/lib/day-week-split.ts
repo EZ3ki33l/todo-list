@@ -73,6 +73,7 @@ function actionOnDay(a: SchedulableAction, day: Date): boolean {
   dayEnd.setDate(dayEnd.getDate() + 1);
   const dow = day.getDay();
 
+  if (a.recurrence === "DAILY") return true;
   if (a.recurrence === "NONE" && a.dueAt) {
     const t = dueAtMs(a.dueAt);
     return t >= dayStart.getTime() && t < dayEnd.getTime();

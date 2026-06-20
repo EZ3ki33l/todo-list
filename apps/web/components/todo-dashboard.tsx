@@ -106,7 +106,7 @@ function ListCard({
               <form action={completeTodoList.bind(null, list.id)}>
                 <button
                   type="submit"
-                  className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-primary hover:bg-green-50"
+                  className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-primary hover:bg-app-success-bg"
                 >
                   Terminer
                 </button>
@@ -126,7 +126,7 @@ function ListCard({
             <form action={restoreTodoList.bind(null, list.id)}>
               <button
                 type="submit"
-                className="rounded border border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
+                className="rounded border border-app-border px-2 py-1 text-xs text-app-primary hover:bg-app-badge-bg"
               >
                 Restaurer
               </button>

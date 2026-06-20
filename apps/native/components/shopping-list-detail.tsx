@@ -38,13 +38,13 @@ import {
   type ItemMemory,
   type SuggestionHistoryEntry,
   type TitleSuggestion,
-} from "@/lib/grocery-detect";
+} from "@repo/domain/grocery-detect";
 import {
   CATEGORY_LABELS,
   itemIcon,
   PICKABLE_CATEGORIES,
-} from "@/lib/grocery-ui";
-import { applyListOrder } from "@/lib/reorder-list";
+} from "@repo/domain/grocery-ui";
+import { applyListOrder } from "@repo/domain/reorder-list";
 import {
   memberRoleLabel,
   SHARE_ROLES,

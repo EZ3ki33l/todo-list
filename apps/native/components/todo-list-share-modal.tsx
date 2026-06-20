@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -13,6 +13,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { getPalette, type AppPalette } from "@repo/theme";
+
 import {
   memberRoleLabel,
   SHARE_ROLES,
@@ -20,6 +22,7 @@ import {
   toggleShareRole,
   type ShareRole,
 } from "@/lib/share-roles";
+import { useThemeMode } from "@/lib/theme-context";
 import { trpc } from "@/lib/trpc";
 
 type Props = {
@@ -31,6 +34,9 @@ type Props = {
 export function TodoListShareModal({ listId, visible, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const utils = trpc.useUtils();
+  const { themeName } = useThemeMode();
+  const palette = useMemo(() => getPalette(themeName), [themeName]);
+  const styles = useMemo(() => getStyles(palette), [palette]);
 
   const { data: list } = trpc.lists.getById.useQuery(
     { listId },
@@ -94,7 +100,7 @@ export function TodoListShareModal({ listId, visible, onClose }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Email de l'utilisateur"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={palette.textSubtle}
               value={shareEmail}
               onChangeText={setShareEmail}
               autoCapitalize="none"
@@ -171,72 +177,74 @@ export function TodoListShareModal({ listId, visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  modalOverlay: { flex: 1, justifyContent: "flex-end" },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  modalScrollContent: { paddingBottom: 8 },
-  modalCard: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    maxHeight: "85%",
-  },
-  modalTitle: { fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 16 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: "#111827",
-    marginBottom: 12,
-  },
-  roleHint: { fontSize: 12, color: "#6B7280", marginBottom: 8 },
-  roleRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  roleBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    alignItems: "center",
-  },
-  roleBtnActive: { backgroundColor: "#111827", borderColor: "#111827" },
-  roleBtnText: { fontSize: 12, color: "#374151", textAlign: "center" },
-  roleBtnTextActive: { color: "#fff" },
-  shareError: { fontSize: 13, color: "#DC2626", marginBottom: 8 },
-  addBtn: {
-    backgroundColor: "#111827",
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  addBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  membersTitle: { fontSize: 14, fontWeight: "600", color: "#111827", marginTop: 16, marginBottom: 8 },
-  memberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  memberInfo: { flex: 1 },
-  memberName: { fontSize: 14, color: "#111827" },
-  memberRoleTap: { fontSize: 12, color: "#2563EB", marginTop: 2 },
-  unshareBtn: { fontSize: 13, color: "#DC2626" },
-  modalClose: {
-    marginTop: 16,
-    alignItems: "center",
-    paddingVertical: 14,
-    minHeight: 48,
-    justifyContent: "center",
-  },
-  modalCloseText: { fontSize: 15, fontWeight: "600", color: "#374151" },
-});
+function getStyles(p: AppPalette) {
+  return StyleSheet.create({
+    modalOverlay: { flex: 1, justifyContent: "flex-end" },
+    modalBackdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: p.overlay,
+    },
+    modalScrollContent: { paddingBottom: 8 },
+    modalCard: {
+      backgroundColor: p.bgElevated,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      maxHeight: "85%",
+    },
+    modalTitle: { fontSize: 18, fontWeight: "700", color: p.text, marginBottom: 16 },
+    input: {
+      borderWidth: 1,
+      borderColor: p.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+      color: p.text,
+      marginBottom: 12,
+    },
+    roleHint: { fontSize: 12, color: p.textMuted, marginBottom: 8 },
+    roleRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
+    roleBtn: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: p.borderSoft,
+      alignItems: "center",
+    },
+    roleBtnActive: { backgroundColor: p.primary, borderColor: p.primary },
+    roleBtnText: { fontSize: 12, color: p.text, textAlign: "center" },
+    roleBtnTextActive: { color: p.onPrimary },
+    shareError: { fontSize: 13, color: p.danger, marginBottom: 8 },
+    addBtn: {
+      backgroundColor: p.primary,
+      borderRadius: 8,
+      paddingVertical: 12,
+      alignItems: "center",
+    },
+    addBtnText: { color: p.onPrimary, fontWeight: "600", fontSize: 14 },
+    membersTitle: { fontSize: 14, fontWeight: "600", color: p.text, marginTop: 16, marginBottom: 8 },
+    memberRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: p.borderSoft,
+    },
+    memberInfo: { flex: 1 },
+    memberName: { fontSize: 14, color: p.text },
+    memberRoleTap: { fontSize: 12, color: p.primary, marginTop: 2 },
+    unshareBtn: { fontSize: 13, color: p.danger },
+    modalClose: {
+      marginTop: 16,
+      alignItems: "center",
+      paddingVertical: 14,
+      minHeight: 48,
+      justifyContent: "center",
+    },
+    modalCloseText: { fontSize: 15, fontWeight: "600", color: p.textMuted },
+  });
+}

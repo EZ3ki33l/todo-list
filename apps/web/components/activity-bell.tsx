@@ -199,7 +199,7 @@ export function ActivityBell() {
                             <Link
                               href={href}
                               onClick={() => handleItemClick(item.id, isUnread)}
-                              className={`block px-3 py-2.5 hover:bg-app-bg-soft ${isUnread ? "bg-blue-50/50" : ""}`}
+                              className={`block px-3 py-2.5 hover:bg-app-bg-soft ${isUnread ? "bg-app-primary/10" : ""}`}
                             >
                               {inner}
                             </Link>
@@ -207,7 +207,7 @@ export function ActivityBell() {
                             <button
                               type="button"
                               onClick={() => handleItemClick(item.id, isUnread)}
-                              className={`block w-full px-3 py-2.5 text-left hover:bg-app-bg-soft ${isUnread ? "bg-blue-50/50" : ""}`}
+                              className={`block w-full px-3 py-2.5 text-left hover:bg-app-bg-soft ${isUnread ? "bg-app-primary/10" : ""}`}
                             >
                               {inner}
                             </button>

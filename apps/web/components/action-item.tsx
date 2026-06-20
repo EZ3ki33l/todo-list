@@ -313,18 +313,18 @@ function ActionItemInner({
                 </Link>
               )}
               {action.recurrence === "DAILY" && (
-                <span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-600">quotidien</span>
+                <span className="rounded bg-app-recurrence-daily-bg px-1.5 py-0.5 text-xs text-app-recurrence-daily-text">quotidien</span>
               )}
               {action.recurrence === "WEEKLY" && !hideDayTag && (
-                <span className="rounded bg-purple-50 px-1.5 py-0.5 text-xs text-purple-600">
+                <span className="rounded bg-app-recurrence-weekly-bg px-1.5 py-0.5 text-xs text-app-recurrence-weekly-text">
                   hebdo · {action.recurrenceDow !== null ? DOW_LABELS[action.recurrenceDow!] : ""}
                 </span>
               )}
               {action.recurrence === "WEEKLY" && hideDayTag && (
-                <span className="rounded bg-purple-50 px-1.5 py-0.5 text-xs text-purple-600">hebdo</span>
+                <span className="rounded bg-app-recurrence-weekly-bg px-1.5 py-0.5 text-xs text-app-recurrence-weekly-text">hebdo</span>
               )}
               {action.recurrence !== "NONE" && action.streakCount > 0 && (
-                <span className="rounded bg-orange-50 px-1.5 py-0.5 text-xs text-app-primary">
+                <span className="rounded bg-app-streak-bg px-1.5 py-0.5 text-xs text-app-streak-text">
                   série {action.streakCount}
                   {action.bestStreak > action.streakCount ? ` · record ${action.bestStreak}` : ""}
                 </span>

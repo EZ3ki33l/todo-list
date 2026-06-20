@@ -58,6 +58,9 @@ importers:
       '@repo/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@repo/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@repo/emoji':
         specifier: workspace:*
         version: link:../../packages/emoji
@@ -176,6 +179,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@repo/emoji':
         specifier: workspace:*
         version: link:../../packages/emoji
@@ -299,6 +305,16 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.22.3
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
+  packages/domain:
+    dependencies:
+      '@repo/emoji':
+        specifier: workspace:*
+        version: link:../emoji
+    devDependencies:
       typescript:
         specifier: 5.9.2
         version: 5.9.2

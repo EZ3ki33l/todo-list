@@ -1,4 +1,7 @@
-import { NOTIFICATION_TYPE_OPTIONS } from "@/lib/notification-constants";
+import { useMemo } from "react";
+
+import { NOTIFICATION_TYPE_OPTIONS } from "@repo/api/notification-constants";
+import { getPalette, type AppPalette } from "@repo/theme";
 import {
   Alert,
   Pressable,
@@ -16,6 +19,7 @@ import {
   getPushPermissionStatus,
   openSystemNotificationSettings,
 } from "@/lib/push-notifications";
+import { useThemeMode } from "@/lib/theme-context";
 import { trpc } from "@/lib/trpc";
 
 type Prefs = {
@@ -28,6 +32,8 @@ type Prefs = {
 export function NotificationSettings() {
   const utils = trpc.useUtils();
   const { data: prefs, isLoading } = trpc.notifications.getPreferences.useQuery();
+  const { themeName } = useThemeMode();
+  const styles = useMemo(() => getStyles(getPalette(themeName)), [themeName]);
 
   const update = trpc.notifications.updatePreferences.useMutation({
     onSuccess: () => {
@@ -134,47 +140,49 @@ export function NotificationSettings() {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: 16, paddingVertical: 12 },
-  masterRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    backgroundColor: "#F8FAFC",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    padding: 12,
-    marginBottom: 8,
-  },
-  masterText: { flex: 1 },
-  masterTitle: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  masterHint: { fontSize: 12, color: "#64748B", marginTop: 4, lineHeight: 17 },
-  section: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#94A3B8",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 14,
-    marginBottom: 8,
-  },
-  typeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 8,
-  },
-  typeDisabled: { opacity: 0.45 },
-  typeText: { flex: 1 },
-  typeLabel: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  typeDesc: { fontSize: 12, color: "#64748B", marginTop: 3, lineHeight: 17 },
-  settingsLink: { alignItems: "center", paddingVertical: 8 },
-  settingsLinkText: { fontSize: 13, color: "#6B7280", textDecorationLine: "underline" },
-});
+function getStyles(p: AppPalette) {
+  return StyleSheet.create({
+    wrap: { paddingHorizontal: 16, paddingVertical: 12 },
+    masterRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      backgroundColor: p.bgSoft,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: p.borderSoft,
+      padding: 12,
+      marginBottom: 8,
+    },
+    masterText: { flex: 1 },
+    masterTitle: { fontSize: 14, fontWeight: "600", color: p.text },
+    masterHint: { fontSize: 12, color: p.textMuted, marginTop: 4, lineHeight: 17 },
+    section: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: p.textSubtle,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginTop: 14,
+      marginBottom: 8,
+    },
+    typeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      borderWidth: 1,
+      borderColor: p.borderSoft,
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 8,
+    },
+    typeDisabled: { opacity: 0.45 },
+    typeText: { flex: 1 },
+    typeLabel: { fontSize: 14, fontWeight: "600", color: p.text },
+    typeDesc: { fontSize: 12, color: p.textMuted, marginTop: 3, lineHeight: 17 },
+    settingsLink: { alignItems: "center", paddingVertical: 8 },
+    settingsLinkText: { fontSize: 13, color: p.textMuted, textDecorationLine: "underline" },
+  });
+}

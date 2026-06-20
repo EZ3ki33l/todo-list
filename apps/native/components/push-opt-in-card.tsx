@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   AppState,
@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 
+import { getPalette, type AppPalette } from "@repo/theme";
 import { LoadingLogo } from "@/components/loading-logo";
 import { FluentEmoji } from "@/components/fluent-emoji";
 import { useFocusEffect } from "expo-router";
@@ -20,6 +21,7 @@ import {
   type PushPermissionStatus,
 } from "@/lib/push-notifications";
 import { isPushOptIn } from "@/lib/push-preferences";
+import { useThemeMode } from "@/lib/theme-context";
 import { trpc } from "@/lib/trpc";
 
 const PUSH_HELP_MESSAGES = {
@@ -43,6 +45,9 @@ export function PushOptInCard({ visible, embedded, listKind = "shopping" }: Prop
   const [optIn, setOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const { themeName } = useThemeMode();
+  const palette = useMemo(() => getPalette(themeName), [themeName]);
+  const styles = useMemo(() => getChipStyles(palette), [palette]);
 
   const utils = trpc.useUtils();
   const registerPush = trpc.notifications.registerPushToken.useMutation({
@@ -200,7 +205,7 @@ export function PushOptInCard({ visible, embedded, listKind = "shopping" }: Prop
       style={[styles.wrap, embedded && styles.wrapEmbedded]}
     >
       {loading ? (
-        <LoadingLogo size={18} tintColor={active ? "#22C55E" : "#EF4444"} />
+        <LoadingLogo size={18} tintColor={active ? palette.success : palette.danger} />
       ) : (
         <View style={[styles.chip, active ? styles.chipOn : styles.chipOff]}>
           <FluentEmoji emoji="🔔" size={16} />
@@ -214,55 +219,28 @@ export function PushOptInCard({ visible, embedded, listKind = "shopping" }: Prop
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    alignSelf: "flex-end",
-    marginBottom: 8,
-  },
-  wrapEmbedded: {
-    alignSelf: "center",
-    marginBottom: 0,
-  },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  chipOn: {
-    backgroundColor: "#F0FDF4",
-    borderColor: "#BBF7D0",
-  },
-  chipOff: {
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FECACA",
-  },
-  bell: {
-    fontSize: 12,
-    lineHeight: 14,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  labelOn: {
-    color: "#15803D",
-  },
-  labelOff: {
-    color: "#B91C1C",
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  dotOn: {
-    backgroundColor: "#22C55E",
-  },
-  dotOff: {
-    backgroundColor: "#EF4444",
-  },
-});
+function getChipStyles(p: AppPalette) {
+  return StyleSheet.create({
+    wrap: { alignSelf: "flex-end", marginBottom: 8 },
+    wrapEmbedded: { alignSelf: "center", marginBottom: 0 },
+    chip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 14,
+      borderWidth: 1,
+    },
+    chipOn: { backgroundColor: p.successBg, borderColor: p.success },
+    chipOff: { backgroundColor: p.dangerBg, borderColor: p.danger },
+    bell: { fontSize: 12, lineHeight: 14 },
+    label: { fontSize: 12, fontWeight: "600" },
+    labelOn: { color: p.success },
+    labelOff: { color: p.danger },
+    dot: { width: 7, height: 7, borderRadius: 4 },
+    dotOn: { backgroundColor: p.success },
+    dotOff: { backgroundColor: p.danger },
+  });
+}
+

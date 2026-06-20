@@ -1,8 +1,12 @@
+import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { getPalette, type AppPalette } from "@repo/theme";
+
 import { FluentEmoji } from "@/components/fluent-emoji";
-import { normalizeItemTitle, type TitleSuggestion } from "@/lib/grocery-detect";
-import { CATEGORY_LABELS, itemIcon } from "@/lib/grocery-ui";
+import { normalizeItemTitle, type TitleSuggestion } from "@repo/domain/grocery-detect";
+import { CATEGORY_LABELS, itemIcon } from "@repo/domain/grocery-ui";
+import { useThemeMode } from "@/lib/theme-context";
 
 function suggestionMeta(s: TitleSuggestion): string {
   if (s.source === "history") return "Récent";
@@ -17,6 +21,9 @@ export function TitleSuggestionList({
   suggestions: TitleSuggestion[];
   onSelect: (s: TitleSuggestion) => void;
 }) {
+  const { themeName } = useThemeMode();
+  const styles = useMemo(() => getStyles(getPalette(themeName)), [themeName]);
+
   if (suggestions.length === 0) return null;
 
   return (
@@ -39,26 +46,28 @@ export function TitleSuggestionList({
   );
 }
 
-const styles = StyleSheet.create({
-  box: {
-    marginTop: 4,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 10,
-    backgroundColor: "#F9FAFB",
-    overflow: "hidden",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E7EB",
-  },
-  rowLast: { borderBottomWidth: 0 },
-  title: { flex: 1, fontSize: 15, color: "#111827", fontWeight: "500" },
-  meta: { fontSize: 12, color: "#6B7280" },
-});
+function getStyles(p: AppPalette) {
+  return StyleSheet.create({
+    box: {
+      marginTop: 4,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: p.borderSoft,
+      borderRadius: 10,
+      backgroundColor: p.bgSoft,
+      overflow: "hidden",
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: p.borderSoft,
+    },
+    rowLast: { borderBottomWidth: 0 },
+    title: { flex: 1, fontSize: 15, color: p.text, fontWeight: "500" },
+    meta: { fontSize: 12, color: p.textMuted },
+  });
+}

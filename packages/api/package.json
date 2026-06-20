@@ -8,8 +8,10 @@
     "./notification-constants": "./src/lib/notification-preference-constants.ts",
     "./lib/maps": "./src/lib/maps.ts",
     "./lib/action-form": "./src/lib/action-form.ts",
+    "./lib/action-recurrence": "./src/lib/action-recurrence.ts",
     "./lib/confirm-delete": "./src/lib/confirm-delete.ts",
-    "./lib/action-reminder": "./src/lib/action-reminder.ts"
+    "./lib/action-reminder": "./src/lib/action-reminder.ts",
+    "./lib/default-lists": "./src/lib/default-lists.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

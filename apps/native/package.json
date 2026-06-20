@@ -16,6 +16,7 @@
     "@clerk/expo": "^3.4.2",
     "@react-native-community/datetimepicker": "8.6.0",
     "@repo/api": "workspace:*",
+    "@repo/domain": "workspace:*",
     "@repo/emoji": "workspace:*",
     "@repo/theme": "workspace:*",
     "@tamagui/config": "^2.3.0",

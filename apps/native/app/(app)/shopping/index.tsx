@@ -141,7 +141,6 @@ function SharedShoppingSection({
 }
 
 export default function ShoppingScreen() {
-  const { signOut } = useAuth();
   const { themeName } = useThemeMode();
   const palette = getPalette(themeName);
   const hub = useMemo(() => getListHubStyles(palette), [palette]);
@@ -194,7 +193,7 @@ export default function ShoppingScreen() {
     <SafeAreaView style={hub.safe} edges={["top"]}>
       <View style={{ flex: 1 }}>
         <View style={{ paddingHorizontal: 16, paddingTop: 16, backgroundColor: palette.bg }}>
-          <TabListHeader title="Courses" onSignOut={signOut} />
+          <TabListHeader logoName="caddie" />
         </View>
 
         {showSkeleton ? (

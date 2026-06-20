@@ -1,11 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { ActivityBell } from "@/components/activity-bell";
-import { ClientOnly } from "@/components/client-only";
 import { SessionNav } from "@/components/session-nav";
 import { SessionNavFallback } from "@/components/session-nav-fallback";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { TrpcProvider } from "@/components/trpc-provider";
 import { getCachedAuthSession } from "@/lib/cached-session";
 
@@ -19,14 +16,6 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           <Suspense fallback={<SessionNavFallback />}>
             <SessionNav />
           </Suspense>
-          <ThemeToggle />
-          {session?.user ? (
-            <ClientOnly
-              fallback={<span className="inline-block size-8 shrink-0 rounded-md" aria-hidden />}
-            >
-              <ActivityBell />
-            </ClientOnly>
-          ) : null}
         </div>
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">{children}</main>

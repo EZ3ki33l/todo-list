@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 import { withEffectiveDone } from "@repo/api";
 import { getAppUser } from "@/lib/app-session";
@@ -15,6 +16,7 @@ import { progressLabel } from "@/lib/list-progress";
 import { prisma } from "@repo/db";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@repo/api/server";
+import todoLogo from "../../../../native/assets/ez3-todolist.png";
 
 type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 
@@ -66,9 +68,9 @@ export default async function DashboardPage() {
   const progressByListId = progressByListIdFromActions(sharedListIds, sharedActionRows);
 
   return (
-    <div className="space-y-10">
-      <header>
-        <h1 className="text-2xl font-bold text-app-text">Tâches</h1>
+    <div className="space-y-4">
+      <header className="flex justify-center py-0">
+        <Image src={todoLogo} alt="Tâches" width={70} height={70} className="opacity-95" />
       </header>
 
       <DayWeekView

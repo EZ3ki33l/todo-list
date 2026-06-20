@@ -50,6 +50,7 @@ Chaque entrée cite la PR GitHub quand elle existe.
 | [2.2.0](#220---2026-06-18) | 2026-06-18 | Charte graphique Catppuccin (native + web) |
 | [2.3.0](#230---2026-06-19) | 2026-06-19 | Détails tâches (++), rappels, Google Agenda |
 | [2.3.1](#231---2026-06-20) | 2026-06-20 | Suppression listes partagées + confirmations |
+| [2.3.2](#232---2026-06-20) | 2026-06-20 | Suppression compte Clerk => purge totale des données |
 
 ---
 
@@ -525,6 +526,22 @@ pnpm --filter @repo/db db:push
 #### Légal
 
 - Précision **politique de confidentialité** : suppression volontaire d’une liste par son propriétaire
+
+---
+
+### 2.3.2 — 2026-06-20
+
+**Suppression de compte Clerk : purge complète des données utilisateur**
+
+- Ajout d&apos;un webhook Clerk `user.deleted` sur `POST /api/webhooks/clerk`
+- Vérification de signature webhook côté serveur (`@clerk/nextjs/webhooks`)
+- Suppression de l&apos;utilisateur applicatif par `clerkId`
+- Suppression automatique en cascade de toutes les données liées (listes,
+  tâches, courses, partages, notifications, tokens push/web-push, etc.) via
+  les relations Prisma `onDelete: Cascade`
+- Route webhook rendue publique dans le middleware/proxy Clerk
+- Mise à jour de la politique de confidentialité : suppression self-service
+  depuis Clerk (Manage account > Delete account) + purge automatique
 
 ---
 

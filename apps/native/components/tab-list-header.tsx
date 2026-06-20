@@ -1,31 +1,37 @@
+import { Image, type ImageSourcePropType } from "react-native";
 import { useMemo } from "react";
-import { Text, XStack } from "tamagui";
+import { XStack } from "tamagui";
 
 import { getPalette } from "@repo/theme";
 
-import { ActivityBell } from "@/components/activity-bell";
-import { UserMenu } from "@/components/user-menu";
 import { useThemeMode } from "@/lib/theme-context";
 
 type Props = {
-  title: string;
-  /** @deprecated — La déconnexion est maintenant dans UserMenu */
-  onSignOut?: () => void;
+  logoName: "todolist" | "caddie";
 };
 
-export function TabListHeader({ title }: Props) {
+const LOGOS = {
+  todolist: require("../assets/ez3-todolist.png"),
+  caddie: require("../assets/ez3-caddie.png"),
+} satisfies Record<"todolist" | "caddie", ImageSourcePropType>;
+
+export function TabListHeader({ logoName }: Props) {
   const { themeName } = useThemeMode();
   const palette = useMemo(() => getPalette(themeName), [themeName]);
 
   return (
-    <XStack justifyContent="space-between" alignItems="center" marginBottom={20}>
-      <Text fontSize={24} fontWeight="700" color={palette.text}>
-        {title}
-      </Text>
-      <XStack alignItems="center" gap={12}>
-        <ActivityBell />
-        <UserMenu />
-      </XStack>
+    <XStack justifyContent="center" alignItems="center" marginBottom={10}>
+      <Image
+        source={LOGOS[logoName]}
+        style={{
+          width: 46,
+          height: 46,
+          tintColor: palette.logoTint ?? palette.text,
+          opacity: 0.95,
+        }}
+        resizeMode="contain"
+        accessibilityIgnoresInvertColors
+      />
     </XStack>
   );
 }

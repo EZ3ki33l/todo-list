@@ -12,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
   "/politique-de-confidentialite",
   "/api/trpc(.*)",
   "/api/activity/stream",
+  "/api/webhooks/clerk",
 ]);
 
 function rateLimitApi(req: Request): Response | undefined {

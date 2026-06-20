@@ -1,4 +1,9 @@
+import { useMemo } from "react";
 import { StyleSheet, Text } from "react-native";
+
+import { getPalette, type AppPalette } from "@repo/theme";
+
+import { useThemeMode } from "@/lib/theme-context";
 
 type Props = {
   streakCount?: number | null;
@@ -8,6 +13,9 @@ type Props = {
 export function StreakBadge({ streakCount, bestStreak }: Props) {
   const streak = streakCount ?? 0;
   const best = bestStreak ?? 0;
+  const { themeName } = useThemeMode();
+  const styles = useMemo(() => getStyles(getPalette(themeName)), [themeName]);
+
   if (streak <= 0) return null;
 
   return (
@@ -18,13 +26,15 @@ export function StreakBadge({ streakCount, bestStreak }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    fontSize: 11,
-    color: "#C2410C",
-    backgroundColor: "#FFF7ED",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-});
+function getStyles(p: AppPalette) {
+  return StyleSheet.create({
+    badge: {
+      fontSize: 11,
+      color: p.streakText,
+      backgroundColor: p.streakBg,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+  });
+}

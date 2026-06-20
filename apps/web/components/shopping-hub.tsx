@@ -40,7 +40,7 @@ function ListActions({
             type="button"
             onClick={() => updateStatus.mutate({ listId, status: "DONE" })}
             disabled={updateStatus.isPending}
-            className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-primary hover:bg-green-50"
+            className="rounded border border-app-border-soft px-2 py-1 text-xs text-app-primary hover:bg-app-success-bg"
           >
             Terminer
           </button>
@@ -59,7 +59,7 @@ function ListActions({
           type="button"
           onClick={() => updateStatus.mutate({ listId, status: "ACTIVE" })}
           disabled={updateStatus.isPending}
-          className="rounded border border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
+          className="rounded border border-app-border px-2 py-1 text-xs text-app-primary hover:bg-app-badge-bg"
         >
           Restaurer
         </button>
@@ -70,7 +70,7 @@ function ListActions({
           onClick={handleDelete}
           disabled={deleteList.isPending}
           aria-label={`Supprimer la liste ${title}`}
-          className="rounded border border-app-border-soft p-2 text-app-danger hover:bg-red-50 disabled:opacity-40"
+          className="rounded border border-app-border-soft p-2 text-app-danger hover:bg-app-danger-bg disabled:opacity-40"
         >
           <TrashIcon />
         </button>

@@ -77,7 +77,7 @@ export function AddActionDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-app-overlay p-4 sm:items-center"
       role="presentation"
       onClick={onClose}
     >

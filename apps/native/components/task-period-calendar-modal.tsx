@@ -7,6 +7,8 @@ import {
   View,
 } from "react-native";
 
+import { getPalette, type AppPalette } from "@repo/theme";
+
 import type { SchedulableAction } from "@/lib/day-week-split";
 import {
   addDays,
@@ -20,26 +22,32 @@ import {
   startOfMonth,
 } from "@/lib/task-agenda";
 import { startOfDay } from "@/lib/day-week-split";
+import { useThemeMode } from "@/lib/theme-context";
 
 function CalendarDayDots({
   markers,
   selected,
+  palette,
 }: {
   markers: { hasWeekly: boolean; hasPonctual: boolean };
   selected: boolean;
+  palette: AppPalette;
 }) {
   if (!markers.hasWeekly && !markers.hasPonctual) return null;
   return (
-    <View style={styles.dotsRow}>
+    <View style={dotRowStyle}>
       {markers.hasPonctual && (
-        <View style={[styles.dot, selected ? styles.dotPonctualSelected : styles.dotPonctual]} />
+        <View style={[dotStyle, { backgroundColor: selected ? palette.markerPonctualMuted : palette.markerPonctual }]} />
       )}
       {markers.hasWeekly && (
-        <View style={[styles.dot, selected ? styles.dotWeeklySelected : styles.dotWeekly]} />
+        <View style={[dotStyle, { backgroundColor: selected ? palette.markerWeeklyMuted : palette.markerWeekly }]} />
       )}
     </View>
   );
 }
+
+const dotRowStyle = { flexDirection: "row" as const, gap: 3, alignItems: "center" as const };
+const dotStyle = { width: 5, height: 5, borderRadius: 2.5 };
 
 type Props = {
   visible: boolean;
@@ -58,6 +66,10 @@ export function TaskPeriodCalendarModal({
   today,
   selectedDay,
 }: Props) {
+  const { themeName } = useThemeMode();
+  const palette = useMemo(() => getPalette(themeName), [themeName]);
+  const styles = useMemo(() => getStyles(palette), [palette]);
+
   const [viewMonth, setViewMonth] = useState(() => startOfMonth(selectedDay));
 
   useEffect(() => {
@@ -143,7 +155,7 @@ export function TaskPeriodCalendarModal({
                       {cell.date.getDate()}
                     </Text>
                     <View style={styles.dotsSlot}>
-                      <CalendarDayDots markers={markers} selected={isSelected} />
+                      <CalendarDayDots markers={markers} selected={isSelected} palette={palette} />
                     </View>
                   </View>
                 </Pressable>
@@ -153,11 +165,11 @@ export function TaskPeriodCalendarModal({
 
           <View style={styles.legend}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.dotPonctual]} />
+              <View style={[styles.legendDot, { backgroundColor: palette.markerPonctual }]} />
               <Text style={styles.legendText}>Ponctuelle</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.dotWeekly]} />
+              <View style={[styles.legendDot, { backgroundColor: palette.markerWeekly }]} />
               <Text style={styles.legendText}>Hebdomadaire</Text>
             </View>
           </View>
@@ -179,85 +191,81 @@ export function formatPeriodRangeLabel(periodStart: Date): string {
   return `du ${fmt(start)} au ${fmt(end)}`;
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    padding: 16,
-  },
-  dialog: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  title: { fontSize: 16, fontWeight: "600", color: "#111827", flex: 1 },
-  closeBtn: { fontSize: 18, color: "#9CA3AF", padding: 4 },
-  hint: { fontSize: 12, color: "#9CA3AF", marginBottom: 16 },
-  monthNav: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  navBtn: { fontSize: 22, color: "#6B7280", paddingHorizontal: 8 },
-  monthLabel: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  weekdayRow: { flexDirection: "row", marginBottom: 4 },
-  weekdayLabel: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#9CA3AF",
-    textTransform: "uppercase",
-  },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-  dayCell: {
-    width: `${100 / 7}%`,
-    aspectRatio: 1,
-    borderRadius: 8,
-    padding: 2,
-  },
-  dayCellInner: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 6,
-    paddingBottom: 4,
-  },
-  dayCellSelected: { backgroundColor: "#4F46E5" },
-  dayCellToday: { borderWidth: 2, borderColor: "#C7D2FE" },
-  dayCellOutside: { opacity: 0.5 },
-  dayText: { fontSize: 14, lineHeight: 18, color: "#111827" },
-  dayTextSelected: { color: "#fff", fontWeight: "600" },
-  dayTextToday: { color: "#4338CA", fontWeight: "600" },
-  dayTextOutside: { color: "#D1D5DB" },
-  dotsSlot: {
-    minHeight: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dotsRow: { flexDirection: "row", gap: 3, alignItems: "center" },
-  dot: { width: 5, height: 5, borderRadius: 2.5 },
-  dotPonctual: { backgroundColor: "#F59E0B" },
-  dotPonctualSelected: { backgroundColor: "#FDE68A" },
-  dotWeekly: { backgroundColor: "#A855F7" },
-  dotWeeklySelected: { backgroundColor: "#E9D5FF" },
-  legend: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 16,
-    marginTop: 16,
-  },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
-  legendDot: { width: 6, height: 6, borderRadius: 3 },
-  legendText: { fontSize: 10, color: "#9CA3AF" },
-});
+function getStyles(p: AppPalette) {
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: p.overlay,
+      justifyContent: "center",
+      padding: 16,
+    },
+    dialog: {
+      backgroundColor: p.bgElevated,
+      borderRadius: 12,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: p.borderSoft,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    title: { fontSize: 16, fontWeight: "600", color: p.text, flex: 1 },
+    closeBtn: { fontSize: 18, color: p.textSubtle, padding: 4 },
+    hint: { fontSize: 12, color: p.textSubtle, marginBottom: 16 },
+    monthNav: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    navBtn: { fontSize: 22, color: p.textMuted, paddingHorizontal: 8 },
+    monthLabel: { fontSize: 14, fontWeight: "600", color: p.text },
+    weekdayRow: { flexDirection: "row", marginBottom: 4 },
+    weekdayLabel: {
+      flex: 1,
+      textAlign: "center",
+      fontSize: 10,
+      fontWeight: "600",
+      color: p.textSubtle,
+      textTransform: "uppercase",
+    },
+    grid: { flexDirection: "row", flexWrap: "wrap" },
+    dayCell: {
+      width: `${100 / 7}%`,
+      aspectRatio: 1,
+      borderRadius: 8,
+      padding: 2,
+    },
+    dayCellInner: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingTop: 6,
+      paddingBottom: 4,
+    },
+    dayCellSelected: { backgroundColor: p.primary },
+    dayCellToday: { borderWidth: 2, borderColor: p.badgeBg },
+    dayCellOutside: { opacity: 0.5 },
+    dayText: { fontSize: 14, lineHeight: 18, color: p.text },
+    dayTextSelected: { color: p.onPrimary, fontWeight: "600" },
+    dayTextToday: { color: p.badgeText, fontWeight: "600" },
+    dayTextOutside: { color: p.border },
+    dotsSlot: {
+      minHeight: 8,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    legend: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 16,
+      marginTop: 16,
+    },
+    legendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+    legendDot: { width: 6, height: 6, borderRadius: 3 },
+    legendText: { fontSize: 10, color: p.textSubtle },
+  });
+}

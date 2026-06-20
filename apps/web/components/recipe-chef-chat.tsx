@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { ChefChatMessageContent } from "@/components/chef-chat-message-content";
 import { FluentEmoji } from "@/components/fluent-emoji";
-import { detectCategory } from "@/lib/grocery-detect";
+import { detectCategory } from "@repo/domain/grocery-detect";
 import { trpc } from "@/lib/trpc";
 
 type ChatMode = "from_list" | "suggest_items" | "seasonal_produce";
@@ -185,7 +185,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
           <button
             type="button"
             aria-label="Fermer"
-            className="absolute inset-0 bg-black/45"
+            className="absolute inset-0 bg-app-overlay"
             onClick={closeModal}
           />
           <div

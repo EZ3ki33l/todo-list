@@ -11,8 +11,8 @@ import {
   type GroceryCategory,
   type ItemMemory,
   type TitleSuggestion,
-} from "@/lib/grocery-detect";
-import { CATEGORY_LABELS, itemIcon } from "@/lib/grocery-ui";
+} from "@repo/domain/grocery-detect";
+import { CATEGORY_LABELS, itemIcon } from "@repo/domain/grocery-ui";
 
 export type ShoppingItemRowData = {
   id: string;
@@ -204,7 +204,7 @@ function ShoppingItemRowInner({
           <button
             type="button"
             onClick={onDelete}
-            className="rounded p-1 text-xs text-app-danger hover:bg-red-50 hover:text-app-danger"
+            className="rounded p-1 text-xs text-app-danger hover:bg-app-danger-bg hover:text-app-danger"
             aria-label="Supprimer"
           >
             ✕

@@ -71,7 +71,7 @@ export function SharedListRow({ kind, listId, title, subtitle, isOwner, href }: 
           onClick={handleDelete}
           disabled={pending}
           aria-label={`Supprimer la liste ${title}`}
-          className="flex shrink-0 items-center border-l border-app-border-soft px-3 text-app-danger transition-colors hover:bg-red-50 disabled:opacity-40"
+          className="flex shrink-0 items-center border-l border-app-border-soft px-3 text-app-danger transition-colors hover:bg-app-danger-bg disabled:opacity-40"
         >
           <TrashIcon />
         </button>

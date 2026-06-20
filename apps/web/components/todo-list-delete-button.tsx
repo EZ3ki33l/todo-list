@@ -34,7 +34,7 @@ export function TodoListDeleteButton({
       onClick={handleDelete}
       disabled={deleteList.isPending}
       aria-label={`Supprimer la liste ${title}`}
-      className="rounded border border-app-border-soft p-2 text-app-danger hover:bg-red-50 disabled:opacity-40"
+      className="rounded border border-app-border-soft p-2 text-app-danger hover:bg-app-danger-bg disabled:opacity-40"
     >
       <TrashIcon />
     </button>

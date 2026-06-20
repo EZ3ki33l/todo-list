@@ -30,14 +30,14 @@ function CalendarDayDots({
       {markers.hasPonctual && (
         <span
           className={`size-1 rounded-full ${
-            selected ? "bg-amber-200" : "bg-amber-500"
+            selected ? "bg-app-marker-ponctual-muted" : "bg-app-marker-ponctual"
           }`}
         />
       )}
       {markers.hasWeekly && (
         <span
           className={`size-1 rounded-full ${
-            selected ? "bg-purple-200" : "bg-purple-500"
+            selected ? "bg-app-marker-weekly-muted" : "bg-app-marker-weekly"
           }`}
         />
       )}
@@ -88,7 +88,7 @@ export function TaskPeriodCalendarModal({
       <button
         type="button"
         aria-label="Fermer"
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-app-overlay"
         onClick={onClose}
       />
       <div
@@ -177,11 +177,11 @@ export function TaskPeriodCalendarModal({
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-[10px] text-app-text-subtle">
           <span className="inline-flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-amber-500" aria-hidden />
+            <span className="size-1.5 rounded-full bg-app-marker-ponctual" aria-hidden />
             Ponctuelle
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-purple-500" aria-hidden />
+            <span className="size-1.5 rounded-full bg-app-marker-weekly" aria-hidden />
             Hebdomadaire
           </span>
         </div>

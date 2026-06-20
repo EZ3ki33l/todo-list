@@ -1,0 +1,63 @@
+name: Deploy Native (EAS)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Déclenche uniquement si des fichiers natifs changent
+      - "apps/native/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Profil EAS Build"
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+
+concurrency:
+  group: deploy-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: EAS Build (${{ inputs.profile || 'preview' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.4.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build
+        working-directory: apps/native
+        run: |
+          eas build \
+            --platform android \
+            --profile ${{ inputs.profile || 'preview' }} \
+            --non-interactive \
+            --no-wait

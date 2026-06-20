@@ -6,7 +6,8 @@
     "dev": "NODE_OPTIONS=--disable-warning=DEP0205 next dev",
     "build": "NODE_OPTIONS=--disable-warning=DEP0205 next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.2",

@@ -15,7 +15,8 @@ module.exports = {
       // Par défaut : uniquement l'origine propre
       "default-src 'self'",
       // Scripts : Next.js requiert unsafe-inline pour l'hydratation RSC ; Clerk injecte ses scripts
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.accounts.dev https://*.clerk.com https://*.clerk.dev",
+      // *.clerk.accounts.dev couvre les instances comme next-redbird-67.clerk.accounts.dev
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev",
       // Styles : Tailwind/shadcn utilise des styles inline
       "style-src 'self' 'unsafe-inline'",
       // Images : blobs pour aperçus, data URIs pour icônes SVG
@@ -29,12 +30,12 @@ module.exports = {
       // Empêche l'injection de balise <base> pour rediriger les ressources relatives
       "base-uri 'self'",
       // Les formulaires ne peuvent soumettre qu'à l'origine propre ou Clerk
-      "form-action 'self' https://clerk.accounts.dev https://*.clerk.com",
+      "form-action 'self' https://clerk.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com",
       // Empêche l'intégration dans des iframes (clickjacking) — remplace X-Frame-Options
       "frame-ancestors 'none'",
       // Restreint les workers et iframes chargés
       "worker-src 'self' blob:",
-      "frame-src 'self' https://*.clerk.com https://*.clerk.dev",
+      "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev",
     ];
     const csp = cspDirectives.join("; ");
 

@@ -59,12 +59,18 @@ export const notificationsRouter = router({
   registerPushToken: protectedProcedure
     .input(registerPushInput)
     .mutation(async ({ ctx, input }) => {
+      // Si le token appartient déjà à un autre utilisateur, on refuse la réassignation
+      // pour empêcher le détournement (hijacking) de token push.
+      const existing = await prisma.pushToken.findUnique({
+        where: { token: input.token },
+        select: { userId: true },
+      });
+      if (existing && existing.userId !== ctx.userId) {
+        return existing;
+      }
       return prisma.pushToken.upsert({
         where: { token: input.token },
-        update: {
-          userId: ctx.userId,
-          platform: input.platform ?? null,
-        },
+        update: { platform: input.platform ?? null },
         create: {
           userId: ctx.userId,
           token: input.token,
@@ -84,10 +90,18 @@ export const notificationsRouter = router({
   registerWebPush: protectedProcedure
     .input(registerWebPushInput)
     .mutation(async ({ ctx, input }) => {
+      // Même protection que registerPushToken : refuser la réassignation d'un endpoint
+      // push Web déjà enregistré par un autre utilisateur.
+      const existing = await prisma.webPushSubscription.findUnique({
+        where: { endpoint: input.endpoint },
+        select: { userId: true },
+      });
+      if (existing && existing.userId !== ctx.userId) {
+        return existing;
+      }
       return prisma.webPushSubscription.upsert({
         where: { endpoint: input.endpoint },
         update: {
-          userId: ctx.userId,
           p256dh: input.keys.p256dh,
           auth: input.keys.auth,
         },

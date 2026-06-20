@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { withEffectiveDone } from "@repo/api";
+import { withEffectiveDone, parseListId } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@repo/api/server";
 import { getAppUser } from "@/lib/app-session";
@@ -10,7 +10,7 @@ import { AddActionForm } from "@/components/add-action-form";
 import { ActionListPanel } from "@/components/action-list-panel";
 import { EditableTitle } from "@/components/editable-title";
 import { TodoListShareHeader } from "@/components/todo-list-share-header";
-import { getOrCreatePersonalTodoList } from "@/lib/default-lists";
+import { getOrCreatePersonalTodoList } from "@repo/api/lib/default-lists";
 
 type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 
@@ -19,7 +19,16 @@ export default async function ListPage({
 }: {
   params: Promise<{ listId: string }>;
 }) {
-  const { listId } = await params;
+  const { listId: rawListId } = await params;
+
+  // Rejette immédiatement les IDs malformés avant toute requête Prisma.
+  let listId: string;
+  try {
+    listId = parseListId(rawListId);
+  } catch {
+    redirect("/dashboard");
+  }
+
   const user = await getAppUser();
   if (!user) redirect("/login");
 

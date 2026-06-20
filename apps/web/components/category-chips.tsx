@@ -1,7 +1,7 @@
 "use client";
 
-import type { GroceryCategory } from "@/lib/grocery-detect";
-import { CATEGORY_LABELS, PICKABLE_CATEGORIES } from "@/lib/grocery-ui";
+import type { GroceryCategory } from "@repo/domain/grocery-detect";
+import { CATEGORY_LABELS, PICKABLE_CATEGORIES } from "@repo/domain/grocery-ui";
 
 export function CategoryChips({
   value,

@@ -1,4 +1,4 @@
-import { withEffectiveDone, type ActionCompletionFields } from "@/lib/action-effective";
+import { withEffectiveDone, type ActionCompletionFields } from "@repo/api/lib/action-recurrence";
 
 import type { ActionRow } from "@/lib/day-week-split";
 

@@ -1,6 +1,6 @@
 import { Alert } from "react-native";
 import { TRPCClientError } from "@trpc/client";
-import { withEffectiveDone } from "@/lib/action-effective";
+import { withEffectiveDone } from "@repo/api/lib/action-recurrence";
 
 import { asCompletionFields } from "@/lib/normalize-action-row";
 import { trpc } from "@/lib/trpc";

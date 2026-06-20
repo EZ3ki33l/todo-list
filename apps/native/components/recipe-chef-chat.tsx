@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ChefChatMessageContent } from "@/components/chef-chat-message-content";
 import { FluentEmoji } from "@/components/fluent-emoji";
-import { detectCategory } from "@/lib/grocery-detect";
+import { detectCategory } from "@repo/domain/grocery-detect";
 import { trpc } from "@/lib/trpc";
 
 const CHEF_IMAGE = require("@/assets/chef-ia.png");

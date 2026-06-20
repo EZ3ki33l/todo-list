@@ -1,8 +1,6 @@
 "use client";
 
-import type { inferRouterOutputs } from "@trpc/server";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AppRouter } from "@repo/api/server";
+import { useCallback, useMemo, useState } from "react";
 import { ActionItem, type ActionItemData } from "@/components/action-item";
 import { HydratableSvg } from "@/components/hydratable-svg";
 import { DayWeekViewSkeleton } from "@/components/dashboard-skeleton";
@@ -14,10 +12,9 @@ import {
 import {
   buildPeriodDayGroups,
   getUnscheduledActions,
-  moveInList,
-  reorderSectionInGlobal,
   splitActionsByDayWeek,
   startOfDay,
+  type ActionRow,
   type DayGroup,
 } from "@/lib/day-week-split";
 import {
@@ -26,11 +23,10 @@ import {
   EMPTY_TASKS_MESSAGE,
 } from "@/lib/day-week-layout";
 import { sameDay } from "@/lib/task-agenda";
-import { applyListOrder } from "@/lib/reorder-list";
+import { applyListOrder } from "@repo/domain/reorder-list";
+import { useDragReorder } from "@/lib/use-drag-reorder";
 import { trpc } from "@/lib/trpc";
 import { useMounted } from "@/lib/use-mounted";
-
-type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 
 /** Colonne à hauteur fixe : l'en-tête reste visible, la liste défile. */
 function TaskColumnShell({
@@ -45,7 +41,7 @@ function TaskColumnShell({
   emptyMessage?: string;
 }) {
   return (
-    <div className="flex h-full min-h-[8rem] max-h-[min(22rem,calc(50dvh-8rem))] flex-col overflow-hidden rounded-xl border border-app-border-soft bg-app-bg-elevated shadow-sm sm:max-h-none">
+    <div className="flex h-full min-h-32 max-h-[min(22rem,calc(50dvh-8rem))] flex-col overflow-hidden rounded-xl border border-app-border-soft bg-app-bg-elevated shadow-sm sm:max-h-none">
       <div className="shrink-0 border-b border-app-border-soft px-4 py-3">{header}</div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
         {isEmpty ? <p className="text-sm text-app-text-subtle">{emptyMessage}</p> : children}
@@ -95,6 +91,7 @@ function DraggableActionRow({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
+      aria-label={draggable ? `${action.title} — glisser pour réordonner` : undefined}
       className={`relative list-none ${
         isDragOver ? "rounded-lg ring-2 ring-app-border-soft" : ""
       } ${isDragging ? "opacity-50" : ""}`}
@@ -126,7 +123,6 @@ function ActionColumn({
   title,
   subtitle,
   actions,
-  sectionIds,
   globalIds,
   canEdit,
   showListLink,
@@ -138,7 +134,6 @@ function ActionColumn({
   title: string;
   subtitle?: string;
   actions: ActionItemData[];
-  sectionIds: string[];
   globalIds: string[];
   canEdit: boolean;
   showListLink: boolean;
@@ -147,27 +142,17 @@ function ActionColumn({
   onReorder: (orderedIds: string[]) => void;
   onChanged: () => void;
 }) {
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [override, setOverride] = useState<ActionItemData[] | null>(null);
-
-  const listData = override ?? actions;
-  const dragEnabled = canEdit && listData.length > 1;
-
-  const sectionKey = sectionIds.join(",");
-  useEffect(() => {
-    setOverride(null);
-  }, [sectionKey]);
-
-  const commit = useCallback(
-    (fromId: string, toId: string) => {
-      const currentSectionIds = listData.map((a) => a.id);
-      const nextSection = moveInList(listData, fromId, toId);
-      setOverride(nextSection);
-      onReorder(reorderSectionInGlobal(globalIds, currentSectionIds, fromId, toId));
-    },
-    [globalIds, listData, onReorder],
-  );
+  const {
+    listData,
+    dragEnabled,
+    draggingId,
+    dragOverId,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd,
+  } = useDragReorder({ items: actions, globalIds, canEdit, onReorder });
 
   return (
     <TaskColumnShell
@@ -180,12 +165,14 @@ function ActionColumn({
             {subtitle && <p className="mt-0.5 text-sm text-app-text-subtle">{subtitle}</p>}
           </div>
           {dragEnabled && (
-            <p className="text-xs text-app-text-subtle">Glisser ⠿ pour réordonner</p>
+            <p className="text-xs text-app-text-subtle" aria-live="polite">
+              Glisser ⠿ pour réordonner
+            </p>
           )}
         </div>
       }
     >
-      <ul className="space-y-2">
+      <ul className="space-y-2" aria-label={title}>
         {listData.map((action) => (
           <DraggableActionRow
             key={action.id}
@@ -197,26 +184,11 @@ function ActionColumn({
             isDragging={draggingId === action.id}
             isDragOver={dragOverId === action.id && draggingId !== action.id}
             onChanged={onChanged}
-            onDragStart={() => setDraggingId(action.id)}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOverId(action.id);
-            }}
-            onDragLeave={() => {
-              if (dragOverId === action.id) setDragOverId(null);
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              const fromId = e.dataTransfer.getData("text/plain");
-              if (!fromId || fromId === action.id) return;
-              commit(fromId, action.id);
-              setDragOverId(null);
-              setDraggingId(null);
-            }}
-            onDragEnd={() => {
-              setDragOverId(null);
-              setDraggingId(null);
-            }}
+            onDragStart={() => handleDragStart(action.id)}
+            onDragOver={(e) => handleDragOver(e, action.id)}
+            onDragLeave={() => handleDragLeave(action.id)}
+            onDrop={(e) => handleDrop(e, action.id)}
+            onDragEnd={handleDragEnd}
           />
         ))}
       </ul>
@@ -239,27 +211,17 @@ function DayGroupList({
   onReorder: (orderedIds: string[]) => void;
   onChanged: () => void;
 }) {
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [override, setOverride] = useState<ActionItemData[] | null>(null);
-
-  const sectionIds = group.actions.map((a) => a.id);
-  const listData = override ?? group.actions;
-  const dragEnabled = canEdit && listData.length > 1;
-
-  useEffect(() => {
-    setOverride(null);
-  }, [sectionIds.join(",")]);
-
-  const commit = useCallback(
-    (fromId: string, toId: string) => {
-      const currentSectionIds = listData.map((a) => a.id);
-      const nextSection = moveInList(listData, fromId, toId);
-      setOverride(nextSection);
-      onReorder(reorderSectionInGlobal(globalIds, currentSectionIds, fromId, toId));
-    },
-    [globalIds, listData, onReorder],
-  );
+  const {
+    listData,
+    dragEnabled,
+    draggingId,
+    dragOverId,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd,
+  } = useDragReorder({ items: group.actions, globalIds, canEdit, onReorder });
 
   const mounted = useMounted();
   const weekday = mounted
@@ -275,7 +237,7 @@ function DayGroupList({
         <span className="text-sm font-semibold capitalize text-app-text">{weekday}</span>
         <span className="text-xs text-app-text-subtle">{dayMonth}</span>
       </div>
-      <ul className="space-y-2">
+      <ul className="space-y-2" aria-label={`${weekday} ${dayMonth}`}>
         {listData.map((action) => (
           <DraggableActionRow
             key={action.id}
@@ -287,26 +249,11 @@ function DayGroupList({
             isDragging={draggingId === action.id}
             isDragOver={dragOverId === action.id && draggingId !== action.id}
             onChanged={onChanged}
-            onDragStart={() => setDraggingId(action.id)}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOverId(action.id);
-            }}
-            onDragLeave={() => {
-              if (dragOverId === action.id) setDragOverId(null);
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              const fromId = e.dataTransfer.getData("text/plain");
-              if (!fromId || fromId === action.id) return;
-              commit(fromId, action.id);
-              setDragOverId(null);
-              setDraggingId(null);
-            }}
-            onDragEnd={() => {
-              setDragOverId(null);
-              setDraggingId(null);
-            }}
+            onDragStart={() => handleDragStart(action.id)}
+            onDragOver={(e) => handleDragOver(e, action.id)}
+            onDragLeave={() => handleDragLeave(action.id)}
+            onDrop={(e) => handleDrop(e, action.id)}
+            onDragEnd={handleDragEnd}
           />
         ))}
       </ul>
@@ -346,6 +293,7 @@ function WeekPeriodColumn({
   }, [actions, periodStart, today, toItem]);
 
   const isDefaultPeriod = sameDay(periodStart, defaultStart);
+  const rangeLabel = formatPeriodRangeLabel(periodStart);
 
   return (
     <>
@@ -357,9 +305,7 @@ function WeekPeriodColumn({
             <div>
               <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold text-app-text">
                 Cette semaine
-                <span className="text-sm font-normal text-app-text-subtle">
-                  {formatPeriodRangeLabel(periodStart)}
-                </span>
+                <span className="text-sm font-normal text-app-text-subtle">{rangeLabel}</span>
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -367,6 +313,7 @@ function WeekPeriodColumn({
                 <button
                   type="button"
                   onClick={() => setPeriodStart(defaultStart)}
+                  aria-label="Revenir à la semaine actuelle"
                   className="rounded-lg px-2 py-1 text-xs text-app-text-subtle hover:bg-app-bg-soft transition-colors"
                 >
                   Semaine actuelle
@@ -375,9 +322,17 @@ function WeekPeriodColumn({
               <button
                 type="button"
                 onClick={() => setCalendarOpen(true)}
+                aria-label={`Changer la période — actuellement ${rangeLabel}`}
+                aria-haspopup="dialog"
+                aria-expanded={calendarOpen}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-app-border-soft bg-app-bg-elevated px-2.5 py-1.5 text-xs font-medium text-app-text shadow-sm hover:bg-app-bg-soft transition-colors"
               >
-                <HydratableSvg viewBox="0 0 16 16" className="size-3.5 text-app-text-subtle" fill="currentColor" aria-hidden>
+                <HydratableSvg
+                  viewBox="0 0 16 16"
+                  className="size-3.5 text-app-text-subtle"
+                  fill="currentColor"
+                  aria-hidden
+                >
                   <path
                     d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1.5A1.5 1.5 0 0 1 16 2.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-11A1.5 1.5 0 0 1 1.5 1H3V.5a.5.5 0 0 1 .5-.5M1 4v9.5a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5V4z"
                     suppressHydrationWarning
@@ -474,12 +429,11 @@ export function DayWeekViewClient({
     [listId, listTitle],
   );
 
-  const todayItems = split.today.map(toItem);
+  const todayItems = useMemo(() => split.today.map(toItem), [split.today, toItem]);
   const unscheduledItems = useMemo(
     () => getUnscheduledActions(actions ?? []).map(toItem),
     [actions, toItem],
   );
-  const scheduleActions = actions ?? [];
 
   const refresh = useCallback(() => {
     void utils.actions.getByList.invalidate({ listId });
@@ -508,13 +462,12 @@ export function DayWeekViewClient({
   }
 
   return (
-    <section className={DAY_WEEK_SECTION_CLASS}>
+    <section className={DAY_WEEK_SECTION_CLASS} aria-label="Vue jour et semaine">
       <div className={DAY_WEEK_GRID_CLASS}>
         <ActionColumn
           title="Aujourd'hui"
           subtitle={todaySubtitle}
           actions={todayItems}
-          sectionIds={todayItems.map((a) => a.id)}
           globalIds={split.globalIds}
           canEdit={canEdit}
           showListLink={false}
@@ -523,7 +476,7 @@ export function DayWeekViewClient({
           onChanged={refresh}
         />
         <WeekPeriodColumn
-          actions={scheduleActions}
+          actions={actions ?? []}
           globalIds={split.globalIds}
           canEdit={canEdit}
           showListLink={false}
@@ -534,18 +487,17 @@ export function DayWeekViewClient({
         />
       </div>
 
-      {unscheduledItems.length > 0 ? (
+      {unscheduledItems.length > 0 && (
         <ActionColumn
           title="Sans échéance"
           actions={unscheduledItems}
-          sectionIds={unscheduledItems.map((a) => a.id)}
           globalIds={split.globalIds}
           canEdit={canEdit}
           showListLink={false}
           onReorder={onReorder}
           onChanged={refresh}
         />
-      ) : null}
+      )}
     </section>
   );
 }

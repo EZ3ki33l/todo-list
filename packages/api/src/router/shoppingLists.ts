@@ -5,7 +5,7 @@ import {
   getOrCreatePersonalShoppingList,
   getSharedShoppingLists,
 } from "../lib/default-lists";
-import { notifyShoppingListShared } from "../lib/shopping-list-share-notify";
+import { notifyListShared } from "../lib/list-share-notify";
 import { findAccessibleShoppingList } from "../lib/shopping-list-access";
 import {
   createListInput,
@@ -18,12 +18,24 @@ import {
   updateListStatusInput,
 } from "../trpc";
 
+/** @deprecated Utiliser findAccessibleShoppingList — conservé pour compat interne. */
 export async function assertShoppingListAccess(
   listId: string,
   userId: string,
   mode: "read" | "write" = "write",
 ) {
   return findAccessibleShoppingList(listId, userId, mode);
+}
+
+async function assertShoppingOwner(listId: string, userId: string) {
+  const list = await findAccessibleShoppingList(listId, userId, "write");
+  if (list.ownerId !== userId) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Seul le propriétaire peut effectuer cette action",
+    });
+  }
+  return list;
 }
 
 export const shoppingListsRouter = router({
@@ -68,6 +80,8 @@ export const shoppingListsRouter = router({
       });
     }),
 
+  // Note : rename est accessible à tous les membres write (pas uniquement le propriétaire),
+  // contrairement aux listes de tâches. Comportement intentionnel pour les courses partagées.
   rename: protectedProcedure
     .input(renameListInput)
     .mutation(async ({ ctx, input }) => {
@@ -81,10 +95,7 @@ export const shoppingListsRouter = router({
   updateStatus: protectedProcedure
     .input(updateListStatusInput)
     .mutation(async ({ ctx, input }) => {
-      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "write");
-      if (list.ownerId !== ctx.userId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Seul le propriétaire peut changer le statut" });
-      }
+      await assertShoppingOwner(input.listId, ctx.userId);
       return prisma.shoppingList.update({
         where: { id: input.listId },
         data: { status: input.status },
@@ -94,20 +105,14 @@ export const shoppingListsRouter = router({
   delete: protectedProcedure
     .input(listIdInput)
     .mutation(async ({ ctx, input }) => {
-      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "write");
-      if (list.ownerId !== ctx.userId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Seul le propriétaire peut supprimer la liste" });
-      }
+      await assertShoppingOwner(input.listId, ctx.userId);
       await prisma.shoppingList.delete({ where: { id: input.listId } });
     }),
 
   share: protectedProcedure
     .input(shareListInput)
     .mutation(async ({ ctx, input }) => {
-      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "write");
-      if (list.ownerId !== ctx.userId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Seul le propriétaire peut partager la liste" });
-      }
+      const list = await assertShoppingOwner(input.listId, ctx.userId);
       const target = await prisma.user.findFirst({
         where: { OR: [{ email: input.emailOrId }, { id: input.emailOrId }] },
       });
@@ -128,7 +133,8 @@ export const shoppingListsRouter = router({
         select: { name: true, email: true },
       });
 
-      void notifyShoppingListShared({
+      void notifyListShared({
+        kind: "SHOPPING",
         listId: input.listId,
         listTitle: list.title,
         targetUserId: target.id,
@@ -142,10 +148,7 @@ export const shoppingListsRouter = router({
   unshare: protectedProcedure
     .input(unshareListInput)
     .mutation(async ({ ctx, input }) => {
-      const list = await findAccessibleShoppingList(input.listId, ctx.userId, "write");
-      if (list.ownerId !== ctx.userId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Seul le propriétaire peut retirer un membre" });
-      }
+      await assertShoppingOwner(input.listId, ctx.userId);
       await prisma.shoppingListMember.delete({
         where: { listId_userId: { listId: input.listId, userId: input.userId } },
       });

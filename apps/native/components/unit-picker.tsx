@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { SHOPPING_UNITS } from "@/lib/grocery-ui";
+import { SHOPPING_UNITS } from "@repo/domain/grocery-ui";
 import { useThemeMode } from "@/lib/theme-context";
 import { getPalette } from "@/lib/theme-palette";
 

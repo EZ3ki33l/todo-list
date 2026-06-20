@@ -4,8 +4,8 @@ import { FluentEmoji } from "@/components/fluent-emoji";
 import {
   normalizeItemTitle,
   type TitleSuggestion,
-} from "@/lib/grocery-detect";
-import { CATEGORY_LABELS, itemIcon } from "@/lib/grocery-ui";
+} from "@repo/domain/grocery-detect";
+import { CATEGORY_LABELS, itemIcon } from "@repo/domain/grocery-ui";
 
 function suggestionMeta(s: TitleSuggestion): string {
   if (s.source === "history") return "Récent";

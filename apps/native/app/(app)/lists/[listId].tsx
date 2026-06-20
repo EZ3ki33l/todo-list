@@ -13,7 +13,7 @@ import {
 } from "@/lib/lazy-draggable-flatlist";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 
-import { applyListOrder } from "@/lib/reorder-list";
+import { applyListOrder } from "@repo/domain/reorder-list";
 import { normalizeActionRows } from "@/lib/normalize-action-row";
 import { AddActionForm } from "@/components/add-action-form";
 import { ActionLocationSheet } from "@/components/action-location-sheet";

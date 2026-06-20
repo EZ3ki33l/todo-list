@@ -1,4 +1,4 @@
-import { withEffectiveDone } from "@/lib/action-effective";
+import { withEffectiveDone } from "@repo/api/lib/action-recurrence";
 
 type TodoActionProgress = {
   done: boolean;

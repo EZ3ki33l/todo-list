@@ -4,7 +4,9 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@repo/domain": ["../../packages/domain/src/index.ts"],
+      "@repo/domain/*": ["../../packages/domain/src/*"]
     },
     "plugins": [
       {

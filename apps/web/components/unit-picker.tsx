@@ -1,6 +1,6 @@
 "use client";
 
-import { SHOPPING_UNITS } from "@/lib/grocery-ui";
+import { SHOPPING_UNITS } from "@repo/domain/grocery-ui";
 
 export function UnitPicker({
   value,

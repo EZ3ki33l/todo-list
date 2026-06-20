@@ -47,6 +47,15 @@ export default function AppLayout() {
           headerBackTitle: "Retour",
         }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null,
+          title: "Mon profil",
+          headerBackTitle: "Retour",
+          headerShown: true,
+        }}
+      />
     </Tabs>
   );
 }

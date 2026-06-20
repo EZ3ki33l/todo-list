@@ -1,39 +1,30 @@
-import { Pressable } from "react-native";
-import { Text, View, XStack } from "tamagui";
+import { useMemo } from "react";
+import { Text, XStack } from "tamagui";
+
+import { getPalette } from "@repo/theme";
 
 import { ActivityBell } from "@/components/activity-bell";
-import { FluentEmoji } from "@/components/fluent-emoji";
+import { UserMenu } from "@/components/user-menu";
 import { useThemeMode } from "@/lib/theme-context";
-import { getPalette } from "@/lib/theme-palette";
 
 type Props = {
   title: string;
+  /** @deprecated — La déconnexion est maintenant dans UserMenu */
   onSignOut?: () => void;
 };
 
-export function TabListHeader({ title, onSignOut }: Props) {
-  const { themeName, toggleTheme } = useThemeMode();
-  const palette = getPalette(themeName);
+export function TabListHeader({ title }: Props) {
+  const { themeName } = useThemeMode();
+  const palette = useMemo(() => getPalette(themeName), [themeName]);
 
   return (
     <XStack justifyContent="space-between" alignItems="center" marginBottom={20}>
       <Text fontSize={24} fontWeight="700" color={palette.text}>
         {title}
       </Text>
-      <XStack alignItems="center" gap={10}>
-        <Pressable onPress={toggleTheme} hitSlop={8}>
-          <FluentEmoji emoji={themeName === "latte" ? "🌙" : "🌤️"} size={18} />
-        </Pressable>
+      <XStack alignItems="center" gap={12}>
         <ActivityBell />
-        {onSignOut ? (
-          <Pressable onPress={onSignOut} hitSlop={8}>
-            <Text fontSize={13} color={palette.textMuted}>
-              Déconnexion
-            </Text>
-          </Pressable>
-        ) : (
-          <View width={72} />
-        )}
+        <UserMenu />
       </XStack>
     </XStack>
   );

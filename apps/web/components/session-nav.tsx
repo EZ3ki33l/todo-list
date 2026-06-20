@@ -1,7 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { UserButton, useAuth } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
+
+import { ActivityBell } from "@/components/activity-bell";
+import { UserDropdown } from "@/components/user-dropdown";
+import todoLogo from "../../native/assets/ez3-todolist.png";
+import shoppingLogo from "../../native/assets/ez3-caddie.png";
 
 export function SessionNav() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -28,14 +34,29 @@ export function SessionNav() {
   }
 
   return (
-    <>
-      <Link href="/dashboard" className="text-sm text-app-text-muted hover:text-app-text">
-        Tâches
+    <div className="flex items-center justify-center gap-2">
+      <Link
+        href="/dashboard"
+        className="flex h-14 w-14 flex-col items-center justify-center rounded-xl border border-app-border-soft bg-app-bg-elevated text-app-text-muted hover:bg-app-bg-soft hover:text-app-text"
+        aria-label="Tâches"
+      >
+        <Image src={todoLogo} alt="" width={22} height={22} className="opacity-95" aria-hidden />
+        <span className="mt-0.5 text-[10px] leading-none">Tâches</span>
       </Link>
-      <Link href="/dashboard/shopping" className="text-sm text-app-text-muted hover:text-app-text">
-        Courses
+      <Link
+        href="/dashboard/shopping"
+        className="flex h-14 w-14 flex-col items-center justify-center rounded-xl border border-app-border-soft bg-app-bg-elevated text-app-text-muted hover:bg-app-bg-soft hover:text-app-text"
+        aria-label="Courses"
+      >
+        <Image src={shoppingLogo} alt="" width={22} height={22} className="opacity-95" aria-hidden />
+        <span className="mt-0.5 text-[10px] leading-none">Courses</span>
       </Link>
-      <UserButton />
-    </>
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-app-border-soft bg-app-bg-elevated">
+        <ActivityBell buttonClassName="hover:bg-transparent p-0.5 text-app-text-muted hover:text-app-text" />
+      </div>
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-app-border-soft bg-app-bg-elevated">
+        <UserDropdown />
+      </div>
+    </div>
   );
 }

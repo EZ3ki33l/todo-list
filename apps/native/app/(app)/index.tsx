@@ -34,7 +34,7 @@ function ownerSubtitle(
 }
 
 export default function DashboardScreen() {
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const { themeName } = useThemeMode();
   const palette = getPalette(themeName);
   const hub = useMemo(() => getListHubStyles(palette), [palette]);
@@ -107,7 +107,7 @@ export default function DashboardScreen() {
           />
         }
       >
-        <TabListHeader title="Tâches" onSignOut={signOut} />
+        <TabListHeader logoName="todolist" />
 
         {showSkeleton ? (
           <TodoHubSkeleton />

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 import { getAppUser } from "@/lib/app-session";
 import { CreateSharedListForm } from "@/components/create-shared-list-form";
@@ -11,6 +12,7 @@ import {
 } from "@repo/api/lib/default-lists";
 import { shoppingCountsByListId } from "@/lib/batch-list-stats";
 import { prisma } from "@repo/db";
+import shoppingLogo from "../../../../../native/assets/ez3-caddie.png";
 
 function ownerSubtitle(
   isOwner: boolean,
@@ -52,9 +54,9 @@ export default async function ShoppingPage() {
   const countsByListId = shoppingCountsByListId(sharedListIds, countGroups);
 
   return (
-    <div className="space-y-10">
-      <header>
-        <h1 className="text-2xl font-bold text-app-text">Courses</h1>
+    <div className="space-y-7">
+      <header className="flex justify-center py-0">
+        <Image src={shoppingLogo} alt="Courses" width={50} height={50} className="opacity-95" />
       </header>
 
       <ShoppingListDetail

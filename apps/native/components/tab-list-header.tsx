@@ -1,40 +1,37 @@
-import { Pressable } from "react-native";
-import { Text, View, XStack } from "tamagui";
+import { Image, type ImageSourcePropType } from "react-native";
+import { useMemo } from "react";
+import { XStack } from "tamagui";
 
-import { ActivityBell } from "@/components/activity-bell";
-import { FluentEmoji } from "@/components/fluent-emoji";
+import { getPalette } from "@repo/theme";
+
 import { useThemeMode } from "@/lib/theme-context";
-import { getPalette } from "@/lib/theme-palette";
 
 type Props = {
-  title: string;
-  onSignOut?: () => void;
+  logoName: "todolist" | "caddie";
 };
 
-export function TabListHeader({ title, onSignOut }: Props) {
-  const { themeName, toggleTheme } = useThemeMode();
-  const palette = getPalette(themeName);
+const LOGOS = {
+  todolist: require("../assets/ez3-todolist.png"),
+  caddie: require("../assets/ez3-caddie.png"),
+} satisfies Record<"todolist" | "caddie", ImageSourcePropType>;
+
+export function TabListHeader({ logoName }: Props) {
+  const { themeName } = useThemeMode();
+  const palette = useMemo(() => getPalette(themeName), [themeName]);
 
   return (
-    <XStack justifyContent="space-between" alignItems="center" marginBottom={20}>
-      <Text fontSize={24} fontWeight="700" color={palette.text}>
-        {title}
-      </Text>
-      <XStack alignItems="center" gap={10}>
-        <Pressable onPress={toggleTheme} hitSlop={8}>
-          <FluentEmoji emoji={themeName === "latte" ? "🌙" : "🌤️"} size={18} />
-        </Pressable>
-        <ActivityBell />
-        {onSignOut ? (
-          <Pressable onPress={onSignOut} hitSlop={8}>
-            <Text fontSize={13} color={palette.textMuted}>
-              Déconnexion
-            </Text>
-          </Pressable>
-        ) : (
-          <View width={72} />
-        )}
-      </XStack>
+    <XStack justifyContent="center" alignItems="center" marginBottom={10}>
+      <Image
+        source={LOGOS[logoName]}
+        style={{
+          width: 46,
+          height: 46,
+          tintColor: palette.logoTint ?? palette.text,
+          opacity: 0.95,
+        }}
+        resizeMode="contain"
+        accessibilityIgnoresInvertColors
+      />
     </XStack>
   );
 }

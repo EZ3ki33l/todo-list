@@ -240,22 +240,16 @@ export default function PolitiqueConfidentialitePage() {
       <section id="suppression-compte" className="space-y-3 scroll-mt-8">
         <h2 className="text-lg font-semibold text-app-text">5. Suppression de compte</h2>
         <p className="text-sm leading-relaxed">
-          Vous pouvez demander la suppression de votre compte et de l&apos;ensemble des
-          données associées (listes, tâches, listes de courses, préférences,
-          jetons de notification).
+          Vous pouvez supprimer votre compte et l&apos;ensemble des données associées
+          (listes, tâches, listes de courses, préférences, jetons de notification)
+          directement depuis votre espace compte Clerk.
         </p>
         <p className="text-sm leading-relaxed">
-          <strong>Procédure :</strong> envoyez un e-mail à{" "}
-          <a
-            href="mailto:r.rousset31@gmail.com?subject=Suppression%20de%20compte%20TodoList"
-            className="text-app-text underline underline-offset-2 hover:text-app-text"
-          >
-            r.rousset31@gmail.com
-          </a>{" "}
-          depuis l&apos;adresse liée à votre compte, avec l&apos;objet{" "}
-          <strong>« Suppression de compte »</strong>. Nous traitons la demande sous
-          30 jours et supprimons également le compte côté Clerk lorsque cela est
-          applicable.
+          <strong>Procédure :</strong> dans le menu utilisateur, ouvrez{" "}
+          <strong>Manage account</strong>, puis sélectionnez{" "}
+          <strong>Delete account</strong>. La suppression du compte Clerk déclenche
+          automatiquement la suppression du compte applicatif TodoList et de toutes les
+          données liées.
         </p>
         <p className="text-sm leading-relaxed">
           <strong>Données supprimées :</strong> profil, contenus créés (tâches, notes,
@@ -266,8 +260,8 @@ export default function PolitiqueConfidentialitePage() {
         </p>
         <p className="text-sm leading-relaxed">
           <strong>Données conservées :</strong> aucune donnée personnelle n&apos;est
-          conservée au-delà de ce qui est strictement nécessaire au traitement de la
-          demande ; les journaux techniques sont purgés ou anonymisés dans un délai
+          conservée après suppression, hors journaux techniques minimaux nécessaires à
+          la sécurité et à la détection d&apos;abus, purgés ou anonymisés dans un délai
           raisonnable.
         </p>
       </section>

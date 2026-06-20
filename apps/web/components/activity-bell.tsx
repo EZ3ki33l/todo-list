@@ -34,7 +34,7 @@ function BellIcon({ className }: { className?: string }) {
 
 type PanelTab = "history" | "settings";
 
-export function ActivityBell() {
+export function ActivityBell({ buttonClassName }: { buttonClassName?: string } = {}) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<PanelTab>("history");
   const panelRef = useRef<HTMLDivElement>(null);
@@ -115,7 +115,7 @@ export function ActivityBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-md p-1.5 text-app-text-muted hover:bg-app-bg-soft hover:text-app-text"
+        className={`relative rounded-md p-1.5 text-app-text-muted hover:bg-app-bg-soft hover:text-app-text ${buttonClassName ?? ""}`}
         aria-label={count > 0 ? `${count} notification(s) non lue(s)` : "Notifications et historique"}
         aria-expanded={open}
       >

@@ -18,6 +18,7 @@ type AuthContextValue = {
   authFlowBusy: boolean;
   setAuthFlowBusy: (busy: boolean) => void;
   signIn: (token: string, user: StoredUser) => Promise<void>;
+  updateUser: (user: StoredUser) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -54,6 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSkipMeValidation(true);
   }
 
+  async function updateUser(nextUser: StoredUser) {
+    // Synchronise le profil (nom/email/image) sans toucher au token API.
+    setUser(nextUser);
+    if (token) {
+      await saveSession(token, nextUser);
+    }
+  }
+
   async function signOut() {
     await setPushOptIn(false);
     await clearSession();
@@ -78,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authFlowBusy,
         setAuthFlowBusy,
         signIn,
+        updateUser,
         signOut,
       }}
     >

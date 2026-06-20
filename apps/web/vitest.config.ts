@@ -9,13 +9,12 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    // Uniquement les utilitaires purs (pas de composants RN)
-    include: ["lib/**/*.test.ts"],
+    include: ["lib/**/*.test.ts", "lib/**/*.test.tsx"],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
       include: ["lib/**/*.ts"],
-      exclude: ["lib/**/*.d.ts", "lib/*-context.tsx", "lib/lazy-*.tsx"],
+      exclude: ["lib/**/*.d.ts"],
       thresholds: { lines: 80, functions: 80, branches: 75 },
     },
   },

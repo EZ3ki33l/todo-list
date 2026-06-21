@@ -16,7 +16,7 @@ import { progressLabel } from "@/lib/list-progress";
 import { prisma } from "@repo/db";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@repo/api/server";
-import todoLogo from "../../../../native/assets/ez3-todolist.png";
+import todoLogo from "@/public/ez3-todolist.png";
 
 type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 

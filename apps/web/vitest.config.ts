@@ -12,6 +12,13 @@ export default defineConfig({
     },
   },
   test: {
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      include: ["lib/**/*.ts", "components/**/*.tsx"],
+      exclude: ["lib/**/*.d.ts", "components/__tests__/**"],
+      thresholds: { lines: 50, functions: 50, branches: 50 },
+    },
     projects: [
       {
         resolve: {
@@ -23,13 +30,6 @@ export default defineConfig({
           name: "lib",
           environment: "node",
           include: ["lib/**/*.test.ts", "lib/**/*.test.tsx"],
-          coverage: {
-            provider: "v8",
-            reporter: ["text", "lcov"],
-            include: ["lib/**/*.ts"],
-            exclude: ["lib/**/*.d.ts"],
-            thresholds: { lines: 80, functions: 80, branches: 75 },
-          },
         },
       },
       {

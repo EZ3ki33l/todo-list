@@ -45,12 +45,14 @@ describe("UserDropdown", () => {
         imageUrl: null,
       },
       isLoaded: true,
-    } as ReturnType<typeof useUser>);
+      isSignedIn: true,
+    } as unknown as ReturnType<typeof useUser>);
     vi.mocked(useClerk).mockReturnValue({
       signOut: mockSignOut,
       openUserProfile: mockOpenUserProfile,
     } as unknown as ReturnType<typeof useClerk>);
     vi.mocked(useThemeMode).mockReturnValue({
+      ready: true,
       themeName: "latte",
       toggleTheme: mockToggleTheme,
     });
@@ -62,13 +64,13 @@ describe("UserDropdown", () => {
   });
 
   it("retourne null quand l'utilisateur n'est pas chargé", () => {
-    vi.mocked(useUser).mockReturnValue({ user: null, isLoaded: false } as ReturnType<typeof useUser>);
+    vi.mocked(useUser).mockReturnValue({ user: null, isLoaded: false } as unknown as ReturnType<typeof useUser>);
     const { container } = render(<UserDropdown />);
     expect(container.firstChild).toBeNull();
   });
 
   it("retourne null quand user est null mais chargé", () => {
-    vi.mocked(useUser).mockReturnValue({ user: null, isLoaded: true } as ReturnType<typeof useUser>);
+    vi.mocked(useUser).mockReturnValue({ user: null, isLoaded: true } as unknown as ReturnType<typeof useUser>);
     const { container } = render(<UserDropdown />);
     expect(container.firstChild).toBeNull();
   });
@@ -133,7 +135,7 @@ describe("UserDropdown", () => {
   });
 
   it("affiche le label mode sombre quand themeName=mocha", () => {
-    vi.mocked(useThemeMode).mockReturnValue({ themeName: "mocha", toggleTheme: mockToggleTheme });
+    vi.mocked(useThemeMode).mockReturnValue({ ready: true, themeName: "mocha", toggleTheme: mockToggleTheme });
     render(<UserDropdown />);
     fireEvent.click(screen.getByLabelText("Menu utilisateur"));
     expect(screen.getByLabelText("Passer en mode clair")).toBeDefined();

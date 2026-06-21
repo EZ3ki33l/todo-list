@@ -194,7 +194,9 @@ export function ShoppingListDetail({
   }, [uncheckedIdsKey]);
 
   const checkedIdsRef = useRef<string[]>([]);
-  checkedIdsRef.current = checkedItems.map((i) => i.id);
+  useEffect(() => {
+    checkedIdsRef.current = checkedItems.map((i) => i.id);
+  });
 
   const titlesInList = useMemo(
     () => new Set((items ?? []).map((i) => normalizeItemTitle(i.title))),

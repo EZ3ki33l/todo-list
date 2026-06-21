@@ -30,10 +30,15 @@ jobs:
             cd /srv/docker/todolist/source
             git pull origin main
 
-            echo "▶ Migration Prisma"
-            cd /srv/docker/todolist/source
-            DATABASE_URL="$(grep DATABASE_URL /srv/docker/todolist/.env | cut -d= -f2-)" \
-              pnpm --filter @repo/db db:push
+            echo "▶ Migration Prisma (via conteneur temporaire)"
+            DB_URL="$(grep ^DATABASE_URL /srv/docker/todolist/.env | cut -d= -f2-)"
+            docker run --rm \
+              --network host \
+              -e DATABASE_URL="$DB_URL" \
+              -v /srv/docker/todolist/source:/app \
+              -w /app \
+              node:22-bookworm-slim \
+              sh -c "corepack enable && corepack prepare pnpm@11.4.0 --activate && pnpm --filter @repo/db db:push"
 
             echo "▶ Build Docker"
             cd /srv/docker/todolist

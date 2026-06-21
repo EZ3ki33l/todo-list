@@ -6,6 +6,8 @@ node_modules
 **/.turbo
 .git
 apps/native
+!apps/native/assets
+!apps/native/assets/**
 **/.expo
 **/android
 **/ios

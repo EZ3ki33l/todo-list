@@ -12,7 +12,7 @@ import {
 } from "@repo/api/lib/default-lists";
 import { shoppingCountsByListId } from "@/lib/batch-list-stats";
 import { prisma } from "@repo/db";
-import shoppingLogo from "../../../../../native/assets/ez3-caddie.png";
+import shoppingLogo from "@/public/ez3-caddie.png";
 
 function ownerSubtitle(
   isOwner: boolean,

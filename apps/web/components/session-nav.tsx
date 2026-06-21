@@ -6,8 +6,8 @@ import { useAuth } from "@clerk/nextjs";
 
 import { ActivityBell } from "@/components/activity-bell";
 import { UserDropdown } from "@/components/user-dropdown";
-import todoLogo from "../../native/assets/ez3-todolist.png";
-import shoppingLogo from "../../native/assets/ez3-caddie.png";
+import todoLogo from "@/public/ez3-todolist.png";
+import shoppingLogo from "@/public/ez3-caddie.png";
 
 export function SessionNav() {
   const { isSignedIn, isLoaded } = useAuth();

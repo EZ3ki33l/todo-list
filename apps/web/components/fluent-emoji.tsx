@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { getFlatEmojiUrl } from "@repo/emoji";
 import { useState } from "react";
 
@@ -25,12 +26,12 @@ export function FluentEmoji({ emoji, size = 20, className }: Props) {
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- CDN SVG Fluent Emoji
-    <img
+    <Image
       src={getFlatEmojiUrl(emoji)}
       alt=""
       width={size}
       height={size}
+      unoptimized
       className={className}
       style={{
         display: "inline-block",
@@ -38,8 +39,6 @@ export function FluentEmoji({ emoji, size = 20, className }: Props) {
         flex: "none",
         objectFit: "contain",
       }}
-      loading="lazy"
-      decoding="async"
       onError={() => setFailed(true)}
       aria-hidden
     />

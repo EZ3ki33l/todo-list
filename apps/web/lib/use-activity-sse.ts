@@ -12,7 +12,9 @@ type Options = {
 export function useActivitySse(enabled: boolean, options?: Options) {
   const utils = trpc.useUtils();
   const onPermanentFailureRef = useRef(options?.onPermanentFailure);
-  onPermanentFailureRef.current = options?.onPermanentFailure;
+  useEffect(() => {
+    onPermanentFailureRef.current = options?.onPermanentFailure;
+  });
 
   useEffect(() => {
     if (!enabled || typeof EventSource === "undefined") return;

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
 
 import { prisma } from "@repo/db";
@@ -10,7 +10,7 @@ type ClerkDeletedUserEvent = {
   };
 };
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   let evt: unknown;
 
   try {

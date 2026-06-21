@@ -5,6 +5,7 @@
     "build": "turbo run build",
     "docker:build": "docker build -f deploy/todolist/Dockerfile -t todolist-web:test .",
     "clean": "turbo run clean && rm -rf node_modules",
+    "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore"
   },
   "devDependencies": {

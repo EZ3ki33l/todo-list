@@ -4,7 +4,7 @@ import {
   detectCategory,
   getTitleSuggestions,
   matchesSuggestionQuery,
-} from "./grocery-detect";
+} from "@repo/domain/grocery-detect";
 
 describe("detectCategory", () => {
   it("détecte via le dictionnaire fixe", () => {

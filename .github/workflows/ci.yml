@@ -35,7 +35,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
-        run: pnpm --filter @repo/db generate
+        run: pnpm --filter @repo/db db:generate
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
@@ -53,5 +53,11 @@ jobs:
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci
           CLERK_SECRET_KEY: sk_test_ci
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          JWT_SECRET: ci-secret-32-chars-minimum-length
+
+      - name: Tests unitaires
+        run: pnpm turbo test
+        env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           JWT_SECRET: ci-secret-32-chars-minimum-length

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useClerk, useUser } from "@clerk/nextjs";
 
@@ -65,9 +66,11 @@ export function UserDropdown() {
       >
         <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-app-primary">
           {imageUrl ? (
-            <img
+            <Image
               src={imageUrl}
               alt={name ?? "Photo de profil"}
+              width={32}
+              height={32}
               className="size-full object-cover"
             />
           ) : (
@@ -85,7 +88,7 @@ export function UserDropdown() {
           <div className="flex items-center gap-3 border-b border-app-border-soft px-4 py-4">
             <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-app-primary">
               {imageUrl ? (
-                <img src={imageUrl} alt="" className="size-full object-cover" aria-hidden />
+                <Image src={imageUrl} alt="" width={44} height={44} className="size-full object-cover" aria-hidden />
               ) : (
                 <span className="text-sm font-bold text-app-on-primary">{initials}</span>
               )}

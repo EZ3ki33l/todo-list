@@ -4,6 +4,13 @@ module.exports = {
   transpilePackages: ["@repo/db"],
   serverExternalPackages: ["@prisma/client", "@prisma/adapter-neon"],
   reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      // Photos de profil Clerk (avatars utilisateurs)
+      { protocol: "https", hostname: "img.clerk.com" },
+      { protocol: "https", hostname: "images.clerk.dev" },
+    ],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "1mb",

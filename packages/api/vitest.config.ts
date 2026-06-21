@@ -1,10 +1,11 @@
+import path from "path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
     alias: {
-      "server-only": "/mnt/SSD medias/Codes/todo list/packages/api/src/__tests__/__mocks__/server-only.ts",
+      "server-only": path.resolve(__dirname, "src/__tests__/__mocks__/server-only.ts"),
     },
     // Exclure les tests nécessitant une vraie base de données
     exclude: ["src/lib/shopping-item-stat.test.ts"],

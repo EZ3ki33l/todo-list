@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   },
 };
 
+const clerkPublishableKey =
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? process.env.CLERK_PUBLISHABLE_KEY;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr" suppressHydrationWarning data-theme={DEFAULT_THEME_NAME}>
@@ -22,7 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body suppressHydrationWarning className="min-h-screen bg-app-bg font-sans text-app-text">
         <ThemeModeProvider>
-          <ClerkProvider>{children}</ClerkProvider>
+          <ClerkProvider publishableKey={clerkPublishableKey}>{children}</ClerkProvider>
         </ThemeModeProvider>
       </body>
     </html>

@@ -3,7 +3,7 @@ import "react-native-reanimated";
 
 import { ClerkProvider, useAuth as useClerkAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { SystemBars } from "react-native-edge-to-edge";
 import { AppState, StyleSheet, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -21,6 +21,9 @@ import { trpc, createTrpcClient } from "@/lib/trpc";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { ThemeModeProvider, useThemeMode } from "@/lib/theme-context";
 import { getPalette } from "@/lib/theme-palette";
+import { useMeValidation } from "@/hooks/use-me-validation";
+import { useAuthRedirect } from "@/hooks/use-auth-redirect";
+import { useAuthOverlay } from "@/hooks/use-auth-overlay";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -51,82 +54,29 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
   const segment = segments[0];
-  const [meValidationTimedOut, setMeValidationTimedOut] = useState(false);
   const { themeName } = useThemeMode();
   const palette = getPalette(themeName);
 
-  const shouldValidateStoredToken = !!token && ready && !skipMeValidation;
-
-  const meQuery = trpc.auth.me.useQuery(undefined, {
-    enabled: shouldValidateStoredToken,
-    retry: false,
-    staleTime: 5 * 60 * 1000,
+  const { meUnauthorized, isPending: mePending } = useMeValidation({
+    token,
+    ready,
+    skipMeValidation,
+    signOut,
   });
 
-  const meUnauthorized =
-    shouldValidateStoredToken &&
-    meQuery.isFetched &&
-    (meQuery.error as { data?: { code?: string } } | null)?.data?.code === "UNAUTHORIZED";
-
-  useEffect(() => {
-    if (meUnauthorized) {
-      void signOut();
-    }
-  }, [meUnauthorized, signOut]);
-
-  useEffect(() => {
-    if (!shouldValidateStoredToken || meQuery.isFetched || meQuery.isError) {
-      setMeValidationTimedOut(false);
-      return;
-    }
-    if (!meQuery.isLoading) return;
-
-    const timer = setTimeout(() => {
-      setMeValidationTimedOut(true);
-    }, 6000);
-    return () => clearTimeout(timer);
-  }, [shouldValidateStoredToken, meQuery.isLoading, meQuery.isFetched, meQuery.isError]);
-
-  const bootstrapping =
-    !ready ||
-    (shouldValidateStoredToken &&
-      !meValidationTimedOut &&
-      meQuery.isLoading &&
-      !meQuery.isFetched);
-
+  const bootstrapping = !ready || mePending;
   const pendingApiExchange = ready && isLoaded && isSignedIn && !token;
   const leavingAuthRoute = !!token && segment === "(auth)";
-  const showLoadingOverlay =
-    bootstrapping ||
-    meUnauthorized ||
-    pendingApiExchange ||
-    leavingAuthRoute ||
-    authFlowBusy;
-  const renderChildren = !meUnauthorized;
-  const showShell = renderChildren && !leavingAuthRoute && !bootstrapping;
-  // Filet de sécurité : évite un écran blanc si shell masqué sans overlay explicite.
-  const showOverlay = showLoadingOverlay || !showShell;
 
-  useEffect(() => {
-    if (token && segment === "(app)") {
-      setAuthFlowBusy(false);
-    }
-  }, [token, segment, setAuthFlowBusy]);
+  useAuthRedirect({ bootstrapping, meUnauthorized, token, segment, setAuthFlowBusy, router });
 
-  useEffect(() => {
-    if (bootstrapping || meUnauthorized) return;
-
-    if (!token) {
-      if (segment !== "(auth)") {
-        router.replace("/(auth)/login");
-      }
-      return;
-    }
-
-    if (segment !== "(app)") {
-      router.replace("/(app)");
-    }
-  }, [bootstrapping, meUnauthorized, token, segment, router]);
+  const { showShell, showOverlay } = useAuthOverlay({
+    bootstrapping,
+    meUnauthorized,
+    pendingApiExchange,
+    leavingAuthRoute,
+    authFlowBusy,
+  });
 
   return (
     <View style={[styles.root, { backgroundColor: palette.bgElevated }]}>

@@ -20,7 +20,7 @@ export function BootGate() {
     return (
       <div className="flex min-h-screen flex-col px-4">
         <div className="mb-7 flex justify-center pt-12">
-          <LoadingLogo size={64} />
+          <LoadingLogo size={64} priority />
         </div>
         <div className="flex-1 px-4 opacity-85">
           <DayWeekViewSkeleton />

@@ -7,6 +7,7 @@
     "dev": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start -c",
     "start": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start -c",
     "android": "expo run:android",
+    "android:dev": "bash scripts/run-android-dev.sh",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "eject": "expo eject",

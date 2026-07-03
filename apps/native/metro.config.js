@@ -64,6 +64,19 @@ function resolveWithPlatformVariant(context, moduleName, platform, resolveReques
   }
 }
 
+// metro-runtime@0.83.x déclare HMRClient.android.js dans "exports" sans fournir le fichier.
+function resolveMissingPlatformModule(context, moduleName, platform, resolveRequest) {
+  const match = moduleName.match(/^(.*)\.(android|ios)\.js$/);
+  if (!match) return null;
+
+  const genericModule = `${match[1]}.js`;
+  try {
+    return resolveRequest(context, genericModule, platform);
+  } catch {
+    return null;
+  }
+}
+
 const defaultResolveRequest = config.resolver.resolveRequest;
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
@@ -80,6 +93,14 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     resolveRequest,
   );
   if (platformResolved) return platformResolved;
+
+  const platformFallback = resolveMissingPlatformModule(
+    context,
+    moduleName,
+    platform,
+    resolveRequest,
+  );
+  if (platformFallback) return platformFallback;
 
   if (defaultResolveRequest) {
     return defaultResolveRequest(context, moduleName, platform);

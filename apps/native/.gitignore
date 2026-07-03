@@ -11,6 +11,7 @@ npm-debug.*
 .pnpm-store/
 .env
 web-build/
+.gradle-user-home/
 
 # macOS
 .DS_Store

@@ -67,8 +67,10 @@ jobs:
               echo "   Ajoutez pk_live_… (guillemets simples si la clé finit par \$) puis relancez le workflow."
               exit 1
             fi
+            echo "Clerk PK: ${#NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} caractères"
 
-            docker compose --env-file .env build
+            docker compose --env-file .env build \
+              --build-arg "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}"
             docker compose --env-file .env up -d
 
             echo "▶ Sanity check"

@@ -1,6 +1,7 @@
 import { UserProfileView } from "@clerk/expo/native";
 import { Tabs } from "expo-router";
-import { Image, Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -27,7 +28,10 @@ export default function AppLayout() {
         presentationStyle="pageSheet"
         onRequestClose={() => setProfileVisible(false)}
       >
-        <SafeAreaView style={[layoutStyles.profileModal, { backgroundColor: palette.bg }]}>
+        <SafeAreaView
+          style={[layoutStyles.profileModal, { backgroundColor: palette.bg }]}
+          edges={["top", "bottom"]}
+        >
           <UserProfileView
             style={layoutStyles.profileView}
             onDismiss={() => setProfileVisible(false)}

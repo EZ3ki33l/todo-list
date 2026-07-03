@@ -9,9 +9,11 @@ type Props = {
   size?: number;
   className?: string;
   tintColor?: string;
+  /** Above-the-fold logos (LCP) — maps to Next.js Image `priority`. */
+  priority?: boolean;
 };
 
-export function LoadingLogo({ size = 72, className = "", tintColor }: Props) {
+export function LoadingLogo({ size = 72, className = "", tintColor, priority = false }: Props) {
   const { themeName } = useThemeMode();
   const palette = getPalette(themeName);
   const resolvedTint = tintColor ?? palette.logoTint;
@@ -22,6 +24,7 @@ export function LoadingLogo({ size = 72, className = "", tintColor }: Props) {
       alt=""
       width={size}
       height={size}
+      priority={priority}
       aria-hidden
       className={`motion-safe:animate-spin rounded-[20%] ${className}`}
       style={{

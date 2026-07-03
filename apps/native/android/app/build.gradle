@@ -81,23 +81,32 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def reactNativeAbiFilters = (findProperty("reactNativeArchitectures") ?: "arm64-v8a")
+    .split(",")
+    .collect { it.trim() }
+    .findAll { it }
+
 android {
     kotlinOptions {
         // Clerk: allow reading metadata from newer Kotlin versions
         freeCompilerArgs += ['-Xskip-metadata-version-check']
     }
-    ndkVersion rootProject.ext.ndkVersion
+    ndkVersion = rootProject.ext.ndkVersion
 
-    buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk rootProject.ext.compileSdkVersion
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+    compileSdk = rootProject.ext.compileSdkVersion
 
     namespace 'com.ez3ki33l.todolist'
     defaultConfig {
         applicationId 'com.ez3ki33l.todolist'
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        minSdk = rootProject.ext.minSdkVersion
+        targetSdk = rootProject.ext.targetSdkVersion
         versionCode 4
         versionName "1.0.1"
+
+        ndk {
+            abiFilters(*reactNativeAbiFilters)
+        }
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -111,18 +120,18 @@ android {
     }
     buildTypes {
         debug {
-            signingConfig signingConfigs.debug
+            signingConfig = signingConfigs.debug
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig = signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
-            shrinkResources enableShrinkResources.toBoolean()
-            minifyEnabled enableMinifyInReleaseBuilds
+            shrinkResources = enableShrinkResources.toBoolean()
+            minifyEnabled = enableMinifyInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             def enablePngCrunchInRelease = findProperty('android.enablePngCrunchInReleaseBuilds') ?: 'true'
-            crunchPngs enablePngCrunchInRelease.toBoolean()
+            crunchPngs = enablePngCrunchInRelease.toBoolean()
         }
     }
     packagingOptions {
@@ -132,11 +141,11 @@ android {
         }
         jniLibs {
             def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'
-            useLegacyPackaging enableLegacyPackaging.toBoolean()
+            useLegacyPackaging = enableLegacyPackaging.toBoolean()
         }
     }
     androidResources {
-        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
+        ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
 }
 
@@ -192,6 +201,6 @@ dependencies {
 // FCM (notifications push Android) — nécessite android/app/google-services.json
 if (file("google-services.json").exists()) {
     apply plugin: "com.google.gms.google-services"
-} else {
+} else if (gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }) {
     logger.warn("google-services.json absent : notifications push Android indisponibles (voir apps/native/DEPLOY.md)")
 }

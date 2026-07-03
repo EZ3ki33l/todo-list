@@ -180,10 +180,34 @@ npx eas-cli build --platform android --profile production
 
 | Problème | Solution |
 |----------|----------|
-| `Missing publishableKey` (Clerk) | Ajouter `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` dans `/srv/docker/todolist/.env`, puis `docker compose build --no-cache && docker compose up -d` |
+| `Missing publishableKey` (Clerk) alors que `.env` est rempli | Voir § ci-dessous — souvent `.env` mal placé ou image buildée sans la clé |
 | `clerkMiddleware` / `auth()` | Souvent conséquence de l’absence de clés Clerk — corriger le `.env` ci-dessus |
 | Connexion Clerk échoue | Vérifier clés Clerk (web + native) |
 | Réglages notifs « chargement » | `db:push` + redémarrer Docker |
 | Build EAS échoue install | `git pull main`, Node 22, voir [apps/native/DEPLOY.md](../apps/native/DEPLOY.md) |
 
 Docs détaillées : [deploy/todolist/README.md](todolist/README.md) · [apps/native/DEPLOY.md](../apps/native/DEPLOY.md)
+
+### Clerk : `.env` rempli mais `Missing publishableKey`
+
+Le `.env` doit être **`/srv/docker/todolist/.env`** (à côté de `docker-compose.yml`), pas `source/apps/web/.env`.
+
+```bash
+cd /srv/docker/todolist
+
+# 1. Compose voit-il les clés ? (doit afficher pk_test_… / sk_test_…)
+docker compose config | grep CLERK
+
+# 2. Le conteneur les reçoit-il ?
+docker inspect todolist-web --format '{{range .Config.Env}}{{println .}}{{end}}' | grep CLERK
+
+# 3. Rebuild + recreate (obligatoire pour NEXT_PUBLIC_*)
+docker compose build --no-cache
+docker compose up -d --force-recreate
+```
+
+Si l’étape 1 affiche une valeur vide → mauvais chemin `.env` ou lancer `docker compose` depuis un autre répertoire.
+
+Si l’étape 1 OK mais étape 2 vide → mettre à jour `docker-compose.yml` (bloc `environment`) puis `up -d --force-recreate`.
+
+> **Sécurité** : ne jamais coller le `.env` prod dans un chat — régénérer les secrets exposés (Neon, Clerk, JWT, Mistral, VAPID).

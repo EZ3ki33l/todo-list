@@ -26,6 +26,11 @@ COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+RUN test -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" || ( \
+  echo "ERROR: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY manquant au build Docker." && \
+  echo "Ajoutez-le dans deploy/todolist/.env puis relancez: docker compose build --no-cache" && \
+  exit 1 \
+)
 # URL factice : Next charge @repo/db au build (collect page data) sans accès à Neon
 ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?sslmode=require"
 RUN mkdir -p apps/web/public

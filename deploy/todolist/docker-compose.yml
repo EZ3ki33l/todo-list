@@ -6,8 +6,16 @@ services:
       dockerfile: deploy/todolist/Dockerfile
       args:
         # NEXT_PUBLIC_* doit être présent au build Next.js (pas seulement au runtime)
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:?définir NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY dans .env}
     env_file: .env
+    environment:
+      # Reprise explicite : évite un conteneur démarré avec des vars vides si env_file mal placé
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:?définir NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY dans .env}
+      # Alias serveur : clerkMiddleware lit la clé au runtime (standalone Docker)
+      CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:?définir NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY dans .env}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?définir CLERK_SECRET_KEY dans .env}
+      DATABASE_URL: ${DATABASE_URL:?définir DATABASE_URL dans .env}
+      JWT_SECRET: ${JWT_SECRET:?définir JWT_SECRET dans .env}
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"

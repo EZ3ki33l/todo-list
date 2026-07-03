@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@repo/api";
 
+// Référencé ici pour être inliné au build Next (standalone Docker) ; fallback runtime via CLERK_PUBLISHABLE_KEY.
+const clerkPublishableKey =
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? process.env.CLERK_PUBLISHABLE_KEY;
+
 const isPublicRoute = createRouteMatcher([
   "/",
   "/login",
@@ -30,20 +34,23 @@ function rateLimitApi(req: Request): Response | undefined {
   }
 }
 
-export const proxy = clerkMiddleware(async (auth, req) => {
-  const blocked = rateLimitApi(req);
-  if (blocked) return blocked;
+export const proxy = clerkMiddleware(
+  async (auth, req) => {
+    const blocked = rateLimitApi(req);
+    if (blocked) return blocked;
 
-  if (!isPublicRoute(req)) {
-    await auth.protect({ unauthenticatedUrl: new URL("/login", req.url).toString() });
-  }
+    if (!isPublicRoute(req)) {
+      await auth.protect({ unauthenticatedUrl: new URL("/login", req.url).toString() });
+    }
 
-  const { userId } = await auth();
-  const { pathname } = req.nextUrl;
-  if (userId && (pathname === "/" || pathname === "/login" || pathname === "/sign-up")) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-});
+    const { userId } = await auth();
+    const { pathname } = req.nextUrl;
+    if (userId && (pathname === "/" || pathname === "/login" || pathname === "/sign-up")) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+  },
+  { publishableKey: clerkPublishableKey },
+);
 
 export const config = {
   matcher: [

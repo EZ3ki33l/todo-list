@@ -75,6 +75,7 @@ Pendant que je suis hors-ligne, mon conjoint ajoute et coche des articles sur la
 - Que se passe-t-il si l'envoi échoue au retour du réseau (serveur indisponible) ? Les changements restent en attente et sont retentés.
 - Que se passe-t-il si mon accès à la liste a été retiré pendant que j'étais hors-ligne ? Les changements concernés sont refusés par le serveur et je suis informé que la liste n'est plus accessible.
 - Que se passe-t-il si la session expire hors-ligne ? Les changements restent en attente jusqu'à la reconnexion.
+- Que se passe-t-il si je me déconnecte alors que des changements sont en attente ? Ils sont effacés avec le reste (FR-011) ; l'app prévient avant la déconnexion s'il en reste.
 - Que se passe-t-il pour une tâche récurrente cochée hors-ligne ? La série ne doit être comptée qu'une fois par période.
 
 ## Requirements *(mandatory)*
@@ -89,8 +90,9 @@ Pendant que je suis hors-ligne, mon conjoint ajoute et coche des articles sur la
 - **FR-006**: Le système MUST indiquer l'état hors-ligne et le nombre de changements en attente.
 - **FR-007**: Le système MUST fusionner les changements concurrents sur des éléments différents et appliquer « le plus récent gagne » sur un même élément.
 - **FR-008**: Le système MUST ne pas dupliquer un ajout lorsqu'un envoi est retenté.
-- **FR-009**: Les actions qui exigent le réseau (partage de liste, Chef IA, création ou suppression de liste, catalogue de recettes) MUST être désactivées hors-ligne avec un message clair.
+- **FR-009**: Les actions qui exigent le réseau (partage de liste, Chef IA, création ou suppression de liste, catalogue de recettes, réorganisation des éléments, suppression des articles cochés en une fois, création, modification ou suppression d'une tâche) MUST être désactivées hors-ligne avec un message clair.
 - **FR-010**: Les exigences FR-001 à FR-009 MUST s'appliquer à l'app Android et au site web, y compris après fermeture et réouverture du navigateur.
+- **FR-011**: À la déconnexion, le système MUST effacer de l'appareil les copies locales des listes et les changements en attente ou refusés, de sorte qu'un autre compte ne retrouve aucune donnée du précédent.
 
 ### Key Entities
 
@@ -112,7 +114,7 @@ Pendant que je suis hors-ligne, mon conjoint ajoute et coche des articles sur la
 - **[Décidé]** Pas de création ni de suppression de listes hors-ligne : seulement des changements dans le contenu de listes existantes.
 - **[Décidé]** Conflit sur un même élément : le changement le plus récent gagne.
 - **[Mon choix]** Les listes jamais ouvertes sur l'appareil ne sont pas disponibles hors-ligne ; pas de téléchargement préventif de toutes les listes.
-- **[Mon choix]** Pas de limite de durée de conservation de la copie locale.
+- **[Mon choix]** La copie locale est conservée 30 jours après la dernière synchronisation, durée de validité de la session de l'API : au-delà, les données ne pourraient de toute façon plus être synchronisées.
 - **[Mon choix]** Livraison en deux temps : Android d'abord (nécessaire au widget `004`), puis web, sous la même spec. Le plan décidera si c'est un ou deux jalons.
 - Les droits d'accès existants (`todo-list-access`, `shopping-list-access`) sont réutilisés tels quels.
 - Ce chantier est la base du widget (`004`).

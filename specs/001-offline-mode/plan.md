@@ -54,7 +54,7 @@ Approche retenue (détail et alternatives écartées dans [research.md](./resear
 | V. Simplicité | ⚠️ justifiée | File maison au lieu des mutations en pause de TanStack, colonne `lwwAt`, service worker web : voir « Complexity Tracking ». |
 | VI. Honnêteté sur le natif | ✅ | `expo-sqlite` et `expo-network` sont des modules natifs ; selon la doc Expo ils sont inclus dans Expo Go, mais la release exige un nouveau build EAS. Le serveur doit passer en production avant. |
 
-**Écarts entre ce plan et le spec** (à reporter dans le spec, proposés plus bas) :
+**Écarts entre ce plan et le spec** (reportés dans le spec le 2026-11-09 : FR-009 étendu, FR-011 ajouté, rétention de 30 jours) :
 - Hors-ligne, *réordonner*, *vider les articles cochés* et *créer, modifier ou supprimer une tâche* restent réservés au réseau (FR-002 ne couvre que les articles et le cochage des tâches). À ajouter à FR-009.
 - La déconnexion doit **purger** copie locale et file : exigence absente du spec, à ajouter (FR-011).
 - Copie locale conservée **30 jours** et non « sans limite » : c'est aussi la durée de vie du jeton API, au-delà les données ne seraient de toute façon plus synchronisables.

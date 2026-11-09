@@ -4,7 +4,7 @@ A [react-native](https://reactnative.dev/) app built using [expo](https://docs.e
 
 ## Build Android local (perf)
 
-Le repo est souvent sur `/mnt/SSD medias` alors que `~/.gradle` est sur le disque système. Gradle ne peut pas faire de hard links entre les deux volumes et recopie `libreactnative.so` pour chaque module natif — d’où les centaines de lignes `Hard link … failed. Doing a slower copy instead.` et des builds longs.
+Le repo est souvent sur `/mnt/SSDMedias` alors que `~/.gradle` est sur le disque système. Gradle ne peut pas faire de hard links entre les deux volumes et recopie `libreactnative.so` pour chaque module natif — d’où les centaines de lignes `Hard link … failed. Doing a slower copy instead.` et des builds longs.
 
 **Commande recommandée en dev :**
 

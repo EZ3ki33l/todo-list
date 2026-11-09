@@ -1,5 +1,4 @@
-import type { SchedulableAction } from "@/lib/day-week-split";
-import { startOfDay } from "@/lib/day-week-split";
+import { dueAtMs, startOfDay, timeStr, type SchedulableAction } from "./day-week-split";
 
 export function dateKey(date: Date): string {
   return startOfDay(date).toISOString().slice(0, 10);
@@ -54,15 +53,6 @@ export function getMonthCells(viewMonth: Date): CalendarCell[] {
     cells.push({ date: startOfDay(date), inMonth: date.getMonth() === month });
   }
   return cells;
-}
-
-function dueAtMs(dueAt: Date | string | null): number {
-  if (!dueAt) return 0;
-  return new Date(dueAt).getTime();
-}
-
-function timeStr(time: string | null): string {
-  return time ?? "";
 }
 
 /** Tâches prévues un jour donné (ponctuelles, hebdo ce jour-là, quotidiennes). */

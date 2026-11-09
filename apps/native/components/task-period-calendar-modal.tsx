@@ -20,7 +20,7 @@ import {
   getWeekdayLabels,
   sameDay,
   startOfMonth,
-} from "@/lib/task-agenda";
+} from "@repo/domain/task-agenda";
 import { startOfDay } from "@/lib/day-week-split";
 import { useThemeMode } from "@/lib/theme-context";
 

@@ -26,7 +26,7 @@ import { useDeleteAction, useUpdateAction } from "@/lib/use-action-mutations";
 import { confirmPermanentDelete } from "@/lib/confirm-delete";
 import { normalizeActionRows } from "@/lib/normalize-action-row";
 import { useRefetchTasksOnFocus } from "@/lib/use-refetch-tasks-on-focus";
-import { sameDay } from "@/lib/task-agenda";
+import { sameDay } from "@repo/domain/task-agenda";
 import { useToggleAction } from "@/lib/use-toggle-action";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth-context";

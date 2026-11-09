@@ -9,6 +9,7 @@
     "./lib/maps": "./src/lib/maps.ts",
     "./lib/action-form": "./src/lib/action-form.ts",
     "./lib/action-recurrence": "./src/lib/action-recurrence.ts",
+    "./lib/recipe-from-chat": "./src/lib/recipe-from-chat.ts",
     "./lib/confirm-delete": "./src/lib/confirm-delete.ts",
     "./lib/action-reminder": "./src/lib/action-reminder.ts",
     "./lib/default-lists": "./src/lib/default-lists.ts"
@@ -18,20 +19,21 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@clerk/backend": "^3.7.0",
+    "@clerk/backend": "^3.18.1",
     "@repo/db": "workspace:*",
+    "@repo/domain": "workspace:*",
     "@trpc/server": "catalog:",
-    "jose": "^5.10.0",
+    "jose": "^6.2.12",
     "server-only": "^0.0.1",
     "web-push": "^3.6.7",
-    "zod": "^3.25.76"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "@types/node": "^20.10.6",
+    "@types/node": "^22.20.3",
     "@types/web-push": "^3.6.4",
-    "@vitest/coverage-v8": "^4.1.9",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "@vitest/coverage-v8": "^5.0.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
   }
 }

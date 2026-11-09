@@ -52,6 +52,7 @@ VAPID_PUBLIC_KEY=...
 VAPID_PRIVATE_KEY=...
 VAPID_SUBJECT=mailto:r.rousset31@gmail.com
 MISTRAL_API_KEY=...   # suggestions « Idées repas » (optionnel)
+# THEMEALDB_API_KEY=1  # catalogue TheMealDB (optionnel, défaut 1)
 ```
 
 Générer les clés (PC) :

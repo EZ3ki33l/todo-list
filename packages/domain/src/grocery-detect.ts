@@ -18,6 +18,9 @@ const KEYWORDS: Record<Exclude<GroceryCategory, "AUTRE">, string[]> = {
     "pomme de terre", "patate", "patates", "radis", "celeri", "fenouil", "betterave",
     "navet", "potiron", "citrouille", "champignon", "champignons", "asperge", "asperges",
     "artichaut", "concombre", "mais", "blette", "poireau", "poireaux", "endive", "endives",
+    "tomato", "tomatoes", "carrot", "carrots", "onion", "onions", "garlic", "potato",
+    "potatoes", "lettuce", "spinach", "mushroom", "mushrooms", "broccoli", "cucumber",
+    "celery", "cabbage", "zucchini", "eggplant",
   ],
   FRUIT: [
     "pomme", "pommes", "poire", "poires", "banane", "bananes", "orange", "oranges",
@@ -26,21 +29,27 @@ const KEYWORDS: Record<Exclude<GroceryCategory, "AUTRE">, string[]> = {
     "ananas", "mangue", "abricot", "abricots", "peche", "peches", "prune", "prunes",
     "nectarine", "avocat", "avocats", "figue", "figues", "grenade", "clementine",
     "mandarine", "pamplemousse", "fruit",
+    "apple", "apples", "banana", "bananas", "lemon", "lime", "mango", "pineapple",
+    "grape", "grapes", "avocado", "berry", "berries",
   ],
   VIANDE: [
     "poulet", "dinde", "canard", "boeuf", "veau", "porc", "jambon", "lardons", "bacon",
     "saucisse", "saucisses", "merguez", "chipolata", "steak", "entrecote", "rumsteak",
     "escalope", "cotelette", "roti", "filet mignon", "boudin", "charcuterie", "viande",
     "hache", "hachee", "cote de boeuf", "agneau", "gigot", "saucisson",
+    "chicken", "beef", "pork", "lamb", "turkey", "sausage", "sausages", "meat",
   ],
   POISSON: [
     "saumon", "thon", "cabillaud", "colin", "truite", "sardine", "sardines", "crevette",
     "crevettes", "moule", "moules", "huitre", "huitres", "poisson", "sole", "bar",
     "dorade", "maquereau", "anchois", "surimi", "crabe", "homard", "calamar", "calamars",
+    "salmon", "tuna", "shrimp", "prawn", "prawns", "fish", "seafood", "cod", "mussel",
+    "mussels",
   ],
   BOULANGERIE: [
     "pain", "baguette", "baguettes", "brioche", "croissant", "croissants", "pain de mie",
     "viennoiserie", "farine", "levure", "pate", "pizza", "tortilla", "gaufre", "gaufres",
+    "flour", "bread",
   ],
   EPICERIE: [
     "riz", "pates", "semoule", "couscous", "lentille", "lentilles", "haricot sec",
@@ -49,11 +58,13 @@ const KEYWORDS: Record<Exclude<GroceryCategory, "AUTRE">, string[]> = {
     "sucre", "chocolat", "cacao", "cafe", "the", "biscuit", "biscuits", "chips",
     "cereale", "cereales", "soupe", "bouillon", "olive", "olives", "cornichon",
     "cornichons", "capre", "capres", "nutella", "cereale",
+    "rice", "pasta", "oil", "salt", "sugar", "vinegar", "honey", "soy sauce",
   ],
   LAITIER: [
     "lait", "beurre", "creme", "yaourt", "yogurt", "fromage", "emmental", "gruyere",
     "mozzarella", "parmesan", "camembert", "brie", "roquefort", "feta", "cheddar",
     "raclette", "creme fraiche", "oeuf", "oeufs", "blanc d oeuf",
+    "milk", "cheese", "butter", "cream", "yogurt", "egg", "eggs",
   ],
   BOISSON: [
     "eau", "jus", "soda", "coca", "cola", "biere", "vin", "champagne", "limonade",

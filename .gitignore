@@ -48,3 +48,8 @@ apps/native/android/app/google-services.json
 .turbo
 
 .pnpm-store/
+
+graphify/
+
+claude/
+graphify-out/

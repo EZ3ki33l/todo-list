@@ -13,7 +13,7 @@ import {
   getWeekdayLabels,
   sameDay,
   startOfMonth,
-} from "@/lib/task-agenda";
+} from "@repo/domain/task-agenda";
 import { startOfDay } from "@/lib/day-week-split";
 
 function CalendarDayDots({

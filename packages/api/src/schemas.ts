@@ -141,6 +141,63 @@ export const shoppingItemInputSchema = z.object({
   icon: iconSchema,
 });
 
+export const recipeSourceEnum = z.enum(["MANUAL", "CHEF_IA", "MEALDB"]);
+
+export const mealDbIdSchema = z.string().regex(/^\d{1,10}$/);
+
+export const catalogSearchInput = z.object({
+  query: z.string().trim().max(80).optional(),
+  category: z.string().trim().max(40).optional(),
+  area: z.string().trim().max(40).optional(),
+  ingredient: z.string().trim().max(80).optional(),
+});
+
+export const catalogMealIdInput = z.object({
+  mealId: mealDbIdSchema,
+});
+
+export const recipeIngredientSchema = z.object({
+  title: titleSchema,
+  quantity: quantitySchema,
+  unit: unitSchema,
+  category: groceryCategoryEnum.default("AUTRE"),
+});
+
+export const recipeStepSchema = z.string().trim().min(1).max(2000);
+
+export const recipeFieldsSchema = z.object({
+  title: titleSchema,
+  timeLabel: z.string().trim().max(60).nullable().optional().transform((v) => v || null),
+  servings: z.number().int().min(1).max(100).nullable().optional(),
+  notes: notesSchema,
+  ingredients: z.array(recipeIngredientSchema).max(60).default([]),
+  steps: z.array(recipeStepSchema).max(60).default([]),
+});
+
+export const recipeIdInput = z.object({ recipeId: cuidSchema });
+
+export const createRecipeInput = recipeFieldsSchema.extend({
+  source: recipeSourceEnum.default("MANUAL"),
+});
+
+export const updateRecipeInput = recipeFieldsSchema.extend({ recipeId: cuidSchema });
+
+export const listRecipesInput = z.object({
+  /** Recherche plein texte simple sur le titre et les ingrédients. */
+  search: z.string().trim().max(200).optional(),
+  source: recipeSourceEnum.optional(),
+  limit: z.number().int().min(1).max(100).default(20),
+  /** Id de la dernière recette reçue, pour la page suivante. */
+  cursor: cuidSchema.optional(),
+});
+
+export const saveRecipeFromChatInput = z.object({
+  /** Réponse brute du Chef IA, analysée par @repo/domain/chef-message. */
+  messageText: z.string().trim().min(1).max(20_000),
+  /** Index de la recette à retenir quand le message en contient plusieurs. */
+  recipeIndex: z.number().int().min(0).max(20).default(0),
+});
+
 export const listIdInput = z.object({ listId: cuidSchema });
 export const actionIdInput = z.object({ actionId: cuidSchema });
 export const itemIdInput = z.object({ itemId: cuidSchema });

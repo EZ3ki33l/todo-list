@@ -52,6 +52,8 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [addedKeys, setAddedKeys] = useState<Set<string>>(() => new Set());
+  const [savedRecipeKeys, setSavedRecipeKeys] = useState<Set<string>>(() => new Set());
+  const [savingRecipeKey, setSavingRecipeKey] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const utils = trpc.useUtils();
@@ -60,6 +62,9 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
     { enabled: open && mode !== null },
   );
   const chat = trpc.recipes.chat.useMutation();
+  const saveRecipe = trpc.recipes.saveFromChat.useMutation({
+    onSuccess: () => void utils.recipes.list.invalidate(),
+  });
   const createItem = trpc.shoppingItems.create.useMutation({
     onSuccess: () => {
       void utils.shoppingItems.getByList.invalidate({ listId });
@@ -83,7 +88,27 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
     setMessages([]);
     setDraft("");
     setAddedKeys(new Set());
+    setSavedRecipeKeys(new Set());
+    setSavingRecipeKey(null);
     chat.reset();
+  }
+
+  /** Enregistre dans le carnet la recette n° `recipeIndex` du message `messageIndex`. */
+  function saveRecipeFromMessage(messageIndex: number, recipeIndex: number) {
+    const key = `${messageIndex}:${recipeIndex}`;
+    if (savedRecipeKeys.has(key) || savingRecipeKey) return;
+
+    const content = messages[messageIndex]?.content;
+    if (!content) return;
+
+    setSavingRecipeKey(key);
+    saveRecipe.mutate(
+      { messageText: content, recipeIndex },
+      {
+        onSuccess: () => setSavedRecipeKeys((prev) => new Set(prev).add(key)),
+        onSettled: () => setSavingRecipeKey(null),
+      },
+    );
   }
 
   async function addItemToList(
@@ -242,7 +267,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                     <span>Recettes avec ma liste</span>
                   </p>
                   <p className="mt-1 text-sm text-app-text-muted">
-                    Des idées de plats à partir des articles déjà dans vos courses.
+                    Catalogue TheMealDB d&apos;abord, idée maison seulement s&apos;il est vide.
                   </p>
                 </button>
                 <button
@@ -255,7 +280,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                     <span>Articles pour cuisiner</span>
                   </p>
                   <p className="mt-1 text-sm text-app-text-muted">
-                    Décrivez un plat : je vous dis quoi ajouter à la liste.
+                    TheMealDB d&apos;abord, puis la liste de courses à compléter.
                   </p>
                 </button>
                 <button
@@ -294,6 +319,11 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                           <ChefChatMessageContent
                             text={msg.content}
                             productsOnly={mode === "seasonal_produce"}
+                            saveState={(recipeIndex) => ({
+                              onSave: () => saveRecipeFromMessage(index, recipeIndex),
+                              saving: savingRecipeKey === `${index}:${recipeIndex}`,
+                              saved: savedRecipeKeys.has(`${index}:${recipeIndex}`),
+                            })}
                           />
                         ) : (
                           msg.content
@@ -360,7 +390,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                   {chat.isPending ? (
                     <div className="flex justify-start">
                       <div className="rounded-2xl border border-app-border-soft bg-app-bg-soft px-4 py-2 text-sm text-app-text-subtle">
-                        Le chef réfléchit…
+                        Je cherche dans TheMealDB…
                       </div>
                     </div>
                   ) : null}

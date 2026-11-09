@@ -210,7 +210,7 @@ export function RecipeForm({
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-app-text-subtle">Aucun ingrédient pour l'instant.</p>
+          <p className="text-sm text-app-text-subtle">Aucun ingrédient pour l&apos;instant.</p>
         )}
 
         <div className="grid gap-2 sm:grid-cols-[2fr_1fr_1fr_auto]">
@@ -303,7 +303,7 @@ export function RecipeForm({
             ))}
           </ol>
         ) : (
-          <p className="text-sm text-app-text-subtle">Aucune étape pour l'instant.</p>
+          <p className="text-sm text-app-text-subtle">Aucune étape pour l&apos;instant.</p>
         )}
 
         <div className="flex gap-2">

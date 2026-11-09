@@ -267,7 +267,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                     <span>Recettes avec ma liste</span>
                   </p>
                   <p className="mt-1 text-sm text-app-text-muted">
-                    Catalogue TheMealDB d'abord, idée maison seulement s'il est vide.
+                    Catalogue TheMealDB d&apos;abord, idée maison seulement s&apos;il est vide.
                   </p>
                 </button>
                 <button
@@ -280,7 +280,7 @@ export function RecipeChefChat({ listId, variant = "floating" }: Props) {
                     <span>Articles pour cuisiner</span>
                   </p>
                   <p className="mt-1 text-sm text-app-text-muted">
-                    TheMealDB d'abord, puis la liste de courses à compléter.
+                    TheMealDB d&apos;abord, puis la liste de courses à compléter.
                   </p>
                 </button>
                 <button

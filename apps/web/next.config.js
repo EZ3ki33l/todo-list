@@ -9,6 +9,8 @@ module.exports = {
       // Photos de profil Clerk (avatars utilisateurs)
       { protocol: "https", hostname: "img.clerk.com" },
       { protocol: "https", hostname: "images.clerk.dev" },
+      { protocol: "https", hostname: "www.themealdb.com" },
+      { protocol: "https", hostname: "themealdb.com" },
     ],
   },
   experimental: {

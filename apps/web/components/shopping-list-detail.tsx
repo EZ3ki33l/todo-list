@@ -24,7 +24,8 @@ import {
 } from "@repo/domain/grocery-detect";
 import { CATEGORY_LABELS, itemIcon } from "@repo/domain/grocery-ui";
 import { applyListOrder } from "@repo/domain/reorder-list";
-import { parseQuantity } from "@/lib/shopping-quantity";
+import { parseQuantity } from "@repo/domain/shopping-quantity";
+import { listAccess } from "@repo/domain/list-access";
 import { trpc } from "@/lib/trpc";
 import {
   confirmPermanentBulkDelete,
@@ -84,12 +85,7 @@ export function ShoppingListDetail({
   const { data: list } = trpc.shoppingLists.getById.useQuery({ listId });
   const { data: items, isLoading } = trpc.shoppingItems.getByList.useQuery({ listId });
 
-  const isOwner = list?.ownerId === userId;
-  const isShared =
-    (list?.members.length ?? 0) > 0 ||
-    (!!userId && !isOwner && !!list?.members.some((m) => m.userId === userId));
-  const myMember = list?.members.find((m) => m.userId === userId);
-  const canWrite = isOwner || myMember?.role === "membre";
+  const { isOwner, canWrite, isShared } = listAccess(list, userId);
 
   const { data: frequentItems } = trpc.shoppingItems.getFrequent.useQuery(
     { limit: 24, minUseCount: 1 },

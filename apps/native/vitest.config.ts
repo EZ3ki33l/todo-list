@@ -3,19 +3,19 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      include: ["lib/**/*.ts"],
+      exclude: ["lib/**/*.d.ts", "lib/*-context.tsx", "lib/lazy-*.tsx"],
+      thresholds: { lines: 80, functions: 80, branches: 75 },
+    },
     projects: [
       {
         test: {
           name: "lib",
           environment: "node",
           include: ["lib/**/*.test.ts"],
-          coverage: {
-            provider: "v8",
-            reporter: ["text", "lcov"],
-            include: ["lib/**/*.ts"],
-            exclude: ["lib/**/*.d.ts", "lib/*-context.tsx", "lib/lazy-*.tsx"],
-            thresholds: { lines: 80, functions: 80, branches: 75 },
-          },
         },
       },
       {

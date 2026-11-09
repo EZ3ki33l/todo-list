@@ -10,6 +10,10 @@ import {
   normalizeIngredientName,
 } from "./recipe-suggestions";
 import {
+  chatResultFromCatalog,
+  skipCatalogForMessage,
+} from "./recipe-chat-catalog";
+import {
   CANONICAL_SEASONAL_SOURCES,
   formatSourcesForPrompt,
 } from "./seasonal-produce-sources";
@@ -275,14 +279,14 @@ export function recipeChatWelcome(mode: RecipeChatMode, ingredientCount: number)
     if (ingredientCount < 2) {
       return "J'ai regardé votre liste — il y a peu d'articles pour l'instant. Ajoutez-en quelques-uns, ou décrivez ce que vous avez sous la main et je vous proposerai des idées !";
     }
-    return `Parfait ! J'ai ${ingredientCount} article${ingredientCount > 1 ? "s" : ""} à travailler. Décrivez le style de repas que vous voulez (rapide, familial, léger…), ou dites « surprenez-moi » pour des idées créatives.`;
+    return `Parfait ! J'ai ${ingredientCount} article${ingredientCount > 1 ? "s" : ""} à travailler. Je cherche d'abord dans TheMealDB, et je n'invente une idée que si le catalogue est vide. Décrivez le style (rapide, familial, léger…) ou dites « surprenez-moi ».`;
   }
 
   if (mode === "seasonal_produce") {
     return `Nous sommes en ${season.season} (${season.monthName}). Je vous liste les fruits et légumes de saison en France — pas de recettes ici, seulement les produits. Vous pourrez ajouter d'un clic ce qui manque à votre liste.`;
   }
 
-  return "Quel plat ou repas avez-vous en tête ? Je vous dirai quoi ajouter à votre liste, avec des sources.";
+  return "Quel plat ou repas avez-vous en tête ? Je cherche d'abord dans TheMealDB, puis je vous dirai quoi ajouter à la liste.";
 }
 
 function buildSystemPrompt(mode: RecipeChatMode, ingredients: string[]): string {
@@ -301,6 +305,25 @@ export async function runRecipeChat(params: {
   ingredients: string[];
   messages: RecipeChatMessage[];
 }): Promise<RecipeChatResult> {
+  const lastUser = [...params.messages].reverse().find((m) => m.role === "user");
+
+  if (
+    lastUser &&
+    params.mode !== "seasonal_produce" &&
+    !skipCatalogForMessage(lastUser.content)
+  ) {
+    try {
+      const fromCatalog = await chatResultFromCatalog({
+        mode: params.mode,
+        ingredients: params.ingredients,
+        userMessage: lastUser.content,
+      });
+      if (fromCatalog) return fromCatalog;
+    } catch (err) {
+      console.error("[themealdb-chat]", err);
+    }
+  }
+
   const system = buildSystemPrompt(params.mode, params.ingredients);
 
   const mistralMessages: MistralMessage[] = [

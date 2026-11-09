@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Linking,
@@ -72,6 +73,8 @@ export function RecipeChefChat({ listId }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [addedKeys, setAddedKeys] = useState<Set<string>>(() => new Set());
+  const [savedRecipeKeys, setSavedRecipeKeys] = useState<Set<string>>(() => new Set());
+  const [savingRecipeKey, setSavingRecipeKey] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const utils = trpc.useUtils();
@@ -80,6 +83,9 @@ export function RecipeChefChat({ listId }: Props) {
     { enabled: open && mode !== null },
   );
   const chat = trpc.recipes.chat.useMutation();
+  const saveRecipe = trpc.recipes.saveFromChat.useMutation({
+    onSuccess: () => void utils.recipes.list.invalidate(),
+  });
   const createItem = trpc.shoppingItems.create.useMutation({
     onSuccess: () => {
       void utils.shoppingItems.getByList.invalidate({ listId });
@@ -105,7 +111,28 @@ export function RecipeChefChat({ listId }: Props) {
     setMessages([]);
     setDraft("");
     setAddedKeys(new Set());
+    setSavedRecipeKeys(new Set());
+    setSavingRecipeKey(null);
     chat.reset();
+  }
+
+  /** Enregistre dans le carnet la recette n° `recipeIndex` du message `messageIndex`. */
+  function saveRecipeFromMessage(messageIndex: number, recipeIndex: number) {
+    const key = `${messageIndex}:${recipeIndex}`;
+    if (savedRecipeKeys.has(key) || savingRecipeKey) return;
+
+    const content = messages[messageIndex]?.content;
+    if (!content) return;
+
+    setSavingRecipeKey(key);
+    saveRecipe.mutate(
+      { messageText: content, recipeIndex },
+      {
+        onSuccess: () => setSavedRecipeKeys((prev) => new Set(prev).add(key)),
+        onError: (err) => Alert.alert("Erreur", err.message),
+        onSettled: () => setSavingRecipeKey(null),
+      },
+    );
   }
 
   async function addItemToList(item: ChatItemToAdd, messageIndex: number) {
@@ -234,7 +261,7 @@ export function RecipeChefChat({ listId }: Props) {
                     <Text style={styles.modeCardTitle}>Recettes avec ma liste</Text>
                   </View>
                   <Text style={styles.modeCardDesc}>
-                    Des idées de plats à partir des articles déjà dans vos courses.
+                    Catalogue TheMealDB d'abord, idée maison seulement s'il est vide.
                   </Text>
                 </Pressable>
                 <Pressable
@@ -246,7 +273,7 @@ export function RecipeChefChat({ listId }: Props) {
                     <Text style={styles.modeCardTitle}>Articles pour cuisiner</Text>
                   </View>
                   <Text style={styles.modeCardDesc}>
-                    Décrivez un plat : je vous dis quoi ajouter à la liste.
+                    TheMealDB d'abord, puis la liste de courses à compléter.
                   </Text>
                 </Pressable>
                 <Pressable
@@ -288,6 +315,11 @@ export function RecipeChefChat({ listId }: Props) {
                           <ChefChatMessageContent
                             text={msg.content}
                             productsOnly={mode === "seasonal_produce"}
+                            saveState={(recipeIndex) => ({
+                              onSave: () => saveRecipeFromMessage(index, recipeIndex),
+                              saving: savingRecipeKey === `${index}:${recipeIndex}`,
+                              saved: savedRecipeKeys.has(`${index}:${recipeIndex}`),
+                            })}
                           />
                         ) : (
                           <Text style={[styles.bubbleText, styles.bubbleTextUser]}>
@@ -353,7 +385,7 @@ export function RecipeChefChat({ listId }: Props) {
                   {chat.isPending ? (
                     <View style={styles.bubbleRowAssistant}>
                       <View style={styles.bubbleAssistant}>
-                        <Text style={styles.bubbleText}>Le chef réfléchit…</Text>
+                        <Text style={styles.bubbleText}>Je cherche dans TheMealDB…</Text>
                       </View>
                     </View>
                   ) : null}
@@ -451,7 +483,7 @@ const styles = StyleSheet.create({
   fabImage: { width: 44, height: 44, borderRadius: 22 },
   fabLabel: { fontSize: 14, fontWeight: "700", color: "#111827" },
   overlay: { flex: 1, justifyContent: "flex-end" },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.45)" },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(0,0,0,0.45)" },
   sheet: {
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,

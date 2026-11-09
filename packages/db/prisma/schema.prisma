@@ -1,7 +1,7 @@
 generator client {
-  provider             = "prisma-client"
-  output               = "../src/generated/prisma"
-  importFileExtension  = "ts"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  importFileExtension = "ts"
 }
 
 datasource db {
@@ -24,9 +24,9 @@ enum ListStatus {
 
 /// Récurrence d'une action.
 enum Recurrence {
-  NONE    // tâche ponctuelle
-  DAILY   // chaque jour
-  WEEKLY  // chaque semaine, même jour
+  NONE // tâche ponctuelle
+  DAILY // chaque jour
+  WEEKLY // chaque semaine, même jour
 }
 
 /// Catégorie d'un article de courses (utilisée pour fallback d'icône et tri/groupement).
@@ -43,6 +43,13 @@ enum GroceryCategory {
   AUTRE
 }
 
+/// Origine d'une recette enregistrée.
+enum RecipeSource {
+  MANUAL // saisie à la main
+  CHEF_IA // sauvegardée depuis une réponse du Chef IA
+  MEALDB // importée depuis le catalogue TheMealDB
+}
+
 /// Utilisateur applicatif (profil Clerk + données métier).
 model User {
   id            String    @id @default(cuid())
@@ -53,18 +60,19 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
 
-  accounts            Account[]
-  sessions            Session[]
-  ownedLists          TodoList[]           @relation("ListOwner")
-  memberships         TodoListMember[]
-  ownedShoppingLists  ShoppingList[]       @relation("ShoppingListOwner")
-  shoppingMemberships ShoppingListMember[]
-  pushTokens          PushToken[]
-  webPushSubscriptions WebPushSubscription[]
-  shoppingItemStats   ShoppingItemStat[]
-  activityEvents           ActivityEvent[]           @relation("ActivityRecipient")
-  activityAsActor          ActivityEvent[]           @relation("ActivityActor")
-  notificationPreferences  NotificationPreferences?
+  accounts                Account[]
+  sessions                Session[]
+  ownedLists              TodoList[]               @relation("ListOwner")
+  memberships             TodoListMember[]
+  ownedShoppingLists      ShoppingList[]           @relation("ShoppingListOwner")
+  shoppingMemberships     ShoppingListMember[]
+  pushTokens              PushToken[]
+  webPushSubscriptions    WebPushSubscription[]
+  shoppingItemStats       ShoppingItemStat[]
+  recipes                 Recipe[]                 @relation("RecipeOwner")
+  activityEvents          ActivityEvent[]          @relation("ActivityRecipient")
+  activityAsActor         ActivityEvent[]          @relation("ActivityActor")
+  notificationPreferences NotificationPreferences?
 }
 
 /// Préférences de notifications par utilisateur (web + native).
@@ -77,9 +85,9 @@ model NotificationPreferences {
   todoListShared     Boolean @default(true)
 
   /// Popups Notification API (web uniquement).
-  browserPopups      Boolean @default(false)
+  browserPopups     Boolean @default(false)
   /// Compteur dans le titre de l'onglet (web uniquement).
-  browserTitleBadge  Boolean @default(true)
+  browserTitleBadge Boolean @default(true)
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -102,7 +110,7 @@ enum ActivityListKind {
 
 /// Événement persistant pour l'historique in-app (web + native).
 model ActivityEvent {
-  id          String             @id @default(cuid())
+  id          String            @id @default(cuid())
   userId      String
   actorUserId String?
   type        ActivityEventType
@@ -112,7 +120,7 @@ model ActivityEvent {
   title       String
   body        String
   readAt      DateTime?
-  createdAt   DateTime           @default(now())
+  createdAt   DateTime          @default(now())
 
   user  User  @relation("ActivityRecipient", fields: [userId], references: [id], onDelete: Cascade)
   actor User? @relation("ActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
@@ -170,13 +178,13 @@ model PushToken {
 
 /// Lot de notifications courses en attente (regroupement des ajouts rapides).
 model ShoppingNotifyBatch {
-  listId        String
-  actorUserId   String
-  itemCount     Int
-  lastTitle     String
-  lastQuantity  Float?
-  lastUnit      String?
-  sendAfter     DateTime
+  listId       String
+  actorUserId  String
+  itemCount    Int
+  lastTitle    String
+  lastQuantity Float?
+  lastUnit     String?
+  sendAfter    DateTime
 
   @@unique([listId, actorUserId])
   @@index([sendAfter])
@@ -250,28 +258,28 @@ model TodoListMember {
 
 /// Une action dans une liste : titre, fait / pas fait, planification optionnelle.
 model Action {
-  id             String     @id @default(cuid())
-  listId         String
-  title          String
-  done           Boolean    @default(false)
-  doneAt         DateTime?  // dernière validation (réinitialise l'affichage des tâches récurrentes)
-  streakCount    Int        @default(0) // série en cours (récurrentes uniquement)
-  bestStreak     Int        @default(0)
-  lastStreakPeriod String?  // clé du dernier jour/semaine compté (ex. "2026-05-29")
-  dueAt          DateTime?  // date d'échéance (tâche ponctuelle)
-  recurrence     Recurrence @default(NONE)
-  recurrenceTime String?    // heure de la récurrence au format "HH:mm"
-  recurrenceDow  Int?       // jour de la semaine (0=dim..6=sam) pour WEEKLY
-  locationLabel  String?    // nom du lieu (ex. « Cabinet médical »)
-  locationAddress String?   // adresse pour la navigation
-  notes          String?    @db.Text
-  remindBeforeMinutes Int? // délai avant échéance (minutes)
-  remindAt       DateTime?  // date/heure d'envoi du rappel
-  remindSentAt   DateTime?
+  id                    String     @id @default(cuid())
+  listId                String
+  title                 String
+  done                  Boolean    @default(false)
+  doneAt                DateTime? // dernière validation (réinitialise l'affichage des tâches récurrentes)
+  streakCount           Int        @default(0) // série en cours (récurrentes uniquement)
+  bestStreak            Int        @default(0)
+  lastStreakPeriod      String? // clé du dernier jour/semaine compté (ex. "2026-05-29")
+  dueAt                 DateTime? // date d'échéance (tâche ponctuelle)
+  recurrence            Recurrence @default(NONE)
+  recurrenceTime        String? // heure de la récurrence au format "HH:mm"
+  recurrenceDow         Int? // jour de la semaine (0=dim..6=sam) pour WEEKLY
+  locationLabel         String? // nom du lieu (ex. « Cabinet médical »)
+  locationAddress       String? // adresse pour la navigation
+  notes                 String?    @db.Text
+  remindBeforeMinutes   Int? // délai avant échéance (minutes)
+  remindAt              DateTime? // date/heure d'envoi du rappel
+  remindSentAt          DateTime?
   googleCalendarEventId String?
-  position       Int        @default(0)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  position              Int        @default(0)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
 
   list TodoList @relation(fields: [listId], references: [id], onDelete: Cascade)
 
@@ -318,10 +326,10 @@ model ShoppingItem {
   id        String          @id @default(cuid())
   listId    String
   title     String
-  quantity  Float?          // null = pas de quantité spécifiée
-  unit      String?         // "kg", "g", "L", "botte", "pcs"... libre
+  quantity  Float? // null = pas de quantité spécifiée
+  unit      String? // "kg", "g", "L", "botte", "pcs"... libre
   category  GroceryCategory @default(AUTRE)
-  icon      String?         // nom MaterialCommunityIcons spécifique, null = fallback catégorie
+  icon      String? // nom MaterialCommunityIcons spécifique, null = fallback catégorie
   checked   Boolean         @default(false)
   position  Int             @default(0)
   createdAt DateTime        @default(now())
@@ -330,4 +338,63 @@ model ShoppingItem {
   list ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
 
   @@index([listId])
+}
+
+/// Une recette du carnet : saisie à la main, Chef IA, ou catalogue TheMealDB.
+model Recipe {
+  id         String       @id @default(cuid())
+  ownerId    String
+  title      String
+  timeLabel  String? // « 45 min », tel que formulé par le Chef IA
+  servings   Int? // nombre de parts, null = non précisé
+  notes      String?
+  source     RecipeSource @default(MANUAL)
+  imageUrl   String? // vignette TheMealDB (ou autre source)
+  externalId String? // idMeal TheMealDB, pour éviter un import en double
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  owner       User               @relation("RecipeOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ingredients RecipeIngredient[]
+  steps       RecipeStep[]
+
+  @@unique([ownerId, externalId])
+  @@index([ownerId, createdAt])
+}
+
+/// Un ingrédient d'une recette — même forme qu'un ShoppingItem pour l'ajout en liste de courses.
+model RecipeIngredient {
+  id       String          @id @default(cuid())
+  recipeId String
+  title    String
+  quantity Float? // null = pas de quantité spécifiée
+  unit     String? // "kg", "g", "L", "botte", "pcs"... libre
+  category GroceryCategory @default(AUTRE)
+  position Int             @default(0)
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+}
+
+/// Une étape de préparation, ordonnée.
+model RecipeStep {
+  id       String @id @default(cuid())
+  recipeId String
+  text     String
+  position Int    @default(0)
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+}
+
+/// Traduction FR mise en cache d'un plat TheMealDB (évite de re-payer DeepL à chaque consultation).
+model MealTranslation {
+  mealId      String   @id // idMeal TheMealDB
+  title       String
+  ingredients Json? // titres d'ingrédients traduits, même ordre que la fiche d'origine
+  steps       Json? // étapes traduites, même ordre que la fiche d'origine
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

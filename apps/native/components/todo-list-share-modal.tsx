@@ -181,7 +181,7 @@ function getStyles(p: AppPalette) {
   return StyleSheet.create({
     modalOverlay: { flex: 1, justifyContent: "flex-end" },
     modalBackdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: p.overlay,
     },
     modalScrollContent: { paddingBottom: 8 },

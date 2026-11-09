@@ -27,6 +27,7 @@ import { useRefetchTasksOnFocus } from "@/lib/use-refetch-tasks-on-focus";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/lib/auth-context";
 import { formatActionDueTime } from "@repo/api/lib/action-form";
+import { listAccess } from "@repo/domain/list-access";
 import { confirmPermanentDelete } from "@/lib/confirm-delete";
 import { formatActionLocation, resolveMapsQuery } from "@repo/api/lib/maps";
 
@@ -65,11 +66,7 @@ export default function ListDetailScreen() {
     { enabled: !!listId },
   );
 
-  const isOwner = !!user?.id && list?.ownerId === user.id;
-  const myMember = list?.members.find((m) => m.userId === user?.id);
-  const canWrite = isOwner || myMember?.role === "membre";
-  const isShared =
-    (list?.members.length ?? 0) > 0 || (!!user?.id && !isOwner && !!myMember);
+  const { isOwner, canWrite, isShared } = listAccess(list, user?.id);
 
   useEffect(() => {
     if (personalList && listId === personalList.id) {

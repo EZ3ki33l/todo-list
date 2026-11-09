@@ -11,6 +11,7 @@ import { ActionListPanel } from "@/components/action-list-panel";
 import { EditableTitle } from "@/components/editable-title";
 import { TodoListShareHeader } from "@/components/todo-list-share-header";
 import { getOrCreatePersonalTodoList } from "@repo/api/lib/default-lists";
+import { listAccess } from "@repo/domain/list-access";
 
 type ActionRow = inferRouterOutputs<AppRouter>["actions"]["getByList"][number];
 
@@ -47,12 +48,11 @@ export default async function ListPage({
 
   if (!list) redirect("/dashboard");
 
-  const isOwner = list.ownerId === userId;
-  const membership = list.members[0];
+  const { isOwner, member: membership, canWrite, isShared } = listAccess(
+    { ...list, memberCount: list._count.members },
+    userId,
+  );
   if (!isOwner && !membership) redirect("/dashboard");
-
-  const canWrite = isOwner || membership?.role === "membre";
-  const isShared = list._count.members > 0 || (!isOwner && !!membership);
   const now = new Date();
   const initialActions = list.actions.map((a) => withEffectiveDone(a, now));
   const total = initialActions.length;

@@ -9,15 +9,23 @@
   "exports": {
     ".": "./src/index.ts",
     "./reorder-list": "./src/reorder-list.ts",
+    "./day-week-split": "./src/day-week-split.ts",
+    "./task-agenda": "./src/task-agenda.ts",
     "./grocery-detect": "./src/grocery-detect.ts",
-    "./grocery-ui": "./src/grocery-ui.ts"
+    "./grocery-ui": "./src/grocery-ui.ts",
+    "./shopping-quantity": "./src/shopping-quantity.ts",
+    "./recipe-source": "./src/recipe-source.ts",
+    "./chef-message": "./src/chef-message.ts",
+    "./activity-time": "./src/activity-time.ts",
+    "./list-access": "./src/list-access.ts"
   },
   "dependencies": {
     "@repo/emoji": "workspace:*"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.9",
-    "typescript": "5.9.2",
-    "vitest": "^3.2.6"
+    "@repo/typescript-config": "workspace:*",
+    "@vitest/coverage-v8": "^5.0.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
   }
 }

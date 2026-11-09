@@ -1,9 +1,9 @@
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextCoreWebVitals from "@repo/eslint-config/next";
 
 export default defineConfig([
   ...nextCoreWebVitals,
-  globalIgnores([".next/**", "out/**", "node_modules/**"]),
+  globalIgnores([".next/**", "out/**", "node_modules/**", "coverage/**"]),
   {
     rules: {
       // Pattern valide : réinitialiser du state dans un effect au changement d'une clé

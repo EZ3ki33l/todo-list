@@ -58,6 +58,7 @@ Créer `/srv/docker/todolist/.env` avec au minimum :
 | `CLERK_SECRET_KEY` | Clerk Dashboard → API Keys (secret) |
 | `MISTRAL_API_KEY` | [console.mistral.ai](https://console.mistral.ai) — suggestions « Idées repas » (optionnel) |
 | `MISTRAL_MODEL` | Optionnel, défaut `mistral-small-latest` |
+| `THEMEALDB_API_KEY` | [TheMealDB](https://www.themealdb.com/api.php) — catalogue de recettes (optionnel, clé test `1` par défaut) |
 
 **Schéma Neon** (après changement Prisma, depuis ton PC ou le serveur avec Node) :
 

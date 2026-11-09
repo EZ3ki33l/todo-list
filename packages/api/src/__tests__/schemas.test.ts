@@ -16,6 +16,9 @@ import {
   pushPlatformEnum,
   pushTokenSchema,
   quantitySchema,
+  recipeSourceEnum,
+  mealDbIdSchema,
+  catalogSearchInput,
   recurrenceEnum,
   recurrenceTimeSchema,
   remindBeforeMinutesSchema,
@@ -338,5 +341,24 @@ describe("shoppingItemInputSchema", () => {
 
   it("rejette une catégorie invalide", () => {
     expect(fail(shoppingItemInputSchema, { ...base, category: "FAKE" })).toThrow();
+  });
+});
+
+describe("recipeSourceEnum / mealDbIdSchema", () => {
+  it.each(["MANUAL", "CHEF_IA", "MEALDB"])("accepte la source %s", (v) => {
+    expect(() => recipeSourceEnum.parse(v)).not.toThrow();
+  });
+
+  it("accepte un id TheMealDB numérique", () => {
+    expect(mealDbIdSchema.parse("52772")).toBe("52772");
+  });
+
+  it("rejette un id TheMealDB non numérique", () => {
+    expect(fail(mealDbIdSchema, "abc")).toThrow();
+    expect(fail(mealDbIdSchema, "")).toThrow();
+  });
+
+  it("accepte une recherche catalogue vide", () => {
+    expect(catalogSearchInput.parse({})).toEqual({});
   });
 });

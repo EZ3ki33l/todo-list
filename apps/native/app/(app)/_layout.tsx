@@ -69,6 +69,22 @@ export default function AppLayout() {
           }}
         />
         <Tabs.Screen
+          name="recettes"
+          options={{
+            title: "Recettes",
+            headerShown: false,
+            tabBarLabel: "Recettes",
+            tabBarIcon: ({ focused }) => (
+              <MaterialCommunityIcons
+                name="chef-hat"
+                size={22}
+                color={iconTint}
+                style={{ opacity: focused ? 1 : 0.5 }}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="notifications"
           options={{
             title: "Notifications",

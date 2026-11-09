@@ -75,6 +75,13 @@ describe("detectCategory", () => {
     expect(detectCategory("zzzzunknownxxx")).toBeNull();
   });
 
+  it("détecte des libellés anglais courants (TheMealDB)", () => {
+    expect(detectCategory("chicken breasts")).toBe("VIANDE");
+    expect(detectCategory("soy sauce")).toBe("EPICERIE");
+    expect(detectCategory("tomato")).toBe("LEGUME");
+    expect(detectCategory("milk")).toBe("LAITIER");
+  });
+
   it("utilise la mémoire si le dictionnaire ne connaît pas le titre", () => {
     expect(
       detectCategory("mon fromage artisanal", [

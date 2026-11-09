@@ -22,7 +22,7 @@ import {
   DAY_WEEK_SECTION_CLASS,
   EMPTY_TASKS_MESSAGE,
 } from "@/lib/day-week-layout";
-import { sameDay } from "@/lib/task-agenda";
+import { sameDay } from "@repo/domain/task-agenda";
 import { applyListOrder } from "@repo/domain/reorder-list";
 import { useDragReorder } from "@/lib/use-drag-reorder";
 import { trpc } from "@/lib/trpc";

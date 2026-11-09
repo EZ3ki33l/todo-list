@@ -1,144 +1,44 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { FluentEmoji } from "@/components/fluent-emoji";
+import {
+  parseChefMessage,
+  stripMd,
+  type ParsedRecipe,
+  type SectionKind,
+} from "@repo/domain/chef-message";
 
-type ParsedSection = {
-  kind: "ingredients" | "steps";
-  label: string;
-  items: string[];
+const SECTION_ICONS: Record<SectionKind, string> = {
+  ingredients: "🥗",
+  steps: "👨‍🍳",
+  info: "ℹ️",
 };
 
-type ParsedRecipe = {
-  title: string;
-  time?: string;
-  intro?: string;
-  sections: ParsedSection[];
+/** Bouton « Enregistrer » d'une carte recette, piloté par le chat parent. */
+export type SaveRecipeState = {
+  onSave: () => void;
+  saving: boolean;
+  saved: boolean;
 };
 
-function stripMd(text: string): string {
-  return text
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .trim();
-}
-
-function isRecipeTitle(line: string): boolean {
-  const t = line.trim();
-  return /^\*\*(\d+\.\s*)?.+\*\*$/.test(t) && !/^(Printemps|Été|Automne|Hiver)/i.test(stripMd(t));
-}
-
-function isSeasonTitle(line: string): boolean {
-  return /^(Printemps|Été|Automne|Hiver)$/i.test(stripMd(line.trim()));
-}
-
-function sectionKind(line: string): "ingredients" | "steps" | null {
-  const t = stripMd(line).toLowerCase();
-  if (t.includes("ingrédient") || line.includes("📝")) return "ingredients";
-  if (t.includes("étape") || line.includes("👨‍🍳")) return "steps";
-  return null;
-}
-
-function isListLine(line: string): boolean {
-  return /^[-•*]\s+/.test(line.trim()) || /^\d+\.\s+/.test(line.trim());
-}
-
-function listItemText(line: string): string {
-  return stripMd(line.trim().replace(/^[-•*]\s+/, "").replace(/^\d+\.\s+/, ""));
-}
-
-function parseTime(line: string): string | undefined {
-  if (!/⏱|temps|min/i.test(line)) return undefined;
-  return stripMd(line.replace(/^⏱️?\s*/, ""));
-}
-
-function parseRecipes(text: string): { intro: string; recipes: ParsedRecipe[]; seasons: { name: string; lines: string[] }[] } {
-  const lines = text.split("\n");
-  const recipes: ParsedRecipe[] = [];
-  const seasons: { name: string; lines: string[] }[] = [];
-  const introParts: string[] = [];
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i] ?? "";
-    const trimmed = line.trim();
-
-    if (isSeasonTitle(line)) {
-      const season = { name: stripMd(line), lines: [] as string[] };
-      i++;
-      while (i < lines.length && !isSeasonTitle(lines[i] ?? "") && !isRecipeTitle(lines[i] ?? "")) {
-        const l = (lines[i] ?? "").trim();
-        if (l) season.lines.push(stripMd(l));
-        i++;
-      }
-      seasons.push(season);
-      continue;
-    }
-
-    if (isRecipeTitle(line)) {
-      const recipe: ParsedRecipe = { title: stripMd(line).replace(/^\d+\.\s*/, ""), sections: [] };
-      i++;
-      while (i < lines.length && !isRecipeTitle(lines[i] ?? "") && !isSeasonTitle(lines[i] ?? "")) {
-        const l = (lines[i] ?? "").trim();
-        if (!l) {
-          i++;
-          continue;
-        }
-        const time = parseTime(l);
-        if (time) {
-          recipe.time = time;
-          i++;
-          continue;
-        }
-        const kind = sectionKind(l);
-        if (kind) {
-          const section: ParsedSection = {
-            kind,
-            label: stripMd(l.replace(/^📝\s*|^👨‍🍳\s*/, "")),
-            items: [],
-          };
-          i++;
-          while (i < lines.length) {
-            const next = (lines[i] ?? "").trim();
-            if (!next) {
-              i++;
-              continue;
-            }
-            if (sectionKind(next) || isRecipeTitle(next) || isSeasonTitle(next) || parseTime(next)) break;
-            if (isListLine(next) || kind === "steps") {
-              section.items.push(listItemText(next));
-              i++;
-              continue;
-            }
-            break;
-          }
-          recipe.sections.push(section);
-          continue;
-        }
-        if (isListLine(l)) {
-          const last = recipe.sections[recipe.sections.length - 1];
-          if (last) last.items.push(listItemText(l));
-          else if (!recipe.intro) recipe.intro = listItemText(l);
-        } else if (!recipe.intro && recipe.sections.length === 0) {
-          recipe.intro = stripMd(l);
-        }
-        i++;
-      }
-      recipes.push(recipe);
-      continue;
-    }
-
-    if (trimmed && recipes.length === 0 && seasons.length === 0) introParts.push(stripMd(trimmed));
-    i++;
-  }
-
-  return { intro: introParts.join(" "), recipes, seasons };
-}
-
-function RecipeCard({ recipe }: { recipe: ParsedRecipe }) {
+function RecipeCard({ recipe, save }: { recipe: ParsedRecipe; save?: SaveRecipeState }) {
   return (
     <View style={styles.recipeCard}>
       <View style={styles.recipeHeader}>
-        <Text style={styles.recipeTitle}>{recipe.title}</Text>
+        <View style={styles.recipeTitleRow}>
+          <Text style={styles.recipeTitle}>{recipe.title}</Text>
+          {save ? (
+            <Pressable
+              onPress={save.onSave}
+              disabled={save.saved || save.saving}
+              style={[styles.saveBtn, (save.saved || save.saving) && { opacity: 0.6 }]}
+            >
+              <Text style={styles.saveBtnText}>
+                {save.saved ? "✓ Enregistrée" : save.saving ? "…" : "Enregistrer"}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
         {recipe.time ? (
           <View style={styles.recipeTimeRow}>
             <FluentEmoji emoji="⏱️" size={14} />
@@ -151,10 +51,7 @@ function RecipeCard({ recipe }: { recipe: ParsedRecipe }) {
         {recipe.sections.map((section, idx) => (
           <View key={idx} style={styles.section}>
             <View style={styles.sectionLabelRow}>
-              <FluentEmoji
-                emoji={section.kind === "ingredients" ? "🥗" : "👨‍🍳"}
-                size={14}
-              />
+              <FluentEmoji emoji={SECTION_ICONS[section.kind]} size={14} />
               <Text style={styles.sectionLabel}>
                 {section.label || (section.kind === "ingredients" ? "Ingrédients" : "Étapes")}
               </Text>
@@ -181,12 +78,16 @@ function RecipeCard({ recipe }: { recipe: ParsedRecipe }) {
 export function ChefChatMessageContent({
   text,
   productsOnly = false,
+  saveState,
 }: {
   text: string;
   productsOnly?: boolean;
+  /** Fourni par le chat pour offrir « Enregistrer » sur chaque recette. */
+  saveState?: (recipeIndex: number) => SaveRecipeState;
 }) {
-  const { intro, recipes: parsedRecipes, seasons } = parseRecipes(text);
-  const recipes = productsOnly ? [] : parsedRecipes;
+  const parsed = parseChefMessage(text);
+  const recipes = productsOnly ? [] : parsed.recipes;
+  const { intro, seasons } = parsed;
 
   if (recipes.length === 0 && seasons.length === 0) {
     return (
@@ -206,9 +107,9 @@ export function ChefChatMessageContent({
 
   return (
     <View style={styles.wrap}>
-      {intro ? <Text style={styles.intro}>{intro}</Text> : null}
+      {intro.length > 0 ? <Text style={styles.intro}>{intro.join(" ")}</Text> : null}
       {recipes.map((recipe, idx) => (
-        <RecipeCard key={idx} recipe={recipe} />
+        <RecipeCard key={idx} recipe={recipe} save={saveState?.(idx)} />
       ))}
       {seasons.map((season, idx) => (
         <View key={idx} style={styles.seasonCard}>
@@ -243,7 +144,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  recipeTitle: { fontSize: 15, fontWeight: "700", color: "#111827", lineHeight: 20 },
+  recipeTitleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  recipeTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: "#111827", lineHeight: 20 },
+  saveBtn: {
+    borderWidth: 1,
+    borderColor: "#FED7AA",
+    backgroundColor: "#fff",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  saveBtnText: { fontSize: 11, fontWeight: "600", color: "#9A3412" },
   recipeTimeRow: {
     marginTop: 6,
     flexDirection: "row",
